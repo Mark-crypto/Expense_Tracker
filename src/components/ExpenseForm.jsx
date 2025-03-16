@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { db } from "../services/Firebase.js";
 import { collection, addDoc } from "firebase/firestore";
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
+import { useFormik } from "formik";
+import expenseValidation from "../schemas/expenseValidation";
 
 const ExpenseForm = () => {
   const [expense, setExpense] = useState({
@@ -8,7 +12,14 @@ const ExpenseForm = () => {
     category: "",
     date: "",
   });
-
+  const formik = useFormik({
+    initialValues: {
+      amount: "",
+      category: "",
+      date: "",
+    },
+    validationSchema: expenseValidation,
+  });
   const addExpense = async (e) => {
     e.preventDefault();
     await addDoc(collection(db, "expenses"), expense);
@@ -16,31 +27,109 @@ const ExpenseForm = () => {
   };
 
   return (
-    <form onSubmit={addExpense} className="p-4 bg-gray-100 rounded">
-      <input
-        type="number"
-        placeholder="Amount"
-        required
-        value={expense.amount}
-        onChange={(e) => setExpense({ ...expense, amount: e.target.value })}
-      />
-      <input
-        type="text"
-        placeholder="Category"
-        required
-        value={expense.category}
-        onChange={(e) => setExpense({ ...expense, category: e.target.value })}
-      />
-      <input
-        type="date"
-        required
-        value={expense.date}
-        onChange={(e) => setExpense({ ...expense, date: e.target.value })}
-      />
-      <button type="submit" className="bg-green-500 text-white p-2 rounded">
-        Add Expense
-      </button>
-    </form>
+    <div
+      style={{
+        backgroundColor: "#9D00FF",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div>
+        <Form
+          onSubmit={addExpense}
+          style={{
+            width: "500px",
+            margin: "auto",
+            border: "1px solid grey",
+            padding: "20px",
+            borderRadius: "10px",
+            backgroundColor: "white",
+          }}
+        >
+          <h3
+            style={{
+              color: "#9D00FF",
+              marginBottom: "20px",
+              textAlign: "center",
+            }}
+          >
+            Add Expense
+          </h3>
+          <Form.Group className="mb-3">
+            <Form.Label>Amount</Form.Label>
+            <Form.Control
+              type="number"
+              placeholder="Enter amount"
+              value={expense.amount}
+              onChange={(e) =>
+                setExpense({ ...expense, amount: e.target.value })
+              }
+              onBlur={formik.handleBlur}
+              name="amount"
+            />
+            {formik.errors.amount && formik.touched.amount && (
+              <p style={{ color: "red" }}>{formik.errors.amount}</p>
+            )}
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Category</Form.Label>
+            <Form.Select
+              value={expense.category}
+              onChange={(e) =>
+                setExpense({ ...expense, category: e.target.value })
+              }
+              name="category"
+              onBlur={formik.handleBlur}
+            >
+              <option>Choose a Category</option>
+              <option value="clothing">Clothing</option>
+              <option value="debt">Debt</option>
+              <option value="education">Education</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="food">Food</option>
+              <option value="gifts">Gifts</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="housing">Housing</option>
+              <option value="householdSupplies">Household Supplies</option>
+              <option value="insurance">Insurance</option>
+              <option value="personal">Personal</option>
+              <option value="retirement">Retirement</option>
+              <option value="transportation">Transportation</option>
+              <option value="utilities">Utilities</option>
+            </Form.Select>
+            {formik.errors.category && formik.touched.category && (
+              <p style={{ color: "red" }}>{formik.errors.category}</p>
+            )}
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Date</Form.Label>
+            <Form.Control
+              type="date"
+              placeholder=""
+              value={expense.date}
+              onChange={(e) => setExpense({ ...expense, date: e.target.value })}
+              onBlur={formik.handleBlur}
+              name="date"
+            />
+            {formik.errors.date && formik.touched.date && (
+              <p style={{ color: "red" }}>{formik.errors.date}</p>
+            )}
+          </Form.Group>
+          <Button
+            style={{
+              backgroundColor: "#9D00FF",
+              marginBottom: "20px",
+              width: "100%",
+            }}
+            type="submit"
+          >
+            Add Expense
+          </Button>
+        </Form>
+      </div>
+    </div>
   );
 };
 

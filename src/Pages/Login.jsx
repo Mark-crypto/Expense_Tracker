@@ -97,7 +97,7 @@ const Login = () => {
                 marginBottom: "20px",
                 width: "100%",
               }}
-              type="button"
+              type="submit"
             >
               Submit
             </Button>
