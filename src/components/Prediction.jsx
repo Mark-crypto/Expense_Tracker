@@ -1,5 +1,6 @@
-import Navbar from "../components/Navbar";
-const Settings = () => {
+import Navbar from "./Navbar.jsx";
+
+const Prediction = () => {
   return (
     <div
       style={{
@@ -19,10 +20,13 @@ const Settings = () => {
           width: "80%",
         }}
       >
-        <h1>Settings</h1>
+        <h1>
+          AI Predictions - total, debt, advised budget amount,month v
+          amount,future category vs expenditure
+        </h1>
       </div>
     </div>
   );
 };
 
-export default Settings;
+export default Prediction;

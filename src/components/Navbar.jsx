@@ -19,19 +19,21 @@ const Navbar = () => {
         >
           Expense Tracker
         </h3>
-        <button className="btn-nav">
-          <FaUserCircle style={{ marginRight: "8px", fontSize: "22px" }} />
-          User Profile
-        </button>
+        <a href="/profile">
+          <button className="btn-nav">
+            <FaUserCircle style={{ marginRight: "8px", fontSize: "22px" }} />
+            User Profile
+          </button>
+        </a>
         <ul>
           <li>
-            <a href="">
+            <a href="/expense-form">
               <IoMdAdd style={{ marginRight: "8px", fontSize: "25px" }} />
               New Expense
             </a>
           </li>
           <li>
-            <a href="">
+            <a href="/">
               <MdSpaceDashboard
                 style={{ marginRight: "8px", fontSize: "25px" }}
               />
@@ -39,25 +41,25 @@ const Navbar = () => {
             </a>
           </li>
           <li>
-            <a href="">
+            <a href="/predictions">
               <TbBulb style={{ marginRight: "8px", fontSize: "25px" }} />
               AI Predictions
             </a>
           </li>
           <li>
-            <a href="">
+            <a href="/budget">
               <FaWallet style={{ marginRight: "8px", fontSize: "25px" }} />
               Budget
             </a>
           </li>
           <li>
-            <a href="">
+            <a href="/history">
               <FaHistory style={{ marginRight: "8px", fontSize: "25px" }} />
               History
             </a>
           </li>
           <li>
-            <a href="">
+            <a href="/settings">
               <IoMdSettings style={{ marginRight: "8px", fontSize: "25px" }} />
               Settings
             </a>

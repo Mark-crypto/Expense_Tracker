@@ -1,5 +1,6 @@
-import Navbar from "../components/Navbar";
-const Settings = () => {
+import Navbar from "./Navbar";
+
+const History = () => {
   return (
     <div
       style={{
@@ -19,10 +20,10 @@ const Settings = () => {
           width: "80%",
         }}
       >
-        <h1>Settings</h1>
+        <h1>History</h1>
       </div>
     </div>
   );
 };
 
-export default Settings;
+export default History;
