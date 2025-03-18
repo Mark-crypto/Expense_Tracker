@@ -3,16 +3,23 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import budgetValidation from "../schemas/budgetValidation";
+import BudgetTable from "./BudgetTable";
+import { useState } from "react";
+import { FaArrowAltCircleDown } from "react-icons/fa";
+import { FaArrowAltCircleUp } from "react-icons/fa";
 
 const Budget = () => {
+  const [show, setShow] = useState(false);
   const formik = useFormik({
     initialValues: {
       name: "",
       category: "",
       amount: "",
       date: "",
+      email: true,
     },
     validationSchema: budgetValidation,
+    enableReinitialize: true,
   });
 
   const addBudget = (e) => {
@@ -24,15 +31,16 @@ const Budget = () => {
         display: "flex",
         flexDirection: "row",
         justifyContent: "space-between",
+        maxHeight: "100vh",
       }}
     >
-      <div style={{ width: "20%" }}>
+      <div style={{ width: "20%", height: "100%" }}>
         <Navbar />
       </div>
       <div
         style={{
           backgroundColor: "#9D00FF",
-          height: "100vh",
+          height: "100%",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -44,7 +52,8 @@ const Budget = () => {
           onSubmit={addBudget}
           style={{
             width: "500px",
-            marginBottom: "60px",
+            marginBottom: "20px",
+            marginTop: "100px",
             border: "1px solid grey",
             padding: "20px",
             borderRadius: "10px",
@@ -116,7 +125,18 @@ const Budget = () => {
               <p style={{ color: "red" }}>{formik.errors.amount}</p>
             )}
           </Form.Group>
-
+          <Form.Group className="mb-3" controlId="formBasicCheckbox">
+            <Form.Check
+              type="checkbox"
+              label="Receive Email Reminders"
+              checked={formik.values.email}
+              onChange={formik.handleChange}
+              onClick={() =>
+                formik.setFieldValue("email", !formik.values.email)
+              }
+              name="email"
+            />
+          </Form.Group>
           <Button
             style={{
               backgroundColor: "#9D00FF",
@@ -129,8 +149,11 @@ const Budget = () => {
           </Button>
         </Form>
         <div className="btn-budget">
-          <button type="button">Show Previous Budgets</button>
+          <button type="button" onClick={() => setShow(!show)}>
+            {show ? "Hide Previous Budgets " : `Show Previous Budgets`}
+          </button>
         </div>
+        <div>{show && <BudgetTable />}</div>
       </div>
     </div>
   );

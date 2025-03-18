@@ -81,6 +81,7 @@
   color: #fff;
   font-weight: bold;
   font-size: 20px;
+  margin-bottom: 20px;
 }
 .btn-budget button:hover {
   background-color: #6e00b3;
