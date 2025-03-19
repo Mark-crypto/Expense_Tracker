@@ -75,7 +75,7 @@
 .btn-budget button {
   width: 500px;
   height: 50px;
-  background-color: #3c0061;
+  background-color: #6e00b3;
   border: 1px solid grey;
   border-radius: 10px;
   color: #fff;
@@ -84,6 +84,20 @@
   margin-bottom: 20px;
 }
 .btn-budget button:hover {
-  background-color: #6e00b3;
+  background-color: #39015b;
   color: white;
+}
+.dashboard-cards {
+  display: flex;
+  justify-content: space-around;
+}
+.dashboard-card {
+  width: 300px;
+  height: 100px;
+  background-color: white;
+  display: flex;
+  flex-direction: row;
+  border-radius: 10px;
+  padding: 10px;
+  justify-content: space-between;
 }

@@ -142,6 +142,7 @@ const Budget = () => {
               backgroundColor: "#9D00FF",
               marginBottom: "20px",
               width: "100%",
+              fontWeight: "bold",
             }}
             type="submit"
           >
@@ -150,7 +151,24 @@ const Budget = () => {
         </Form>
         <div className="btn-budget">
           <button type="button" onClick={() => setShow(!show)}>
-            {show ? "Hide Previous Budgets " : `Show Previous Budgets`}
+            {show ? (
+              <>
+                Hide Previous Budgets{" "}
+                <FaArrowAltCircleUp
+                  style={{ marginLeft: "10px", fontSize: "30px" }}
+                />
+              </>
+            ) : (
+              <>
+                Show Previous Budgets{" "}
+                <FaArrowAltCircleDown
+                  style={{
+                    marginLeft: "10px",
+                    fontSize: "30px",
+                  }}
+                />
+              </>
+            )}
           </button>
         </div>
         <div>{show && <BudgetTable />}</div>
