@@ -6,12 +6,12 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCsJwqvCrxV9LtAR4QxOrX6gUABsIiDxAo",
-  authDomain: "expense-tracker-58245.firebaseapp.com",
-  projectId: "expense-tracker-58245",
-  storageBucket: "expense-tracker-58245.firebasestorage.app",
-  messagingSenderId: "1090103333720",
-  appId: "1:1090103333720:web:93846f70527b69aa200b2d",
+  apiKey: import.meta.env.API_KEY,
+  authDomain: import.meta.env.AUTH_DOMAIN,
+  projectId: import.meta.env.PROJECT_ID,
+  storageBucket: import.meta.env.STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.MESSAGING_SENDER_ID,
+  appId: import.meta.env.APP_ID,
 };
 
 // Initialize Firebase
