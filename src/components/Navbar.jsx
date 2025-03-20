@@ -6,8 +6,18 @@ import { FaWallet } from "react-icons/fa";
 import { FaHistory } from "react-icons/fa";
 import { IoMdSettings } from "react-icons/io";
 import { MdLogout } from "react-icons/md";
+import { doSignOut } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const { userLoggedIn, currentUser } = useAuth();
+  const handleLogout = () => {
+    doSignOut().then(() => {
+      navigate("/login");
+    });
+  };
   return (
     <>
       <div className="navbar">
@@ -22,6 +32,7 @@ const Navbar = () => {
         <a href="/profile">
           <button className="btn-nav">
             <FaUserCircle style={{ marginRight: "8px", fontSize: "22px" }} />
+            {/* {currentUser.displayName ? currentUser.displayName : currentUser.email} */}
             User Profile
           </button>
         </a>
@@ -65,7 +76,7 @@ const Navbar = () => {
             </a>
           </li>
           <li>
-            <a href="">
+            <a href="" onClick={handleLogout}>
               <MdLogout style={{ marginRight: "8px", fontSize: "25px" }} />
               Logout
             </a>

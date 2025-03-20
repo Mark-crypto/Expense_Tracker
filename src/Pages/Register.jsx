@@ -1,12 +1,18 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { FaGoogle } from "react-icons/fa";
 import { FaFacebook } from "react-icons/fa";
 import { useFormik } from "formik";
 import registerValidation from "../schemas/registerValidation";
+import { useAuth } from "../context/AuthContext";
+import { doCreateUserWithEmailAndPassword } from "../services/auth";
+import { useState } from "react";
 
 const Register = () => {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [error, setError] = useState("");
+  const { userLoggedIn } = useAuth();
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -17,11 +23,22 @@ const Register = () => {
     validationSchema: registerValidation,
   });
 
-  const handleSubmit = (e) => {
-    console.log("Form Submitted");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isRegistering) {
+      setIsRegistering(true);
+      await doCreateUserWithEmailAndPassword(
+        formik.values.email,
+        formik.values.password
+      ).catch((err) => {
+        setIsRegistering(false);
+        setError(err.message);
+      });
+    }
   };
   return (
     <>
+      {userLoggedIn && <Navigate to={"/"} replace={true} />}
       <div className="login-page">
         {/* purple - #9D00FF, #B069DB, #6E00B3, #3C0061 */}
         <div className="login-form">

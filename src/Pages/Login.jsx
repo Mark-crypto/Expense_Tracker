@@ -1,12 +1,23 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { FaGoogle } from "react-icons/fa";
 import { FaFacebook } from "react-icons/fa";
 import { useFormik } from "formik";
 import loginValidation from "../schemas/loginValidation";
+import {
+  doSignInWithEmailAndPassword,
+  doSignInWithGoogle,
+} from "../services/auth";
+import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
 
 const Login = () => {
+  const { userLoggedIn } = useAuth();
+
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [error, setError] = useState("");
+
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -15,11 +26,29 @@ const Login = () => {
     validationSchema: loginValidation,
   });
 
-  const handleSubmit = (e) => {
-    console.log("Form Submitted");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isSigningIn) {
+      setIsSigningIn(true);
+    }
+    await doSignInWithEmailAndPassword(
+      formik.values.email,
+      formik.values.password
+    );
+  };
+
+  const onGoogleSignIn = async () => {
+    if (!isSigningIn) {
+      setIsSigningIn(true);
+      doSignInWithGoogle().catch((err) => {
+        setIsSigningIn(false);
+        // setError(err.message);
+      });
+    }
   };
   return (
     <>
+      {userLoggedIn && <Navigate to={"/"} replace={true} />}
       <div className="login-page">
         {/* purple - #9D00FF, #B069DB, #6E00B3, #3C0061 */}
         <div className="login-form">
