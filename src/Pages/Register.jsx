@@ -2,17 +2,15 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { Link, Navigate } from "react-router-dom";
 import { FaGoogle } from "react-icons/fa";
-import { FaFacebook } from "react-icons/fa";
 import { useFormik } from "formik";
 import registerValidation from "../schemas/registerValidation";
-import { useAuth } from "../context/AuthContext";
-import { doCreateUserWithEmailAndPassword } from "../services/auth";
 import { useState } from "react";
 
 const Register = () => {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState("");
   const { userLoggedIn } = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [error, setError] = useState("");
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -23,18 +21,18 @@ const Register = () => {
     validationSchema: registerValidation,
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!isRegistering) {
-      setIsRegistering(true);
-      await doCreateUserWithEmailAndPassword(
-        formik.values.email,
-        formik.values.password
-      ).catch((err) => {
-        setIsRegistering(false);
-        setError(err.message);
+  const onGoogleSignIn = async () => {
+    if (!isSigningIn) {
+      setIsSigningIn(true);
+      doSignInWithGoogle().catch((err) => {
+        setIsSigningIn(false);
+        // setError(err.message);
       });
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
   };
   return (
     <>
@@ -45,7 +43,7 @@ const Register = () => {
           <h3 style={{ color: "#9D00FF" }}>Create Your Account</h3>
           <h6>Choose to sign in with:</h6>
           <a href="https://google.com">
-            <button type="button" className="auth-btn">
+            <button type="button" className="auth-btn" onClick={onGoogleSignIn}>
               <FaGoogle
                 style={{
                   marginRight: "5px",
@@ -54,19 +52,6 @@ const Register = () => {
                 }}
               />
               Sign in with Google
-            </button>
-          </a>
-          <br />
-          <a href="https://facebook.com">
-            <button type="button" className="auth-btn">
-              <FaFacebook
-                style={{
-                  marginRight: "5px",
-                  fontSize: "17px",
-                  color: "#9D00FF",
-                }}
-              />
-              Sign in with Facebook
             </button>
           </a>
 

@@ -5,10 +5,7 @@ import { FaGoogle } from "react-icons/fa";
 import { FaFacebook } from "react-icons/fa";
 import { useFormik } from "formik";
 import loginValidation from "../schemas/loginValidation";
-import {
-  doSignInWithEmailAndPassword,
-  doSignInWithGoogle,
-} from "../services/auth";
+import { doSignInWithGoogle } from "../services/auth";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 
@@ -28,13 +25,6 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isSigningIn) {
-      setIsSigningIn(true);
-    }
-    await doSignInWithEmailAndPassword(
-      formik.values.email,
-      formik.values.password
-    );
   };
 
   const onGoogleSignIn = async () => {
@@ -55,7 +45,7 @@ const Login = () => {
           <h3 style={{ color: "#9D00FF" }}>Welcome Back</h3>
           <h6>Enter your details</h6>
           <a href="https://google.com">
-            <button type="button" className="auth-btn">
+            <button type="button" className="auth-btn" onClick={onGoogleSignIn}>
               <FaGoogle
                 style={{
                   marginRight: "5px",
@@ -64,19 +54,6 @@ const Login = () => {
                 }}
               />
               Sign in with Google
-            </button>
-          </a>
-          <br />
-          <a href="https://facebook.com">
-            <button type="button" className="auth-btn">
-              <FaFacebook
-                style={{
-                  marginRight: "5px",
-                  fontSize: "17px",
-                  color: "#9D00FF",
-                }}
-              />
-              Sign in with Facebook
             </button>
           </a>
 
