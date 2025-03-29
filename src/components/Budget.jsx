@@ -15,7 +15,7 @@ const Budget = () => {
       name: "",
       category: "",
       amount: "",
-      date: "",
+      // date: "",
       email: true,
     },
     validationSchema: budgetValidation,
