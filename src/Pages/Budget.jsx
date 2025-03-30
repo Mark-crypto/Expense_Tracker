@@ -1,9 +1,9 @@
-import Navbar from "./Navbar";
+import Navbar from "../components/Navbar";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import budgetValidation from "../schemas/budgetValidation";
-import BudgetTable from "./BudgetTable";
+import BudgetTable from "../components/BudgetTable";
 import { useState } from "react";
 import { FaArrowAltCircleDown } from "react-icons/fa";
 import { FaArrowAltCircleUp } from "react-icons/fa";

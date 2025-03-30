@@ -5,7 +5,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import ExpenseForm from "./components/ExpenseForm";
-import Budget from "./components/Budget";
+import Budget from "./Pages/Budget";
 import Prediction from "./components/Prediction";
 import "bootstrap/dist/css/bootstrap.min.css";
 import History from "./components/History";
