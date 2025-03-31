@@ -1,11 +1,8 @@
-import React from "react";
 import Navbar from "../components/Navbar";
-import revenue from "../assets/revenue.svg";
-import debt from "../assets/debt.svg";
-import budget from "../assets/budget.svg";
-// import BarChart from "../components/BarChart";
 import PieChart from "../components/PieChart";
 import BarChart from "../components/BarChart";
+import Cards from "@/components/Cards";
+// import BarChart from "../components/BarChart";
 
 const Dashboard = () => {
   return (
@@ -27,33 +24,7 @@ const Dashboard = () => {
         }}
       >
         <h2>Dashboard</h2>
-        <div className="dashboard-cards">
-          <div className="dashboard-card">
-            <div>
-              <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>
-                Total Spent:
-              </h4>{" "}
-              <h4 style={{ fontWeight: "bold" }}>Sh 30000</h4>
-            </div>
-            <img src={revenue} alt="revenue" style={{ width: "100px" }} />
-          </div>
-          <div className="dashboard-card">
-            <div>
-              <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>Debt:</h4>{" "}
-              <h4 style={{ fontWeight: "bold" }}>Sh 4000</h4>
-            </div>
-            <img src={debt} alt="revenue" style={{ width: "100px" }} />
-          </div>
-          <div className="dashboard-card">
-            <div>
-              <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>
-                Budgeted:
-              </h4>{" "}
-              <h4 style={{ fontWeight: "bold" }}>Sh 50000</h4>
-            </div>
-            <img src={budget} alt="revenue" style={{ width: "100px" }} />
-          </div>
-        </div>
+        <Cards />
         <div className="dashboard-graphs">
           <div className="dashboard-graph">
             <BarChart />

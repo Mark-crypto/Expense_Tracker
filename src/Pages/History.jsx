@@ -1,4 +1,4 @@
-import Navbar from "./Navbar";
+import Navbar from "../components/Navbar";
 import Table from "react-bootstrap/Table";
 import { MdDelete } from "react-icons/md";
 

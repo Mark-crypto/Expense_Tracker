@@ -8,7 +8,7 @@ import ExpenseForm from "./components/ExpenseForm";
 import Budget from "./Pages/Budget";
 import Prediction from "./components/Prediction";
 import "bootstrap/dist/css/bootstrap.min.css";
-import History from "./components/History";
+import History from "./Pages/History";
 import Dash from "./pages/Dash";
 
 function App() {
