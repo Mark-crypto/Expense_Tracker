@@ -1,5 +1,5 @@
+import HistoryTable from "@/components/HistoryTable";
 import Navbar from "../components/Navbar";
-import Table from "react-bootstrap/Table";
 import { MdDelete } from "react-icons/md";
 
 const History = () => {
@@ -37,40 +37,7 @@ const History = () => {
           <MdDelete style={{ marginRight: "10px", fontSize: "20px" }} />
           Clear All History
         </button>
-        <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Amount</th>
-              <th>Category</th>
-              <th>Date</th>
-              <th>Total Expenditure(All expenses)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>Sh 3000</td>
-              <td>Utilities</td>
-              <td>12/12/24</td>
-              <td>Sh 3000</td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>Sh 24000</td>
-              <td>Housing</td>
-              <td>01/01/25</td>
-              <td>Sh 27000</td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td>Sh 2000</td>
-              <td>Transportation</td>
-              <td>31/01/25</td>
-              <td>Sh 29000</td>
-            </tr>
-          </tbody>
-        </Table>
+        <HistoryTable />
       </div>
     </div>
   );

@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { db } from "../services/Firebase.js";
-import { collection, addDoc } from "firebase/firestore";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
@@ -21,11 +19,6 @@ const ExpenseForm = () => {
     },
     validationSchema: expenseValidation,
   });
-  const addExpense = async (e) => {
-    e.preventDefault();
-    await addDoc(collection(db, "expenses"), expense);
-    setExpense({ amount: "", category: "", date: "" });
-  };
 
   return (
     <div
