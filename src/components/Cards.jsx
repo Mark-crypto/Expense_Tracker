@@ -1,8 +1,15 @@
 import revenue from "../assets/revenue.svg";
 import debt from "../assets/debt.svg";
 import budget from "../assets/budget.svg";
+import { useFetch } from "@/hooks/useFetch";
 
 const Cards = () => {
+  const url = "";
+  const { data, loading, error } = useFetch(url);
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
+
+  // Add data to cards
   return (
     <>
       <div className="dashboard-cards">

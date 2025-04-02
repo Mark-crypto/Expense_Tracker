@@ -1,6 +1,12 @@
 import React, { useEffect } from "react";
+import { useFetch } from "@/hooks/useFetch";
 
 const PieChart = () => {
+  const url = "";
+  const { data, loading, error } = useFetch(url);
+
+  // Pass in data values to the chart
+
   useEffect(() => {
     // Load Google Charts script dynamically
     if (!window.google) {
@@ -44,7 +50,8 @@ const PieChart = () => {
       });
     }
   }, []);
-
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
   return (
     <div
       id="chart_div"

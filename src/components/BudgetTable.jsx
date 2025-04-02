@@ -1,7 +1,12 @@
 import Table from "react-bootstrap/Table";
 import Button from "react-bootstrap/Button";
+import { useFetch } from "@/hooks/useFetch";
 
 const BudgetTable = () => {
+  const url = "";
+  const { data, loading, error } = useFetch(url);
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
   return (
     <>
       <Table striped bordered hover>
@@ -17,6 +22,30 @@ const BudgetTable = () => {
           </tr>
         </thead>
         <tbody>
+          {data.map((item, index) => {
+            return (
+              <tr key={item.id}>
+                <td>{index + 1}</td>
+                <td>{item.name}</td>
+                <td>{item.category}</td>
+                <td>{item.amount}</td>
+                <td
+                  style={{
+                    color: item.status === "Within Budget" ? "green" : "red",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {item.status}
+                </td>
+                <td>Calculate exceeding by</td>
+                <td>
+                  <Button className="" variant="danger">
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
           <tr>
             <td>1</td>
             <td>March Shopping</td>

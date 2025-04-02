@@ -1,6 +1,12 @@
 import React, { useEffect } from "react";
+import { useFetch } from "@/hooks/useFetch";
 
 const BarChart = () => {
+  const url = "";
+  const { data, loading, error } = useFetch(url);
+
+  //Pass in data values to the chart
+
   useEffect(() => {
     if (!window.google) {
       const script = document.createElement("script");
@@ -64,7 +70,8 @@ const BarChart = () => {
       });
     }
   }, []);
-
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
   return (
     <div
       style={{
