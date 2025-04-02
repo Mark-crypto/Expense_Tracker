@@ -5,6 +5,7 @@ import { useFormik } from "formik";
 import loginValidation from "../schemas/loginValidation";
 
 const LoginForm = () => {
+  const url = "http://localhost:5000/api/login";
   const formik = useFormik({
     initialValues: {
       email: "",

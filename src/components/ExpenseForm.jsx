@@ -4,8 +4,11 @@ import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import expenseValidation from "../schemas/expenseValidation";
 import Navbar from "./Navbar.jsx";
+import { useStoreData } from "@/hooks/useStoreData";
 
 const ExpenseForm = () => {
+  const url = "http://localhost:5000/api/expenses";
+  const { data, setData } = useStoreData(url);
   const [expense, setExpense] = useState({
     amount: "",
     category: "",

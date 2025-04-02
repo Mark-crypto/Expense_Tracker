@@ -2,8 +2,11 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import budgetValidation from "../schemas/budgetValidation";
+import { useStoreData } from "@/hooks/useStoreData";
 
 const BudgetForm = () => {
+  const url = "http://localhost:5000/api/budget";
+  const { data, setData } = useStoreData(url);
   const formik = useFormik({
     initialValues: {
       name: "",

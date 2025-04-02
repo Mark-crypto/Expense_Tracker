@@ -3,8 +3,11 @@ import Form from "react-bootstrap/Form";
 import { useFormik } from "formik";
 import registerValidation from "../schemas/registerValidation";
 import { Link } from "react-router-dom";
+import { useStoreData } from "@/hooks/useStoreData";
 
 const RegistrationForm = () => {
+  const url = "http://localhost:5000/api/register";
+  const { data, setData } = useStoreData(url);
   const formik = useFormik({
     initialValues: {
       name: "",

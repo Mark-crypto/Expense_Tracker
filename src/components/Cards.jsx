@@ -4,7 +4,7 @@ import budget from "../assets/budget.svg";
 import { useFetch } from "@/hooks/useFetch";
 
 const Cards = () => {
-  const url = "";
+  const url = `http:localhost:5000/api/dashboard/${id}`;
   const { data, loading, error } = useFetch(url);
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

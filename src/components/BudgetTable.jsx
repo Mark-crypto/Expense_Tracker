@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import { useFetch } from "@/hooks/useFetch";
 
 const BudgetTable = () => {
-  const url = "";
+  const url = "http://localhost:5000/api/budget";
   const { data, loading, error } = useFetch(url);
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

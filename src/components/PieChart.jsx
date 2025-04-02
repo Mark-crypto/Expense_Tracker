@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useFetch } from "@/hooks/useFetch";
 
 const PieChart = () => {
-  const url = "";
+  const url = `http:localhost:5000/api/dashboard/${id}`;
   const { data, loading, error } = useFetch(url);
 
   // Pass in data values to the chart

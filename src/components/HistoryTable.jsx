@@ -1,6 +1,16 @@
 import Table from "react-bootstrap/Table";
+import { useFetch } from "@/hooks/useFetch";
 
 const HistoryTable = () => {
+  const url = "http://localhost:5000/api/expenses";
+  const { data, error, loading } = useFetch(url);
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+  if (loading) {
+    return <div>Loading...</div>;
+  }
   return (
     <>
       <Table striped bordered hover>
