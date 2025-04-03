@@ -1,7 +1,12 @@
 import React, { useEffect } from "react";
 import { useFetch } from "@/hooks/useFetch";
+import LoadingSpinner from "./LoadingSpinner";
+import ErrorPage from "./ErrorPage";
+import { useParams } from "react-router-dom";
 
 const BarChart = () => {
+  //get id from url
+  const id = useParams().id;
   const url = `http:localhost:5000/api/dashboard/${id}`;
   const { data, loading, error } = useFetch(url);
 
@@ -70,22 +75,30 @@ const BarChart = () => {
       });
     }
   }, []);
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+
+  if (error) return <ErrorPage />;
+  if (loading) return <LoadingSpinner />;
+
   return (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: "600px",
-        height: "300px",
-        backgroundColor: "white", // White background
-        borderRadius: "12px", // Rounded corners
-        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)", // Soft shadow
-        padding: "16px", // Some padding inside the container
-      }}
-    >
-      <div id="chart_div2" style={{ width: "100%", height: "100%" }}></div>
-    </div>
+    <>
+      {data.length !== 0 ? (
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "600px",
+            height: "300px",
+            backgroundColor: "white", // White background
+            borderRadius: "12px", // Rounded corners
+            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)", // Soft shadow
+            padding: "16px", // Some padding inside the container
+          }}
+        >
+          <div id="chart_div2" style={{ width: "100%", height: "100%" }}></div>
+        </div>
+      ) : (
+        <h5>No data to display</h5>
+      )}
+    </>
   );
 };
 

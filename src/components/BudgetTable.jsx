@@ -1,12 +1,16 @@
 import Table from "react-bootstrap/Table";
 import Button from "react-bootstrap/Button";
 import { useFetch } from "@/hooks/useFetch";
+import LoadingSpinner from "./LoadingSpinner";
+import ErrorPage from "./ErrorPage";
+
+//If budget amount is greater than expense amount then budget is exceeded
 
 const BudgetTable = () => {
   const url = "http://localhost:5000/api/budget";
   const { data, loading, error } = useFetch(url);
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorPage />;
   return (
     <>
       <Table striped bordered hover>
@@ -22,30 +26,39 @@ const BudgetTable = () => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item, index) => {
-            return (
-              <tr key={item.id}>
-                <td>{index + 1}</td>
-                <td>{item.name}</td>
-                <td>{item.category}</td>
-                <td>{item.amount}</td>
-                <td
-                  style={{
-                    color: item.status === "Within Budget" ? "green" : "red",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {item.status}
-                </td>
-                <td>Calculate exceeding by</td>
-                <td>
-                  <Button className="" variant="danger">
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
+          {data.length !== 0 ? (
+            data.map((item, index) => {
+              return (
+                <tr key={item.id}>
+                  <td>{index + 1}</td>
+                  <td>{item.name}</td>
+                  <td>{item.category}</td>
+                  <td>{item.amount}</td>
+                  <td
+                    style={{
+                      color: item.status === "Within Budget" ? "green" : "red",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {item.status}
+                  </td>
+                  <td>Calculate exceeding by</td>
+                  <td>
+                    <Button className="" variant="danger">
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })
+          ) : (
+            <tr>
+              <td colSpan="7" style={{ textAlign: "center" }}>
+                No budget data available
+              </td>
+            </tr>
+          )}
+
           <tr>
             <td>1</td>
             <td>March Shopping</td>

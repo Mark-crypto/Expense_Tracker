@@ -2,12 +2,17 @@ import revenue from "../assets/revenue.svg";
 import debt from "../assets/debt.svg";
 import budget from "../assets/budget.svg";
 import { useFetch } from "@/hooks/useFetch";
+import { useParams } from "react-router-dom";
+import LoadingSpinner from "./LoadingSpinner";
+import ErrorPage from "./ErrorPage";
 
 const Cards = () => {
+  //get id from url
+  const id = useParams().id;
   const url = `http:localhost:5000/api/dashboard/${id}`;
   const { data, loading, error } = useFetch(url);
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorPage />;
 
   // Add data to cards
   return (

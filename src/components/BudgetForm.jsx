@@ -3,16 +3,16 @@ import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import budgetValidation from "../schemas/budgetValidation";
 import { useStoreData } from "@/hooks/useStoreData";
+import ErrorPage from "./ErrorPage";
 
 const BudgetForm = () => {
   const url = "http://localhost:5000/api/budget";
-  const { data, setData } = useStoreData(url);
+  const { error, fetchData } = useStoreData(url, { ...formik.values });
   const formik = useFormik({
     initialValues: {
       name: "",
       category: "",
       amount: "",
-      // date: "",
       email: true,
     },
     validationSchema: budgetValidation,
@@ -20,8 +20,11 @@ const BudgetForm = () => {
   });
 
   const addBudget = (e) => {
-    console.log("Budget added");
+    e.preventDefault();
+    fetchData();
+    formik.resetForm();
   };
+  if (error) return <ErrorPage />;
   return (
     <>
       <Form
