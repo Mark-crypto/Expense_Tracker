@@ -5,6 +5,7 @@ import { useFetch } from "@/hooks/useFetch";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
+import { expenseAmount } from "./ExpenseTable";
 
 const Cards = () => {
   //get id from url
@@ -23,21 +24,21 @@ const Cards = () => {
             <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>
               Total Spent:
             </h4>{" "}
-            <h4 style={{ fontWeight: "bold" }}>Sh 30000</h4>
+            <h4 style={{ fontWeight: "bold" }}>Sh {expenseAmount}</h4>
           </div>
           <img src={revenue} alt="revenue" style={{ width: "100px" }} />
         </div>
         <div className="dashboard-card">
           <div>
             <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>Debt:</h4>{" "}
-            <h4 style={{ fontWeight: "bold" }}>Sh 4000</h4>
+            <h4 style={{ fontWeight: "bold" }}>Sh {data.debtData.amount}</h4>
           </div>
           <img src={debt} alt="revenue" style={{ width: "100px" }} />
         </div>
         <div className="dashboard-card">
           <div>
             <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>Budgeted:</h4>{" "}
-            <h4 style={{ fontWeight: "bold" }}>Sh 50000</h4>
+            <h4 style={{ fontWeight: "bold" }}>Sh {data.budgetData}</h4>
           </div>
           <img src={budget} alt="revenue" style={{ width: "100px" }} />
         </div>

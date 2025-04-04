@@ -4,10 +4,12 @@ import { useFormik } from "formik";
 import budgetValidation from "../schemas/budgetValidation";
 import { useStoreData } from "@/hooks/useStoreData";
 import ErrorPage from "./ErrorPage";
+import { toast, ToastContainer } from "react-toastify";
 
 const BudgetForm = () => {
   const url = "http://localhost:5000/api/budget";
   const { error, fetchData } = useStoreData(url, { ...formik.values });
+  const [loading, setLoading] = useState(false);
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -18,15 +20,46 @@ const BudgetForm = () => {
     validationSchema: budgetValidation,
     enableReinitialize: true,
   });
-
+  //look for checked
   const addBudget = (e) => {
     e.preventDefault();
-    fetchData();
-    formik.resetForm();
+    formik.values.email = formik.values.email ? "checked" : "unchecked";
+    const { name, category, amount } = formik.values;
+
+    if (!name || !category || !amount) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    if (formik.errors.name || formik.errors.category || formik.errors.amount) {
+      toast.error("Please correct the errors in the form");
+      return;
+    }
+    try {
+      setLoading(true);
+      fetchData();
+    } catch (error) {
+      toast.error("Error creating budget");
+    } finally {
+      setLoading(false);
+      formik.resetForm();
+      toast.success("Budget created successfully");
+    }
   };
   if (error) return <ErrorPage />;
   return (
     <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Form
         onSubmit={addBudget}
         style={{
@@ -57,6 +90,7 @@ const BudgetForm = () => {
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             name="amount"
+            required
           />
           {formik.errors.name && formik.touched.name && (
             <p style={{ color: "red" }}>{formik.errors.name}</p>
@@ -69,6 +103,7 @@ const BudgetForm = () => {
             onChange={formik.handleChange}
             name="category"
             onBlur={formik.handleBlur}
+            required
           >
             <option>Choose a Category</option>
             <option value="clothing">Clothing</option>
@@ -99,6 +134,7 @@ const BudgetForm = () => {
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             name="amount"
+            required
           />
           {formik.errors.amount && formik.touched.amount && (
             <p style={{ color: "red" }}>{formik.errors.amount}</p>
@@ -122,6 +158,7 @@ const BudgetForm = () => {
             fontWeight: "bold",
           }}
           type="submit"
+          disabled={loading}
         >
           Create Budget
         </Button>

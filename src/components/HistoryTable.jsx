@@ -1,16 +1,17 @@
 import Table from "react-bootstrap/Table";
 import { useFetch } from "@/hooks/useFetch";
+import ErrorPage from "./ErrorPage";
+import LoadingSpinner from "./LoadingSpinner";
 
+export const expenseAmount = 0;
 const HistoryTable = () => {
   const url = "http://localhost:5000/api/expenses";
   const { data, error, loading } = useFetch(url);
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  expenseAmount = data.totalAmount;
+
+  if (error) return <ErrorPage />;
+  if (loading) return <LoadingSpinner />;
   return (
     <>
       <Table striped bordered hover>
@@ -24,27 +25,21 @@ const HistoryTable = () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <td>Sh 3000</td>
-            <td>Utilities</td>
-            <td>12/12/24</td>
-            <td>Sh 3000</td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td>Sh 24000</td>
-            <td>Housing</td>
-            <td>01/01/25</td>
-            <td>Sh 27000</td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>Sh 2000</td>
-            <td>Transportation</td>
-            <td>31/01/25</td>
-            <td>Sh 29000</td>
-          </tr>
+          {data.length > 0 ? (
+            data.map((item, index) => (
+              <tr key={item.id}>
+                <td>{index + 1}</td>
+                <td>{item.amount}</td>
+                <td>{item.category}</td>
+                <td>{item.date}</td>
+                <td>{item.totalAmount}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="7">No expenses found</td>
+            </tr>
+          )}
         </tbody>
       </Table>
     </>

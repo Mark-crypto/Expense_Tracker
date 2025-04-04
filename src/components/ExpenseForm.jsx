@@ -5,15 +5,14 @@ import { useFormik } from "formik";
 import expenseValidation from "../schemas/expenseValidation";
 import Navbar from "./Navbar.jsx";
 import { useStoreData } from "@/hooks/useStoreData";
+import ErrorPage from "./ErrorPage";
+import { toast, ToastContainer } from "react-toastify";
 
 const ExpenseForm = () => {
   const url = "http://localhost:5000/api/expenses";
-  const { data, setData } = useStoreData(url);
-  const [expense, setExpense] = useState({
-    amount: "",
-    category: "",
-    date: "",
-  });
+  const { fetchData, error } = useStoreData(url, { ...formik.values });
+  const [loading, setLoading] = useState(false);
+
   const formik = useFormik({
     initialValues: {
       amount: "",
@@ -23,6 +22,29 @@ const ExpenseForm = () => {
     validationSchema: expenseValidation,
   });
 
+  const addExpense = async (e) => {
+    e.preventDefault();
+    const { amount, category, date } = formik.values;
+    if (!amount || !category || !date) {
+      toast.error("Please fill all fields");
+      return;
+    }
+    if (formik.errors.amount || formik.errors.category || formik.errors.date) {
+      toast.error("Please fill all fields correctly");
+      return;
+    }
+    try {
+      setLoading(true);
+      await fetchData();
+      toast.success("Expense added successfully");
+    } catch (error) {
+      toast.error("Error creating expense");
+    } finally {
+      setLoading(false);
+      formik.resetForm();
+    }
+  };
+  if (error) return <ErrorPage />;
   return (
     <div
       style={{
@@ -45,6 +67,18 @@ const ExpenseForm = () => {
         }}
       >
         <div>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
           <Form
             onSubmit={addExpense}
             style={{
@@ -70,12 +104,11 @@ const ExpenseForm = () => {
               <Form.Control
                 type="number"
                 placeholder="Enter amount"
-                value={expense.amount}
-                onChange={(e) =>
-                  setExpense({ ...expense, amount: e.target.value })
-                }
+                value={formik.values.amount}
+                onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 name="amount"
+                required
               />
               {formik.errors.amount && formik.touched.amount && (
                 <p style={{ color: "red" }}>{formik.errors.amount}</p>
@@ -84,12 +117,11 @@ const ExpenseForm = () => {
             <Form.Group className="mb-3">
               <Form.Label>Category</Form.Label>
               <Form.Select
-                value={expense.category}
-                onChange={(e) =>
-                  setExpense({ ...expense, category: e.target.value })
-                }
+                value={formik.values.category}
+                onChange={formik.handleChange}
                 name="category"
                 onBlur={formik.handleBlur}
+                required
               >
                 <option>Choose a Category</option>
                 <option value="clothing">Clothing</option>
@@ -116,12 +148,11 @@ const ExpenseForm = () => {
               <Form.Control
                 type="date"
                 placeholder=""
-                value={expense.date}
-                onChange={(e) =>
-                  setExpense({ ...expense, date: e.target.value })
-                }
+                value={formik.values.date}
+                onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 name="date"
+                required
               />
               {formik.errors.date && formik.touched.date && (
                 <p style={{ color: "red" }}>{formik.errors.date}</p>
@@ -134,6 +165,7 @@ const ExpenseForm = () => {
                 width: "100%",
               }}
               type="submit"
+              disabled={loading}
             >
               Add Expense
             </Button>
