@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import { useFetch } from "@/hooks/useFetch";
+import LoadingSpinner from "./LoadingSpinner";
+import ErrorPage from "./ErrorPage";
 
 const PieChart = () => {
   const url = `http:localhost:5000/api/dashboard/${id}`;
@@ -50,19 +52,27 @@ const PieChart = () => {
       });
     }
   }, []);
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorPage />;
   return (
-    <div
-      id="chart_div"
-      style={{
-        width: "400px",
-        height: "300px",
-        borderRadius: "20px",
-        overflow: "hidden",
-        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
-      }}
-    ></div>
+    <>
+      {data.length > 0 ? (
+        <div
+          id="chart_div"
+          style={{
+            width: "400px",
+            height: "300px",
+            borderRadius: "20px",
+            overflow: "hidden",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+          }}
+        ></div>
+      ) : (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <h2>No Data Available</h2>
+        </div>
+      )}
+    </>
   );
 };
 
