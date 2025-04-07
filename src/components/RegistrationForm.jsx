@@ -1,21 +1,21 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import { Link } from "react-router-dom";
+import ErrorPage from "./ErrorPage";
+import { ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { useStoreData } from "@/hooks/useStoreData";
+import { useState } from "react";
 import { useFormik } from "formik";
 import registerValidation from "../schemas/registerValidation";
-import { Link } from "react-router-dom";
-import { useStoreData } from "@/hooks/useStoreData";
-import ErrorPage from "./ErrorPage";
-import { toast, ToastContainer } from "react-toastify";
-import { useState } from "react";
 import { btoa } from "abab";
-import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const RegistrationForm = () => {
   const url = "http://localhost:5000/api/register";
   const [registerData, setRegisterData] = useState(null);
   const { fetchData, error } = useStoreData(url, registerData);
   const navigate = useNavigate();
-
   const formik = useFormik({
     initialValues: {
       name: "",

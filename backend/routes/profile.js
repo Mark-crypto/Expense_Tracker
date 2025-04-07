@@ -3,7 +3,7 @@ import {
   getProfile,
   updateProfile,
   deleteProfile,
-} from "../controllers/profile.js";
+} from "../controllers/profileController.js";
 
 const router = Router();
 
