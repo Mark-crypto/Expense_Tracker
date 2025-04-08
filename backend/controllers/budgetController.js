@@ -5,14 +5,16 @@ export function getBudget(req, res) {
   try {
     connection.execute("SELECT * FROM budget", (error, data) => {
       if (error) {
-        res
+        return res
           .status(500)
           .json({ error: true, message: "Error fetching budgets" });
       }
-      res.status(200).json({ data });
+      return res.status(200).json({ data });
     });
   } catch (error) {
-    res.status(500).json({ error: true, message: "Error fetching budgets" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Error fetching budgets" });
   }
 }
 
@@ -25,15 +27,15 @@ export function getSingleBudget(req, res) {
       [id],
       (error, data) => {
         if (error) {
-          res
+          return res
             .status(500)
             .json({ error: true, message: "Error fetching budget" });
         }
-        res.json({ data: data[0] });
+        return res.json({ data: data[0] });
       }
     );
   } catch (error) {
-    res.json({ error: true, message: "Error fetching budget" });
+    return res.json({ error: true, message: "Error fetching budget" });
   }
 }
 
@@ -46,13 +48,19 @@ export function addBudget(req, res) {
       [name, category, amount, email_checked],
       (error, data) => {
         if (error) {
-          res.status(500).json({ error: true, message: "Error adding budget" });
+          return res
+            .status(500)
+            .json({ error: true, message: "Error adding budget" });
         }
-        res.status(201).json({ message: "Budget added successfully", data });
+        return res
+          .status(201)
+          .json({ message: "Budget added successfully", data });
       }
     );
   } catch (error) {
-    res.status(500).json({ error: true, message: "Error adding budget" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Error adding budget" });
   }
 }
 
@@ -65,12 +73,18 @@ export function deleteBudget(req, res) {
       [id],
       (error, data) => {
         if (error) {
-          res
+          return res
             .status(500)
             .json({ error: true, message: "Error deleting budget" });
         }
-        res.status(200).json({ message: "Budget deleted successfully", data });
+        return res
+          .status(200)
+          .json({ message: "Budget deleted successfully", data });
       }
     );
-  } catch (error) {}
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: true, message: "Error deleting budget" });
+  }
 }

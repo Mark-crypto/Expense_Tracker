@@ -4,14 +4,16 @@ export const getExpenses = async (req, res) => {
   try {
     connection.execute("SELECT * FROM expense", (error, data) => {
       if (error) {
-        res
+        return res
           .status(500)
           .json({ error: true, message: "Error fetching expenses" });
       }
-      res.status(200).json({ data });
+      return res.status(200).json({ data });
     });
   } catch (error) {
-    res.status(500).json({ error: true, message: "Error fetching expenses" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Error fetching expenses" });
   }
 };
 
@@ -34,19 +36,23 @@ export const createExpense = async (req, res) => {
   const randomMonth = Math.floor(Math.random() * months.length);
   try {
     connection.execute(
-      "INSERT INTO expense SET amount = ?, category = ?, date =?, month = ?",
+      "INSERT INTO expense SET amount = ?, category = ?, date_created =?, month = ?",
       [amount, category, date, months[randomMonth]],
       (error, data) => {
         if (error) {
-          res
+          return res
             .status(500)
             .json({ error: true, message: "Error creating expense" });
         }
-        res.status(201).json({ data, message: "Expense created successfully" });
+        return res
+          .status(201)
+          .json({ data, message: "Expense created successfully" });
       }
     );
   } catch (error) {
-    res.status(500).json({ error: true, message: "Error creating expense" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Error creating expenses" });
   }
 };
 
@@ -58,14 +64,18 @@ export const deleteExpense = async (req, res) => {
       [id],
       (error, data) => {
         if (error) {
-          res
+          return res
             .status(500)
             .json({ error: true, message: "Error deleting expense" });
         }
-        res.status(200).json({ data, message: "Expense deleted successfully" });
+        return res
+          .status(200)
+          .json({ data, message: "Expense deleted successfully" });
       }
     );
   } catch (error) {
-    res.status(500).json({ error: true, message: "Error deleting expense" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Error deleting expense" });
   }
 };

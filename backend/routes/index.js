@@ -2,6 +2,7 @@ import { Router } from "express";
 import authRouter from "./auth.js";
 import profileRouter from "./profile.js";
 import budgetRouter from "./budget.js";
+import expenseRouter from "./expense.js";
 import dashboardRouter from "./dashboard.js";
 import predictionsRouter from "./predictions.js";
 
@@ -12,5 +13,6 @@ router.use(profileRouter);
 router.use(budgetRouter);
 router.use(dashboardRouter);
 router.use(predictionsRouter);
+router.use(expenseRouter);
 
 export default router;
