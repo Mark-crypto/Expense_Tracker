@@ -1,8 +1,8 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import LoginForm from "@/components/LoginForm";
-import Banner from "@/components/Banner";
-import GoogleSignIn from "@/components/GoogleSignIn";
+import LoginForm from "../components/LoginForm";
+import Banner from "../components/Banner";
+import GoogleSignIn from "../components/GoogleSignIn";
 
 const Login = () => {
   const { userLoggedIn } = useAuth();

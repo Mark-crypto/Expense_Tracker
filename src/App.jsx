@@ -18,10 +18,10 @@ const ExpenseForm = lazy(() => import("./components/ExpenseForm"));
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingSpinner />}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dash />} />
           <Route path="/register" element={<Register />} />
@@ -31,10 +31,11 @@ function App() {
           <Route path="/prediction" element={<Prediction />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/history" element={<History />} />
-        </Suspense>
-        {/* predictions budget history */}
-      </Routes>
-    </BrowserRouter>
+          <Route path="/loading" element={<LoadingSpinner />} />
+          {/* predictions budget history */}
+        </Routes>
+      </BrowserRouter>
+    </Suspense>
   );
 }
 

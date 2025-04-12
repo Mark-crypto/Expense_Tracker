@@ -1,9 +1,9 @@
 import Table from "react-bootstrap/Table";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetch } from "../hooks/useFetch";
 import ErrorPage from "./ErrorPage";
 import LoadingSpinner from "./LoadingSpinner";
 
-export const expenseAmount = 0;
+export var expenseAmount = 0;
 const HistoryTable = () => {
   const url = "http://localhost:5000/api/expenses";
   const { data, error, loading } = useFetch(url);

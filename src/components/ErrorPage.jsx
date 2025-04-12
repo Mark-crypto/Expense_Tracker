@@ -10,9 +10,9 @@ const ErrorPage = () => {
         We couldn't process your request. Try again or return home.
       </p>
       <img
-        src="https://source.unsplash.com/400x300/?error"
+        src="https://img.freepik.com/free-vector/404-error-purple-background_24908-77785.jpg?ga=GA1.1.1216656388.1736710841&semt=ais_hybrid&w=740"
         alt="Error illustration"
-        className="rounded-lg shadow-md mb-4"
+        className="rounded-lg shadow-md mb-4 w-[300px] h-[300px]"
       />
       <div>
         <button

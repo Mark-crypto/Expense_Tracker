@@ -6,7 +6,7 @@ const expenseValidation = yup.object({
     .required("Amount is required")
     .positive("Amount must be a positive number"),
   category: yup.string().required("Category is required"),
-  date: yup.string().required("Date is required").datetime("Invalid date"),
+  date: yup.string().required("Date is required"),
 });
 
 export default expenseValidation;

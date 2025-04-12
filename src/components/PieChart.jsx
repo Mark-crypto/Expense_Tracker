@@ -1,10 +1,13 @@
 import React, { useEffect } from "react";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetch } from "../hooks/useFetch";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
+import { useParams } from "react-router-dom";
 
 const PieChart = () => {
+  const id = useParams().id;
   const url = `http:localhost:5000/api/dashboard/${id}`;
+  // const url = `http:localhost:5000/api/dashboard`;
   const { data, loading, error } = useFetch(url);
 
   // Pass in data values to the chart

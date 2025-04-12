@@ -1,4 +1,4 @@
-import HistoryTable from "@/components/HistoryTable";
+import HistoryTable from "../components/HistoryTable";
 import Navbar from "../components/Navbar";
 import { MdDelete } from "react-icons/md";
 

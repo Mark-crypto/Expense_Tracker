@@ -4,13 +4,12 @@ import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import expenseValidation from "../schemas/expenseValidation";
 import Navbar from "./Navbar.jsx";
-import { useStoreData } from "@/hooks/useStoreData";
+import { useStoreData } from "../hooks/useStoreData";
 import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
 
 const ExpenseForm = () => {
   const url = "http://localhost:5000/api/expenses";
-  const { fetchData, error } = useStoreData(url, { ...formik.values });
   const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
@@ -21,6 +20,7 @@ const ExpenseForm = () => {
     },
     validationSchema: expenseValidation,
   });
+  const { fetchData, error } = useStoreData(url, { ...formik.values });
 
   const addExpense = async (e) => {
     e.preventDefault();

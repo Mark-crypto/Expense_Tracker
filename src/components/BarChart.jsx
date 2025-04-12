@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetch } from "../hooks/useFetch";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
 import { useParams } from "react-router-dom";

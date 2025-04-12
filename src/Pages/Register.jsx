@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
-import GoogleSignIn from "@/components/GoogleSignIn";
-import RegistrationForm from "@/components/RegistrationForm";
-import Banner from "@/components/Banner";
+import GoogleSignIn from "../components/GoogleSignIn";
+import RegistrationForm from "../components/RegistrationForm";
+import Banner from "../components/Banner";
 
 const Register = () => {
   const { userLoggedIn } = useAuth();

@@ -6,7 +6,7 @@ import loginValidation from "../schemas/loginValidation";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { btoa } from "abab";
+import { btoa } from "btoa";
 // import bcrypt from "bcryptjs";
 
 const LoginForm = () => {

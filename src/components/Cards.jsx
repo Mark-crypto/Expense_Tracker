@@ -1,11 +1,11 @@
 import revenue from "../assets/revenue.svg";
 import debt from "../assets/debt.svg";
 import budget from "../assets/budget.svg";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetch } from "../hooks/useFetch";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
-import { expenseAmount } from "./ExpenseTable";
+import { expenseAmount } from "./HistoryTable";
 
 const Cards = () => {
   //get id from url

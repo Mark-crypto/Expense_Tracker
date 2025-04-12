@@ -8,7 +8,7 @@ import { useStoreData } from "@/hooks/useStoreData";
 import { useState } from "react";
 import { useFormik } from "formik";
 import registerValidation from "../schemas/registerValidation";
-import { btoa } from "abab";
+import { btoa } from "btoa";
 import { toast } from "react-toastify";
 
 const RegistrationForm = () => {

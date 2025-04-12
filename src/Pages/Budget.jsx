@@ -1,8 +1,8 @@
 import Navbar from "../components/Navbar";
 import BudgetTable from "../components/BudgetTable";
 import { useState } from "react";
-import BudgetForm from "@/components/BudgetForm";
-import BudgetBtn from "@/components/BudgetBtn";
+import BudgetForm from "../components/BudgetForm";
+import BudgetBtn from "../components/BudgetBtn";
 
 const Budget = () => {
   const [show, setShow] = useState(false);

@@ -14,10 +14,7 @@ const getReportData = async (req, res) => {
 
     const [debtData] = await connection
       .promise()
-      .execute("SELECT * FROM expense WHERE category = ? AND expense_id = ?", [
-        "debt",
-        id,
-      ]);
+      .execute("SELECT * FROM expense WHERE category = ? ", ["debt"]);
 
     const [budgetData] = await connection
       .promise()
