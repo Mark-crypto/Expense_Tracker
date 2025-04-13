@@ -5,9 +5,11 @@ import { useFetch } from "../hooks/useFetch";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
-import { expenseAmount } from "./HistoryTable";
+import { useContext } from "react";
+import { ExpenseContext } from "../context/ExpenseContext";
 
 const Cards = () => {
+  const { expenseAmount } = useContext(ExpenseContext);
   //get id from url
   const id = useParams().id;
   const url = `http:localhost:5000/api/dashboard/${id}`;

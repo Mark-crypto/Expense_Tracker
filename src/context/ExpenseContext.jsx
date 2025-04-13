@@ -1,7 +1,13 @@
-import React from "react";
+import { useContext, createContext, useState } from "react";
 
-const ExpenseContext = () => {
-  return <div>ExpenseContext</div>;
+export const ExpenseContext = createContext();
+
+export const ExpenseProvider = ({ children }) => {
+  const [expenseAmount, setExpenseAmount] = useState(0);
+
+  return (
+    <ExpenseContext.Provider value={{ expenseAmount, setExpenseAmount }}>
+      {children}
+    </ExpenseContext.Provider>
+  );
 };
-
-export default ExpenseContext;

@@ -2,14 +2,17 @@ import connection from "../database.js";
 
 export const getExpenses = async (req, res) => {
   try {
-    connection.execute("SELECT * FROM expense", (error, data) => {
-      if (error) {
-        return res
-          .status(500)
-          .json({ error: true, message: "Error fetching expenses" });
+    connection.execute(
+      "SELECT * FROM expense ORDER BY date_created DESC",
+      (error, data) => {
+        if (error) {
+          return res
+            .status(500)
+            .json({ error: true, message: "Error fetching expenses" });
+        }
+        return res.status(200).json({ data });
       }
-      return res.status(200).json({ data });
-    });
+    );
   } catch (error) {
     return res
       .status(500)
