@@ -4,13 +4,14 @@ import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import expenseValidation from "../schemas/expenseValidation";
 import Navbar from "./Navbar.jsx";
-import { useStoreData } from "../hooks/useStoreData";
 import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
+import axios from "axios";
 
 const ExpenseForm = () => {
   const url = "http://localhost:5000/api/expenses";
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -20,7 +21,6 @@ const ExpenseForm = () => {
     },
     validationSchema: expenseValidation,
   });
-  const { fetchData, error } = useStoreData(url, { ...formik.values });
 
   const addExpense = async (e) => {
     e.preventDefault();
@@ -33,11 +33,17 @@ const ExpenseForm = () => {
       toast.error("Please fill all fields correctly");
       return;
     }
+    const storeData = async () => {
+      const response = await axios.post(url, { ...formik.values });
+      if (response.status === 201) {
+        toast.success("Expense added successfully");
+      }
+    };
     try {
       setLoading(true);
-      await fetchData();
-      toast.success("Expense added successfully");
+      storeData();
     } catch (error) {
+      setError(true);
       toast.error("Error creating expense");
     } finally {
       setLoading(false);
