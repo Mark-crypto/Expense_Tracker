@@ -1,36 +1,30 @@
 import Table from "react-bootstrap/Table";
 import ErrorPage from "./ErrorPage";
 import LoadingSpinner from "./LoadingSpinner";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { ExpenseContext } from "../context/ExpenseContext";
 import axios from "axios";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 const HistoryTable = () => {
-  const url = "http://localhost:5000/api/expenses";
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [data, setData] = useState([]);
   const { expenseAmount, setExpenseAmount } = useContext(ExpenseContext);
+  const [page, setPage] = useState(1);
+  const url = `http://localhost:5000/api/expenses?_limit=10&_page=${page}`;
 
-  // setExpenseAmount((prev) => prev + 1000);
-  useEffect(() => {
-    try {
-      setLoading(true);
-      const fetchData = async () => {
-        const response = await axios(url);
-        if (response.status !== 200) return console.log("An error occurred");
-        setData(response.data.data);
-      };
-      fetchData();
-    } catch (error) {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [data]);
+  const fetchData = async () => {
+    const response = await axios(url);
+    if (response.status !== 200) return console.log("An error occurred");
+    return response;
+  };
+
+  const { isLoading, error, data } = useQuery({
+    queryKey: ["expense"],
+    queryFn: fetchData(),
+    placeholderData: keepPreviousData,
+  });
 
   if (error) return <ErrorPage />;
-  if (loading) return <LoadingSpinner />;
+  if (isLoading) return <LoadingSpinner />;
   return (
     <>
       <Table striped bordered hover>
@@ -64,6 +58,12 @@ const HistoryTable = () => {
           )}
         </tbody>
       </Table>
+      <button onClick={() => setPage((prev) => prev - 1)} disabled={page === 0}>
+        Previous Page
+      </button>
+      <button onClick={() => setPage((prev) => prev + 1)} disabled={page === 4}>
+        Next Page
+      </button>
     </>
   );
 };

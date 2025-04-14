@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
@@ -7,12 +6,11 @@ import Navbar from "./Navbar.jsx";
 import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const ExpenseForm = () => {
   const url = "http://localhost:5000/api/expenses";
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-
+  const queryClient = useQueryClient();
   const formik = useFormik({
     initialValues: {
       amount: "",
@@ -20,6 +18,24 @@ const ExpenseForm = () => {
       date: "",
     },
     validationSchema: expenseValidation,
+  });
+
+  const storeData = async () => {
+    const response = await axios.post(url, { ...formik.values });
+    if (response.status === 201) {
+      toast.success("Expense added successfully");
+    }
+    return response;
+  };
+  const { mutate, error, isPending } = useMutation({
+    mutationFn: storeData(),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["expense"]);
+      formik.resetForm();
+    },
+    onError: () => {
+      toast.error("Error creating expense");
+    },
   });
 
   const addExpense = async (e) => {
@@ -33,22 +49,7 @@ const ExpenseForm = () => {
       toast.error("Please fill all fields correctly");
       return;
     }
-    const storeData = async () => {
-      const response = await axios.post(url, { ...formik.values });
-      if (response.status === 201) {
-        toast.success("Expense added successfully");
-      }
-    };
-    try {
-      setLoading(true);
-      storeData();
-    } catch (error) {
-      setError(true);
-      toast.error("Error creating expense");
-    } finally {
-      setLoading(false);
-      formik.resetForm();
-    }
+    mutate();
   };
   if (error) return <ErrorPage />;
   return (
@@ -171,7 +172,7 @@ const ExpenseForm = () => {
                 width: "100%",
               }}
               type="submit"
-              disabled={loading}
+              disabled={isPending}
             >
               Add Expense
             </Button>
