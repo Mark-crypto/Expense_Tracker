@@ -6,11 +6,11 @@ import Navbar from "./Navbar.jsx";
 import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
-// import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Navigate } from "react-router-dom";
 
 const ExpenseForm = () => {
-  const url = "http://localhost:5000/api/expenses";
-  // const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const formik = useFormik({
     initialValues: {
       amount: "",
@@ -20,15 +20,19 @@ const ExpenseForm = () => {
     validationSchema: expenseValidation,
   });
 
-  // const { mutate, error, isPending ,} = useMutation({
-  //   mutationFn: ()=>{},
-  //   onSuccess: () => {
-  //     // queryClient.invalidateQueries(["expense"]);
-  //   },
-  //   onError: () => {
-  //     toast.error("Error creating expense");
-  //   },
-  // });
+  const { mutate, error, isPending } = useMutation({
+    mutationFn: async ({ data }) => {
+      return await axios.post("http://localhost:5000/api/expenses", { data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expense"] });
+      toast.success("Expense added successfully");
+      Navigate("/history");
+    },
+    onError: () => {
+      toast.error("Error creating expense");
+    },
+  });
 
   const addExpense = async (e) => {
     e.preventDefault();
@@ -41,26 +45,18 @@ const ExpenseForm = () => {
       toast.error("Please fill all fields correctly");
       return;
     }
-    // mutate();
-    const storeData = async () => {
-      const response = await axios.post(url, { ...formik.values });
-      if (response.status === 201) {
-        toast.success("Expense added successfully");
-      }
-    };
-
     try {
-      storeData();
+      mutate({ ...formik.values });
     } catch (error) {
-      toast.error(error);
+      toast.error("Something went wrong. Try again later.");
     } finally {
       formik.resetForm();
     }
   };
-  // if (error) {
-  //   console.log(error);
-  //   return <ErrorPage />;
-  // }
+  if (error) {
+    console.log(error);
+    return <ErrorPage />;
+  }
   return (
     <div
       style={{
@@ -181,7 +177,7 @@ const ExpenseForm = () => {
                 width: "100%",
               }}
               type="submit"
-              // disabled={isPending}
+              disabled={isPending}
             >
               Add Expense
             </Button>
