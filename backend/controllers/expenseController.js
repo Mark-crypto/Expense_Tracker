@@ -1,18 +1,30 @@
 import connection from "../database.js";
 
 export const getExpenses = async (req, res) => {
+  const pageNumber = parseInt(req.query._page) || 1;
+  const limit = parseInt(req.query._limit) || 10;
+  const offset = (pageNumber - 1) * limit;
   try {
-    connection.execute(
-      "SELECT * FROM expense ORDER BY date_created DESC",
+    const data = await connection.execute(
+      "SELECT * FROM expense ORDER BY date_created DESC LIMIT=? OFFSET=?",
+      [limit, offset],
       (error, data) => {
         if (error) {
           return res
             .status(500)
             .json({ error: true, message: "Error fetching expenses" });
         }
-        return res.status(200).json({ data });
+        return data;
       }
     );
+    const [countResult] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM expense"
+    );
+    const total = countResult[0]?.total || 0;
+    res.status(200).json({
+      data,
+      meta: { pageNumber, limit, totalPages: math.ceil(total / limit), total },
+    });
   } catch (error) {
     return res
       .status(500)

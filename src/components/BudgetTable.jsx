@@ -3,7 +3,6 @@ import Button from "react-bootstrap/Button";
 import { useFetch } from "@/hooks/useFetch";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
-import { expenseAmount } from "./HistoryTable";
 
 //If budget amount is greater than expense amount then budget is exceeded
 
@@ -43,7 +42,7 @@ const BudgetTable = () => {
                   >
                     {item.status}
                   </td>
-                  <td>{expenseAmount - item.amount}</td>
+                  {/* <td>{expenseAmount - item.amount}</td> */}
                   <td>
                     <Button className="" variant="danger">
                       Delete

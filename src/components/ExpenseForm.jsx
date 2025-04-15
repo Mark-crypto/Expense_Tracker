@@ -6,11 +6,11 @@ import Navbar from "./Navbar.jsx";
 import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+// import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const ExpenseForm = () => {
   const url = "http://localhost:5000/api/expenses";
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   const formik = useFormik({
     initialValues: {
       amount: "",
@@ -20,23 +20,15 @@ const ExpenseForm = () => {
     validationSchema: expenseValidation,
   });
 
-  const storeData = async () => {
-    const response = await axios.post(url, { ...formik.values });
-    if (response.status === 201) {
-      toast.success("Expense added successfully");
-    }
-    return response;
-  };
-  const { mutate, error, isPending } = useMutation({
-    mutationFn: storeData(),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["expense"]);
-      formik.resetForm();
-    },
-    onError: () => {
-      toast.error("Error creating expense");
-    },
-  });
+  // const { mutate, error, isPending ,} = useMutation({
+  //   mutationFn: ()=>{},
+  //   onSuccess: () => {
+  //     // queryClient.invalidateQueries(["expense"]);
+  //   },
+  //   onError: () => {
+  //     toast.error("Error creating expense");
+  //   },
+  // });
 
   const addExpense = async (e) => {
     e.preventDefault();
@@ -49,9 +41,26 @@ const ExpenseForm = () => {
       toast.error("Please fill all fields correctly");
       return;
     }
-    mutate();
+    // mutate();
+    const storeData = async () => {
+      const response = await axios.post(url, { ...formik.values });
+      if (response.status === 201) {
+        toast.success("Expense added successfully");
+      }
+    };
+
+    try {
+      storeData();
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      formik.resetForm();
+    }
   };
-  if (error) return <ErrorPage />;
+  // if (error) {
+  //   console.log(error);
+  //   return <ErrorPage />;
+  // }
   return (
     <div
       style={{
@@ -172,7 +181,7 @@ const ExpenseForm = () => {
                 width: "100%",
               }}
               type="submit"
-              disabled={isPending}
+              // disabled={isPending}
             >
               Add Expense
             </Button>
