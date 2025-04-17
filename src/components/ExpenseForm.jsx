@@ -7,10 +7,11 @@ import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const ExpenseForm = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const formik = useFormik({
     initialValues: {
       amount: "",
@@ -21,15 +22,17 @@ const ExpenseForm = () => {
   });
 
   const { mutate, error, isPending } = useMutation({
-    mutationFn: async ({ data }) => {
-      return await axios.post("http://localhost:5000/api/expenses", { data });
+    mutationFn: async (data) => {
+      console.log(data);
+      return await axios.post("http://localhost:5000/api/expenses", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expense"] });
       toast.success("Expense added successfully");
-      Navigate("/history");
+      navigate("/history");
     },
     onError: () => {
+      console.log("An error from query");
       toast.error("Error creating expense");
     },
   });
@@ -45,8 +48,9 @@ const ExpenseForm = () => {
       toast.error("Please fill all fields correctly");
       return;
     }
+    const values = formik.values;
     try {
-      mutate({ ...formik.values });
+      mutate(values);
     } catch (error) {
       toast.error("Something went wrong. Try again later.");
     } finally {

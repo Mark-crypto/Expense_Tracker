@@ -14,10 +14,14 @@ const PORT = process.env.PORT || 5000;
 //middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 const limiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: 20,
   message: "Too many requests, please try again later",
 });
 app.use("/api", limiter);
