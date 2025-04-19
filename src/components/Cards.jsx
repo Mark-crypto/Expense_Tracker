@@ -13,14 +13,14 @@ const Cards = () => {
   //get id from url
   const id = useParams().id;
   const url = `http:localhost:5000/api/dashboard/${id}`;
-  const { data, loading, error } = useFetch(url);
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorPage />;
+  // const { data, loading, error } = useFetch(url);
+  // if (loading) return <LoadingSpinner />;
+  // if (error) return <ErrorPage />;
 
   // Add data to cards
   return (
     <>
-      <div className="dashboard-cards">
+      {/* <div className="dashboard-cards">
         <div className="dashboard-card">
           <div>
             <h4 style={{ color: "#9d00ff", fontWeight: "bold" }}>
@@ -44,7 +44,8 @@ const Cards = () => {
           </div>
           <img src={budget} alt="revenue" style={{ width: "100px" }} />
         </div>
-      </div>
+      </div> */}
+      <h2>Cards</h2>
     </>
   );
 };
