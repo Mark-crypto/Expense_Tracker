@@ -19,10 +19,8 @@ export const getExpenses = async (req, res) => {
       meta: { pageNumber, limit, totalPages: Math.ceil(total / limit), total },
     });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: true, message: "Error fetching expenses" });
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "An error occurred" });
   }
 };
 
@@ -48,36 +46,32 @@ export const createExpense = async (req, res) => {
       "INSERT INTO expense SET amount = ?, category = ?, date_created =?, month = ?",
       [amount, category, date, months[randomMonth]]
     );
-    if (response)
-      return res.status(201).json({ message: "Expense added successfully" });
+    if (!response) {
+      return res
+        .status(500)
+        .json({ error: true, message: "An error occurred" });
+    }
+    res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: true, message: "Error creating expenses" });
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "An error occurred" });
   }
 };
 
 export const deleteExpense = async (req, res) => {
   const { id } = req.params;
   try {
-    connection.execute(
+    const response = await connection.execute(
       "DELETE FROM expense WHERE expense_id = ?",
-      [id],
-      (error, data) => {
-        if (error) {
-          return res
-            .status(500)
-            .json({ error: true, message: "Error deleting expense" });
-        }
-        return res
-          .status(200)
-          .json({ data, message: "Expense deleted successfully" });
-      }
+      [id]
     );
+    if (!response) {
+      return res
+        .status(500)
+        .json({ error: true, message: "An error occurred" });
+    }
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: true, message: "Error deleting expense" });
+    console.log("Error: ", error);
+    return res.status(500).json({ error: true, message: "An error occurred" });
   }
 };

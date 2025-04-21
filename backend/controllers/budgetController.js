@@ -1,90 +1,64 @@
 import connection from "../database.js";
 
 // Get all budgets
-export function getBudget(req, res) {
+export async function getBudget(req, res) {
   try {
-    connection.execute("SELECT * FROM budget", (error, data) => {
-      if (error) {
-        return res
-          .status(500)
-          .json({ error: true, message: "Error fetching budgets" });
-      }
-      return res.status(200).json({ data });
-    });
+    const [rows] = await connection.execute("SELECT * FROM budget");
+    res.status(200).json({ data: rows });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: true, message: "Error fetching budgets" });
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "An error occurred" });
   }
 }
 
 // Get a single budget
-export function getSingleBudget(req, res) {
+export async function getSingleBudget(req, res) {
   const { id } = req.params;
   try {
-    connection.execute(
+    const [rows] = await connection.execute(
       "SELECT * FROM budget WHERE budget_id = ?",
-      [id],
-      (error, data) => {
-        if (error) {
-          return res
-            .status(500)
-            .json({ error: true, message: "Error fetching budget" });
-        }
-        return res.json({ data: data[0] });
-      }
+      [id]
     );
+    res.status(200).json({ data: rows[0] });
   } catch (error) {
-    return res.json({ error: true, message: "Error fetching budget" });
+    console.log("Error:", error);
+    return res.json({ error: true, message: "An error occurred" });
   }
 }
 
 // Add a budget
-export function addBudget(req, res) {
+export async function addBudget(req, res) {
   const { name, category, amount, email_checked } = req.body;
   try {
-    connection.execute(
+    const response = await connection.execute(
       "INSERT INTO budget SET name = ?,category = ?, amount = ?, email_checked = ?",
-      [name, category, amount, email_checked],
-      (error, data) => {
-        if (error) {
-          return res
-            .status(500)
-            .json({ error: true, message: "Error adding budget" });
-        }
-        return res
-          .status(201)
-          .json({ message: "Budget added successfully", data });
-      }
+      [name, category, amount, email_checked]
     );
+    if (!response) {
+      return res.send(500).json({ error: true, message: "An error occurred" });
+    }
+
+    res.status(201).json({ message: "Budget created successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: true, message: "Error adding budget" });
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "An error occurred" });
   }
 }
 
 // Delete a budget
-export function deleteBudget(req, res) {
+export async function deleteBudget(req, res) {
   const { id } = req.params;
   try {
-    connection.execute(
+    const response = await connection.execute(
       "DELETE FROM budget WHERE budget_id = ?",
-      [id],
-      (error, data) => {
-        if (error) {
-          return res
-            .status(500)
-            .json({ error: true, message: "Error deleting budget" });
-        }
-        return res
-          .status(200)
-          .json({ message: "Budget deleted successfully", data });
-      }
+      [id]
     );
+    if (!response) {
+      return res.send(500).json({ error: true, message: "An error occurred" });
+    }
+    res.send(500).json({ error: true, message: "An error occurred" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: true, message: "Error deleting budget" });
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "An error occurred" });
   }
 }

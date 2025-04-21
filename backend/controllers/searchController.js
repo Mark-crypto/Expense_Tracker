@@ -16,7 +16,7 @@ export const expenseSearch = async (req, res) => {
   if (cached) return res.status(200).json(JSON.parse(cached));
 
   const [rows] = await connection.execute(
-    "SELECT budgetName FROM budgets MATCH(budgetName) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
+    "SELECT category FROM expense MATCH(category) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
     [searchQuery]
   );
   await redisClient.set(searchQuery, JSON.stringify(rows), { EX: 600 });
@@ -32,7 +32,7 @@ export const budgetSearch = async (req, res) => {
   if (cached) return res.status(200).json(json.parse(cached));
 
   const [rows] = await connection.execute(
-    "SELECT category FROM expenses MATCH(category) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
+    "SELECT name FROM budget MATCH(name) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
     [searchQuery]
   );
 

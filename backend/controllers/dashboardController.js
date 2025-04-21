@@ -26,10 +26,10 @@ const getReportData = async (req, res) => {
       budgetData,
     });
   } catch (error) {
+    console.log("Error:", error);
     res.status(500).json({
       error: true,
-      message: "Error in fetching reports",
-      details: error.message,
+      message: "An error occurred",
     });
   }
 };
