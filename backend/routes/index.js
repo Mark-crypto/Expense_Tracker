@@ -5,6 +5,8 @@ import budgetRouter from "./budget.js";
 import expenseRouter from "./expense.js";
 import dashboardRouter from "./dashboard.js";
 import predictionsRouter from "./predictions.js";
+import { isTokenVerified } from "backend/middlewares/verifyToken.js";
+import { isUserAdmin } from "backend/middlewares/userRole.js";
 
 const router = Router();
 

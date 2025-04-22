@@ -20,7 +20,12 @@ export const getExpenses = async (req, res) => {
     });
   } catch (error) {
     console.log("Error:", error);
-    return res.status(500).json({ error: true, message: "An error occurred" });
+    return res
+      .status(500)
+      .json({
+        error: true,
+        message: "An error occurred. No expenses were found.",
+      });
   }
 };
 
@@ -49,12 +54,18 @@ export const createExpense = async (req, res) => {
     if (!response) {
       return res
         .status(500)
-        .json({ error: true, message: "An error occurred" });
+        .json({
+          error: true,
+          message: "An error occurred. Expense was not created.",
+        });
     }
     res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
     console.log("Error:", error);
-    return res.status(500).json({ error: true, message: "An error occurred" });
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred, Expense was not created.",
+    });
   }
 };
 
@@ -68,10 +79,17 @@ export const deleteExpense = async (req, res) => {
     if (!response) {
       return res
         .status(500)
-        .json({ error: true, message: "An error occurred" });
+        .json({
+          error: true,
+          message: "An error occurred. Expenses were not deleted.",
+        });
     }
+    res.send(200).json({ message: "Expense deleted successfully." });
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({ error: true, message: "An error occurred" });
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. Expenses were not deleted.",
+    });
   }
 };

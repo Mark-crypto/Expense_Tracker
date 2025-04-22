@@ -11,7 +11,6 @@ const getReportData = async (req, res) => {
         "SELECT month, category, amount FROM expense WHERE expense_id = ?",
         [id]
       );
-
     const [debtData] = await connection
       .promise()
       .execute("SELECT * FROM expense WHERE category = ? ", ["debt"]);
@@ -29,7 +28,7 @@ const getReportData = async (req, res) => {
     console.log("Error:", error);
     res.status(500).json({
       error: true,
-      message: "An error occurred",
+      message: "An error occurred. Dashboard data is not available.",
     });
   }
 };

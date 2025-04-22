@@ -28,7 +28,10 @@ export const signUp = async (req, res) => {
       .status(500)
       .json({ error: true, message: "An error occurred. Try again later." });
   } catch (error) {
-    res.status(500).json({ error: true, message: "An error occurred" });
+    res.status(500).json({
+      error: true,
+      message: "An error occurred. Try again later.",
+    });
     console.log("Error:", error);
   }
 };
@@ -51,12 +54,20 @@ export const login = async (req, res) => {
         .status(401)
         .json({ error: true, message: "Invalid email or password" });
     }
-    jwt.sign(
+    const token = jwt.sign(
       { userId: user.id, name: user.name, email: user.email },
       process.env.JWT_SECRET_KEY
     );
+    if (!token) {
+      return res
+        .status(500)
+        .json({ error: true, message: "An error occurred. Try again later." });
+    }
+    res.status(200).json({ message: "You have successfully logged in", token });
   } catch (error) {
-    res.status(500).json({ error: true, message: "An error occurred" });
+    res
+      .status(500)
+      .json({ error: true, message: "An error occurred. Try again later." });
     console.log("Error:", error);
   }
 };

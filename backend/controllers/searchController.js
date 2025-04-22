@@ -9,33 +9,47 @@ await redisClient.connect();
 
 export const expenseSearch = async (req, res) => {
   const searchQuery = req.query.q;
-  if (!searchQuery)
-    return res.status(404).json({ message: "No input was passed" });
+  try {
+    if (!searchQuery)
+      return res.status(404).json({ message: "No input was passed" });
 
-  const cached = await redisClient.get(searchQuery);
-  if (cached) return res.status(200).json(JSON.parse(cached));
+    const cached = await redisClient.get(searchQuery);
+    if (cached) return res.status(200).json(JSON.parse(cached));
 
-  const [rows] = await connection.execute(
-    "SELECT category FROM expense MATCH(category) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
-    [searchQuery]
-  );
-  await redisClient.set(searchQuery, JSON.stringify(rows), { EX: 600 });
-  res.status(200).json({ data: rows });
+    const [rows] = await connection.execute(
+      "SELECT category FROM expense MATCH(category) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
+      [searchQuery]
+    );
+    await redisClient.set(searchQuery, JSON.stringify(rows), { EX: 600 });
+    res.status(200).json({ data: rows });
+  } catch (error) {
+    console.log("Error:", error);
+    res
+      .status(500)
+      .json({ error: true, message: "An error occurred. No expense found" });
+  }
 };
 
 export const budgetSearch = async (req, res) => {
   const searchQuery = req.query.q;
-  if (!searchQuery)
-    return res.status(404).json({ message: "No input was passed" });
+  try {
+    if (!searchQuery)
+      return res.status(404).json({ message: "No input was passed" });
 
-  const cached = await redisClient.get(searchQuery);
-  if (cached) return res.status(200).json(json.parse(cached));
+    const cached = await redisClient.get(searchQuery);
+    if (cached) return res.status(200).json(json.parse(cached));
 
-  const [rows] = await connection.execute(
-    "SELECT name FROM budget MATCH(name) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
-    [searchQuery]
-  );
+    const [rows] = await connection.execute(
+      "SELECT name FROM budget MATCH(name) AGAINST(? IN NATURAL LANGUAGE MODE) LIMIT 10",
+      [searchQuery]
+    );
 
-  await redisClient.set(searchQuery, json.stringify(rows), { EX: 600 });
-  res.status(200).json({ data: rows });
+    await redisClient.set(searchQuery, json.stringify(rows), { EX: 600 });
+    res.status(200).json({ data: rows });
+  } catch (error) {
+    console.log("Error:", error);
+    res
+      .status(500)
+      .json({ error: true, message: "An error occurred. No budget found" });
+  }
 };
