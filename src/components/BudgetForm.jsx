@@ -2,14 +2,17 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useFormik } from "formik";
 import budgetValidation from "../schemas/budgetValidation";
-import { useStoreData } from "@/hooks/useStoreData";
 import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import LoadingSpinner from "./LoadingSpinner";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const BudgetForm = () => {
-  const url = "http://localhost:5000/api/budget";
-  const { error, fetchData } = useStoreData(url, { ...formik.values });
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -19,6 +22,19 @@ const BudgetForm = () => {
     },
     validationSchema: budgetValidation,
     enableReinitialize: true,
+  });
+
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: async (data) => {
+      return await axios.post("http://localhost:5000/api/budget", data);
+    },
+    onSuccess: () => {
+      toast.success("Budget created successfully");
+      formik.resetForm();
+    },
+    onError: () => {
+      toast.error("Error creating budget");
+    },
   });
   //look for checked
   const addBudget = (e) => {
@@ -34,18 +50,18 @@ const BudgetForm = () => {
       toast.error("Please correct the errors in the form");
       return;
     }
+    const data = formik.values;
     try {
-      setLoading(true);
-      fetchData();
+      mutate(data);
     } catch (error) {
       toast.error("Error creating budget");
     } finally {
-      setLoading(false);
-      formik.resetForm();
       toast.success("Budget created successfully");
     }
   };
-  if (error) return <ErrorPage />;
+
+  if (isPending) return <LoadingSpinner />;
+  if (isError) return <ErrorPage />;
   return (
     <>
       <ToastContainer
@@ -158,7 +174,7 @@ const BudgetForm = () => {
             fontWeight: "bold",
           }}
           type="submit"
-          disabled={loading}
+          disabled={isPending}
         >
           Create Budget
         </Button>

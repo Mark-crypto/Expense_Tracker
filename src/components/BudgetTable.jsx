@@ -1,6 +1,6 @@
 import Table from "react-bootstrap/Table";
 import Button from "react-bootstrap/Button";
-import { useFetch } from "@/hooks/useFetch";
+import { useFetch } from "../hooks/useFetch";
 import LoadingSpinner from "./LoadingSpinner";
 import ErrorPage from "./ErrorPage";
 

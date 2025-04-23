@@ -29,7 +29,9 @@ const ExpenseForm = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expense"] });
       toast.success("Expense added successfully");
-      navigate("/history");
+      setTimeout(() => {
+        navigate("/history");
+      }, 3000);
     },
     onError: () => {
       console.log("An error from query");
