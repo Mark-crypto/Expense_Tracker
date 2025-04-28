@@ -1,13 +1,17 @@
 import connection from "../database.js";
 
 export const getExpenses = async (req, res) => {
-  const pageNumber = Math.max(1, parseInt(req.query._page) || 1);
-  const limit = Math.max(1, parseInt(req.query._limit) || 10);
+  const pageNumber = parseInt(req.query._page) || 1;
+  const limit = parseInt(req.query._limit) || 10;
   const offset = (pageNumber - 1) * limit;
+
+  const limitString = limit.toString();
+  const offsetString = offset.toString();
 
   try {
     const [rows] = await connection.execute(
-      `SELECT * FROM expense ORDER BY date_created DESC LIMIT ${limit} OFFSET ${offset}`
+      `SELECT * FROM expense ORDER BY date_created DESC LIMIT ? OFFSET ?`,
+      [limitString, offsetString]
     );
 
     const [countResult] = await connection.execute(
@@ -20,12 +24,10 @@ export const getExpenses = async (req, res) => {
     });
   } catch (error) {
     console.log("Error:", error);
-    return res
-      .status(500)
-      .json({
-        error: true,
-        message: "An error occurred. No expenses were found.",
-      });
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. No expenses were found.",
+    });
   }
 };
 
@@ -48,16 +50,14 @@ export const createExpense = async (req, res) => {
   const randomMonth = Math.floor(Math.random() * months.length);
   try {
     const response = await connection.execute(
-      "INSERT INTO expense SET amount = ?, category = ?, date_created =?, month = ?",
+      "INSERT INTO expense (amount , category , date_created, month) VALUES(?,?,?,?)",
       [amount, category, date, months[randomMonth]]
     );
     if (!response) {
-      return res
-        .status(500)
-        .json({
-          error: true,
-          message: "An error occurred. Expense was not created.",
-        });
+      return res.status(400).json({
+        error: true,
+        message: "An error occurred. Expense was not created.",
+      });
     }
     res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
@@ -77,12 +77,10 @@ export const deleteExpense = async (req, res) => {
       [id]
     );
     if (!response) {
-      return res
-        .status(500)
-        .json({
-          error: true,
-          message: "An error occurred. Expenses were not deleted.",
-        });
+      return res.status(400).json({
+        error: true,
+        message: "An error occurred. Expenses were not deleted.",
+      });
     }
     res.send(200).json({ message: "Expense deleted successfully." });
   } catch (error) {

@@ -7,12 +7,10 @@ export async function getBudget(req, res) {
     res.status(200).json({ data: rows });
   } catch (error) {
     console.log("Error:", error);
-    return res
-      .status(500)
-      .json({
-        error: true,
-        message: "An error occurred. No budget was found.",
-      });
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. No budget was found.",
+    });
   }
 }
 
@@ -39,27 +37,23 @@ export async function addBudget(req, res) {
   const { name, category, amount, email_checked } = req.body;
   try {
     const response = await connection.execute(
-      "INSERT INTO budget SET name = ?,category = ?, amount = ?, email_checked = ?",
+      "INSERT INTO budget (name,category, amount, email_checked ) VALUES(?,?,?,?)",
       [name, category, amount, email_checked]
     );
     if (!response) {
-      return res
-        .send(500)
-        .json({
-          error: true,
-          message: "An error occurred. Budget was not created",
-        });
+      return res.send(400).json({
+        error: true,
+        message: "An error occurred. Budget was not created",
+      });
     }
 
     res.status(201).json({ message: "Budget created successfully" });
   } catch (error) {
     console.log("Error:", error);
-    return res
-      .status(500)
-      .json({
-        error: true,
-        message: "An error occurred. Budget was not created",
-      });
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. Budget was not created",
+    });
   }
 }
 
@@ -72,21 +66,17 @@ export async function deleteBudget(req, res) {
       [id]
     );
     if (!response) {
-      return res
-        .send(500)
-        .json({
-          error: true,
-          message: "An error occurred. Budget was not deleted",
-        });
+      return res.send(400).json({
+        error: true,
+        message: "An error occurred. Budget was not deleted",
+      });
     }
     res.send(200).json({ message: "Budget was deleted successfully." });
   } catch (error) {
     console.log("Error:", error);
-    return res
-      .status(500)
-      .json({
-        error: true,
-        message: "An error occurred. Budget was not deleted.",
-      });
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. Budget was not deleted.",
+    });
   }
 }
