@@ -3,5 +3,5 @@ import { getPredictions } from "../controllers/predictionsController.js";
 
 const router = Router();
 
-router.get("/predictions/:id", getPredictions);
+router.get("/predictions", getPredictions);
 export default router;

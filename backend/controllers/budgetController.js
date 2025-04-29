@@ -1,4 +1,5 @@
 import connection from "../database.js";
+//GET ID FROM req.userInfo
 
 // Get all budgets
 export async function getBudget(req, res) {
@@ -36,12 +37,12 @@ export async function getSingleBudget(req, res) {
 export async function addBudget(req, res) {
   const { name, category, amount, email_checked } = req.body;
   try {
-    const response = await connection.execute(
+    const [response] = await connection.execute(
       "INSERT INTO budget (name,category, amount, email_checked ) VALUES(?,?,?,?)",
       [name, category, amount, email_checked]
     );
-    if (!response) {
-      return res.send(400).json({
+    if (response.length == 0) {
+      return res.status(400).json({
         error: true,
         message: "An error occurred. Budget was not created",
       });
@@ -65,13 +66,13 @@ export async function deleteBudget(req, res) {
       "DELETE FROM budget WHERE budget_id = ?",
       [id]
     );
-    if (!response) {
-      return res.send(400).json({
+    if (response.length == 0) {
+      return res.status(400).json({
         error: true,
         message: "An error occurred. Budget was not deleted",
       });
     }
-    res.send(200).json({ message: "Budget was deleted successfully." });
+    res.status(200).json({ message: "Budget was deleted successfully." });
   } catch (error) {
     console.log("Error:", error);
     return res.status(500).json({

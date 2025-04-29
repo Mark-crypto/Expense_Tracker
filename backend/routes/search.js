@@ -6,7 +6,7 @@ import {
 
 const router = Router();
 
-router.get("/search", expenseSearch);
-router.get("/search2", budgetSearch);
+router.get("/expense/search", expenseSearch);
+router.get("/budgets/search", budgetSearch);
 
 export default router;

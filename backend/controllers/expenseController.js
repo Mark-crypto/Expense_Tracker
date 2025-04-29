@@ -49,11 +49,11 @@ export const createExpense = async (req, res) => {
   ];
   const randomMonth = Math.floor(Math.random() * months.length);
   try {
-    const response = await connection.execute(
+    const [response] = await connection.execute(
       "INSERT INTO expense (amount , category , date_created, month) VALUES(?,?,?,?)",
       [amount, category, date, months[randomMonth]]
     );
-    if (!response) {
+    if (response == 0) {
       return res.status(400).json({
         error: true,
         message: "An error occurred. Expense was not created.",
@@ -72,17 +72,17 @@ export const createExpense = async (req, res) => {
 export const deleteExpense = async (req, res) => {
   const { id } = req.params;
   try {
-    const response = await connection.execute(
+    const [response] = await connection.execute(
       "DELETE FROM expense WHERE expense_id = ?",
       [id]
     );
-    if (!response) {
+    if (response.length == 0) {
       return res.status(400).json({
         error: true,
         message: "An error occurred. Expenses were not deleted.",
       });
     }
-    res.send(200).json({ message: "Expense deleted successfully." });
+    res.status(200).json({ message: "Expense deleted successfully." });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({

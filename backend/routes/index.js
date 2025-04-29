@@ -5,8 +5,7 @@ import budgetRouter from "./budget.js";
 import expenseRouter from "./expense.js";
 import dashboardRouter from "./dashboard.js";
 import predictionsRouter from "./predictions.js";
-import { isTokenVerified } from "../middlewares/verifyToken.js";
-import { isUserAdmin } from "../middlewares/userRole.js";
+import searchRouter from "./search.js";
 
 const router = Router();
 
@@ -16,5 +15,6 @@ router.use(budgetRouter);
 router.use(dashboardRouter);
 router.use(predictionsRouter);
 router.use(expenseRouter);
+router.use(searchRouter);
 
 export default router;

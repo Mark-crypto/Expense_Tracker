@@ -4,26 +4,25 @@ dotenv.config();
 
 export const isTokenVerified = (req, res, next) => {
   try {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
-      return res.status.json({
+    const accessToken = req.cookies.accessToken;
+    if (!accessToken) {
+      return res.status(401).json({
         error: true,
         message: "Access denied. Login to access resources.",
       });
     }
-    const userInfo = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    if (!userInfo) {
-      return res.status.json({
+    const user = jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN);
+    if (!user) {
+      return res.status(401).json({
         error: true,
         message: "Access denied. Login to access resources.",
       });
     }
-    req.userInfo = userInfo;
+    req.userInfo = user;
     next();
   } catch (error) {
     console.log("Error:", error);
-    return res.status.json({
+    return res.status(401).json({
       error: true,
       message: "Access denied. Login to access resources.",
     });
