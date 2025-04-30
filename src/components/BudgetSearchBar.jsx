@@ -1,16 +1,14 @@
 import _ from "lodash";
 import { useState, useCallback } from "react";
-import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/axiosInstance";
 
 const BudgetSearchBar = () => {
   const [query, setQuery] = useState("");
 
   const fetchData = async ({ searchItem }) => {
     if (!searchItem) return [];
-    const response = await axios.get(
-      `http://localhost:5000/api/search2?q=${searchItem}`
-    );
+    const response = await axiosInstance.get(`/search2?q=${searchItem}`);
     return response.data.data;
   };
   const debouncedSearch = useCallback(
@@ -41,7 +39,6 @@ const BudgetSearchBar = () => {
           placeholder="Search..."
         />
         <button type="button" onClick={fetchSearch}>
-          {" "}
           Search
         </button>
         {isLoading && <p>Loading...</p>}

@@ -1,67 +1,45 @@
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { useFormik } from "formik";
-import budgetValidation from "../schemas/budgetValidation";
-import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import LoadingSpinner from "./LoadingSpinner";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { budgetSchema } from "../zodSchemas/schemas";
+import axiosInstance from "../axiosInstance";
 
 const BudgetForm = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
-  const formik = useFormik({
-    initialValues: {
-      name: "",
-      category: "",
-      amount: "",
-      email: true,
-    },
-    validationSchema: budgetValidation,
-    enableReinitialize: true,
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(budgetSchema),
+    mode: "onBlur",
   });
-
-  const { mutate, isPending, isError } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: async (data) => {
-      return await axios.post("http://localhost:5000/api/budget", data);
+      return await axiosInstance.post("/budget", data);
     },
-    onSuccess: () => {
-      toast.success("Budget created successfully");
-      formik.resetForm();
+    onSuccess: (data) => {
+      toast.success(data.data.message, "Scroll to view list of all budgets.");
+      reset();
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
     },
     onError: () => {
       toast.error("Error creating budget");
     },
   });
-  //look for checked
-  const addBudget = (e) => {
-    e.preventDefault();
-    formik.values.email = formik.values.email ? "checked" : "unchecked";
-    const { name, category, amount } = formik.values;
 
-    if (!name || !category || !amount) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    if (formik.errors.name || formik.errors.category || formik.errors.amount) {
-      toast.error("Please correct the errors in the form");
-      return;
-    }
-    const data = formik.values;
+  const addBudget = (data) => {
     try {
       mutate(data);
     } catch (error) {
       toast.error("Error creating budget");
-    } finally {
-      toast.success("Budget created successfully");
     }
   };
-
-  if (isPending) return <LoadingSpinner />;
-  if (isError) return <ErrorPage />;
   return (
     <>
       <ToastContainer
@@ -77,7 +55,7 @@ const BudgetForm = () => {
         theme="light"
       />
       <Form
-        onSubmit={addBudget}
+        onSubmit={handleSubmit(addBudget)}
         style={{
           width: "500px",
           marginBottom: "20px",
@@ -101,26 +79,15 @@ const BudgetForm = () => {
           <Form.Label>Budget name</Form.Label>
           <Form.Control
             type="text"
-            placeholder="Enter name"
-            value={formik.values.name}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
+            placeholder="Enter budget name"
             name="amount"
-            required
+            {...register("name")}
           />
-          {formik.errors.name && formik.touched.name && (
-            <p style={{ color: "red" }}>{formik.errors.name}</p>
-          )}
+          {errors.name && <p style={{ color: "red" }}>{errors.name.message}</p>}
         </Form.Group>
         <Form.Group className="mb-3">
           <Form.Label>Category</Form.Label>
-          <Form.Select
-            value={formik.values.category}
-            onChange={formik.handleChange}
-            name="category"
-            onBlur={formik.handleBlur}
-            required
-          >
+          <Form.Select name="category" {...register("category")}>
             <option>Choose a Category</option>
             <option value="clothing">Clothing</option>
             <option value="debt">Debt</option>
@@ -137,8 +104,8 @@ const BudgetForm = () => {
             <option value="transportation">Transportation</option>
             <option value="utilities">Utilities</option>
           </Form.Select>
-          {formik.errors.category && formik.touched.category && (
-            <p style={{ color: "red" }}>{formik.errors.category}</p>
+          {errors.category && (
+            <p style={{ color: "red" }}>{errors.category.message}</p>
           )}
         </Form.Group>
         <Form.Group className="mb-3">
@@ -146,25 +113,23 @@ const BudgetForm = () => {
           <Form.Control
             type="number"
             placeholder="Enter amount"
-            value={formik.values.amount}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
             name="amount"
-            required
+            {...register("amount")}
           />
-          {formik.errors.amount && formik.touched.amount && (
-            <p style={{ color: "red" }}>{formik.errors.amount}</p>
+          {errors.amount && (
+            <p style={{ color: "red" }}>{errors.amount.message}</p>
           )}
         </Form.Group>
-        <Form.Group className="mb-3" controlId="formBasicCheckbox">
+        <Form.Group className="mb-3">
           <Form.Check
             type="checkbox"
             label="Receive Email Reminders"
-            checked={formik.values.email}
-            onChange={formik.handleChange}
-            onClick={() => formik.setFieldValue("email", !formik.values.email)}
             name="email"
+            {...register("email")}
           />
+          {errors.email && (
+            <p style={{ color: "red" }}>{errors.email.message}</p>
+          )}
         </Form.Group>
         <Button
           style={{
@@ -176,7 +141,7 @@ const BudgetForm = () => {
           type="submit"
           disabled={isPending}
         >
-          Create Budget
+          {isPending ? "Creating..." : "Create Budget"}
         </Button>
       </Form>
     </>

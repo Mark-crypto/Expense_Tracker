@@ -1,22 +1,97 @@
 import Table from "react-bootstrap/Table";
+import _ from "lodash";
+import { useState, useCallback } from "react";
 import Button from "react-bootstrap/Button";
-import { useFetch } from "../hooks/useFetch";
 import LoadingSpinner from "./LoadingSpinner";
-import ErrorPage from "./ErrorPage";
-
-//If budget amount is greater than expense amount then budget is exceeded
+import { useMutation, useQuery } from "@tanstack/react-query";
+import axiosInstance from "../axiosInstance";
+import { toast, ToastContainer } from "react-toastify";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const BudgetTable = () => {
-  const url = "http://localhost:5000/api/budget";
-  const { data, loading, error } = useFetch(url);
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorPage />;
+  const [query, setQuery] = useState("");
+  const {
+    data: budgetData,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ["budgets"],
+    queryFn: async () => {
+      return await axiosInstance.get("/budget");
+    },
+  });
+
+  const fetchData = async ({ searchItem }) => {
+    if (!searchItem) return [];
+    const response = await axiosInstance.get(`/search2?q=${searchItem}`);
+    return response.data.data;
+  };
+  const debouncedSearch = useCallback(
+    _.debounce(({ searchItem, resolve }) => {
+      fetchData(searchItem).then(resolve);
+    }, 300),
+    []
+  );
+
+  const queryFn = () => {
+    new Promise((resolve) => debouncedSearch({ searchItem: query, resolve }));
+  };
+
+  const { data: searchedItems, isLoading: searchLoading } = useQuery({
+    queryKey: ["searchBudget", query],
+    queryFn,
+    enabled: !!query,
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (id) => {
+      return await axiosInstance.delete(`budget/${id}`);
+    },
+    onSuccess: (data) => {
+      toast.success(data.data.message);
+    },
+    onError: () => {
+      toast.error("Something went wrong.");
+    },
+  });
+
+  const displayData =
+    query.trim() === "" ? budgetData?.data?.data : searchedItems?.data?.data;
+  const handleDelete = (id) => {
+    try {
+      mutate(id);
+    } catch (error) {
+      toast.error("Something went wrong.");
+    }
+  };
+  if (isLoading || searchLoading) return <LoadingSpinner />;
+  if (error) {
+    toast.error("Something went wrong.");
+  }
   return (
     <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>#</th>
             <th>Budget Name</th>
             <th>Category</th>
             <th>Budget Amount</th>
@@ -26,27 +101,34 @@ const BudgetTable = () => {
           </tr>
         </thead>
         <tbody>
-          {data.length !== 0 ? (
-            data.map((item, index) => {
+          {displayData?.length !== 0 ? (
+            displayData.map((item) => {
               return (
                 <tr key={item.id}>
-                  <td>{index + 1}</td>
                   <td>{item.name}</td>
                   <td>{item.category}</td>
                   <td>{item.amount}</td>
-                  <td
-                    style={{
-                      color: item.status === "Within Budget" ? "green" : "red",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {item.status}
-                  </td>
-                  {/* <td>{expenseAmount - item.amount}</td> */}
+
                   <td>
-                    <Button className="" variant="danger">
-                      Delete
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger>Delete</DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Are you absolutely sure?</DialogTitle>
+                          <DialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete your budgets.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <Button
+                          variant="danger"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={isPending}
+                        >
+                          {isPending ? "Deleting" : "Delete"}
+                        </Button>
+                      </DialogContent>
+                    </Dialog>
                   </td>
                 </tr>
               );

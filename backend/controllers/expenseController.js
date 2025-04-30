@@ -50,8 +50,8 @@ export const createExpense = async (req, res) => {
   const randomMonth = Math.floor(Math.random() * months.length);
   try {
     const [response] = await connection.execute(
-      "INSERT INTO expense (amount , category , date_created, month) VALUES(?,?,?,?)",
-      [amount, category, date, months[randomMonth]]
+      "INSERT INTO expense (amount , category , date_created, month, user_id) VALUES(?,?,?,?)",
+      [amount, category, date, months[randomMonth], 1]
     );
     if (response == 0) {
       return res.status(400).json({

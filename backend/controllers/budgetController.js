@@ -38,8 +38,8 @@ export async function addBudget(req, res) {
   const { name, category, amount, email_checked } = req.body;
   try {
     const [response] = await connection.execute(
-      "INSERT INTO budget (name,category, amount, email_checked ) VALUES(?,?,?,?)",
-      [name, category, amount, email_checked]
+      "INSERT INTO budget (name,category, amount, email_checked, user_id ) VALUES(?,?,?,?)",
+      [name, category, amount, email_checked, 1]
     );
     if (response.length == 0) {
       return res.status(400).json({
