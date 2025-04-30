@@ -114,7 +114,7 @@ const BudgetForm = () => {
             type="number"
             placeholder="Enter amount"
             name="amount"
-            {...register("amount")}
+            {...register("amount", { valueAsNumber: true })}
           />
           {errors.amount && (
             <p style={{ color: "red" }}>{errors.amount.message}</p>

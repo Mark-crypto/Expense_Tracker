@@ -6,14 +6,14 @@ import LoadingSpinner from "./LoadingSpinner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axiosInstance from "../axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogTrigger,
+// } from "@/components/ui/dialog";
 
 const BudgetTable = () => {
   const [query, setQuery] = useState("");
@@ -95,8 +95,7 @@ const BudgetTable = () => {
             <th>Budget Name</th>
             <th>Category</th>
             <th>Budget Amount</th>
-            <th>Status</th>
-            <th>Budget Exceeded By </th>
+
             <th>Actions</th>
           </tr>
         </thead>
@@ -110,7 +109,14 @@ const BudgetTable = () => {
                   <td>{item.amount}</td>
 
                   <td>
-                    <Dialog>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDelete(item.id)}
+                      disabled={isPending}
+                    >
+                      {isPending ? "Deleting" : "Delete"}
+                    </Button>
+                    {/* <Dialog>
                       <DialogTrigger>Delete</DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
@@ -120,15 +126,8 @@ const BudgetTable = () => {
                             delete your budgets.
                           </DialogDescription>
                         </DialogHeader>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleDelete(item.id)}
-                          disabled={isPending}
-                        >
-                          {isPending ? "Deleting" : "Delete"}
-                        </Button>
                       </DialogContent>
-                    </Dialog>
+                    </Dialog> */}
                   </td>
                 </tr>
               );

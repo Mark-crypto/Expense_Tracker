@@ -1,7 +1,6 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { Link } from "react-router-dom";
-import { useFormik } from "formik";
 import loginValidation from "../schemas/loginValidation";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
@@ -13,40 +12,40 @@ const LoginForm = () => {
   const url = "http://localhost:5000/api/login";
   const navigate = useNavigate();
 
-  const formik = useFormik({
-    initialValues: {
-      email: "",
-      password: "",
-    },
-    validationSchema: loginValidation,
-  });
+  // const formik = useFormik({
+  //   initialValues: {
+  //     email: "",
+  //     password: "",
+  //   },
+  //   validationSchema: loginValidation,
+  // });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { email, password } = formik.values;
-    if (!email || !password) {
-      toast.error("Please fill all the fields");
-      return;
-    }
-    if (formik.errors.email || formik.errors.password) {
-      toast.error("Please fill all the fields");
-      return;
-    }
-    // const hashPassword = bcrypt.hashSync(password, 10);
-    const hashPassword = btoa(password);
-    const data = {
-      email: email,
-      password: hashPassword,
-    };
-    const response = await axios.post(url, data);
-    if (response.data.error) {
-      toast.error(response.data.error);
-    }
-    if (response.data.success) {
-      toast.success(response.data.message);
-      navigate("/");
-    }
-  };
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   const { email, password } = formik.values;
+  //   if (!email || !password) {
+  //     toast.error("Please fill all the fields");
+  //     return;
+  //   }
+  //   if (formik.errors.email || formik.errors.password) {
+  //     toast.error("Please fill all the fields");
+  //     return;
+  //   }
+  //   // const hashPassword = bcrypt.hashSync(password, 10);
+  //   const hashPassword = btoa(password);
+  //   const data = {
+  //     email: email,
+  //     password: hashPassword,
+  //   };
+  //   const response = await axios.post(url, data);
+  //   if (response.data.error) {
+  //     toast.error(response.data.error);
+  //   }
+  //   if (response.data.success) {
+  //     toast.success(response.data.message);
+  //     navigate("/");
+  //   }
+  // };
   return (
     <>
       <ToastContainer
