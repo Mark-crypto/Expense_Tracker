@@ -1,68 +1,51 @@
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { useFormik } from "formik";
-import expenseValidation from "../schemas/expenseValidation";
 import Navbar from "./Navbar.jsx";
-import ErrorPage from "./ErrorPage";
 import { toast, ToastContainer } from "react-toastify";
-import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "@/axiosInstance";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { expenseSchema } from "@/zodSchemas/schemas.js";
 
 const ExpenseForm = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const formik = useFormik({
-    initialValues: {
-      amount: "",
-      category: "",
-      date: "",
-    },
-    validationSchema: expenseValidation,
+  const {
+    handleSubmit,
+    formState: { errors },
+    reset,
+    register,
+  } = useForm({
+    resolver: zodResolver(expenseSchema),
+    mode: "onBlur",
   });
-
-  const { mutate, error, isPending } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: async (data) => {
-      console.log(data);
-      return await axios.post("http://localhost:5000/api/expenses", data);
+      return await axiosInstance.post("/expenses", data);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["expense"] });
-      toast.success("Expense added successfully");
+      toast.success(data.data.message);
+      reset();
       setTimeout(() => {
         navigate("/history");
       }, 3000);
     },
     onError: () => {
-      console.log("An error from query");
       toast.error("Error creating expense");
     },
   });
 
-  const addExpense = async (e) => {
-    e.preventDefault();
-    const { amount, category, date } = formik.values;
-    if (!amount || !category || !date) {
-      toast.error("Please fill all fields");
-      return;
-    }
-    if (formik.errors.amount || formik.errors.category || formik.errors.date) {
-      toast.error("Please fill all fields correctly");
-      return;
-    }
-    const values = formik.values;
+  const addExpense = (data) => {
     try {
-      mutate(values);
+      mutate(data);
     } catch (error) {
       toast.error("Something went wrong. Try again later.");
-    } finally {
-      formik.resetForm();
     }
   };
-  if (error) {
-    console.log(error);
-    return <ErrorPage />;
-  }
+
   return (
     <div
       style={{
@@ -98,7 +81,7 @@ const ExpenseForm = () => {
             theme="light"
           />
           <Form
-            onSubmit={addExpense}
+            onSubmit={handleSubmit(addExpense)}
             style={{
               width: "500px",
               margin: "auto",
@@ -122,25 +105,16 @@ const ExpenseForm = () => {
               <Form.Control
                 type="number"
                 placeholder="Enter amount"
-                value={formik.values.amount}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
                 name="amount"
-                required
+                {...register("amount", { valueAsNumber: true })}
               />
-              {formik.errors.amount && formik.touched.amount && (
-                <p style={{ color: "red" }}>{formik.errors.amount}</p>
+              {errors.amount && (
+                <p style={{ color: "red" }}>{errors.amount.message}</p>
               )}
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Category</Form.Label>
-              <Form.Select
-                value={formik.values.category}
-                onChange={formik.handleChange}
-                name="category"
-                onBlur={formik.handleBlur}
-                required
-              >
+              <Form.Select name="category" {...register("category")}>
                 <option>Choose a Category</option>
                 <option value="clothing">Clothing</option>
                 <option value="debt">Debt</option>
@@ -157,23 +131,19 @@ const ExpenseForm = () => {
                 <option value="transportation">Transportation</option>
                 <option value="utilities">Utilities</option>
               </Form.Select>
-              {formik.errors.category && formik.touched.category && (
-                <p style={{ color: "red" }}>{formik.errors.category}</p>
+              {errors.category && (
+                <p style={{ color: "red" }}>{errors.category.message}</p>
               )}
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Date</Form.Label>
               <Form.Control
                 type="date"
-                placeholder=""
-                value={formik.values.date}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
                 name="date"
-                required
+                {...register("date", { valueAsDate: true })}
               />
-              {formik.errors.date && formik.touched.date && (
-                <p style={{ color: "red" }}>{formik.errors.date}</p>
+              {errors.date && (
+                <p style={{ color: "red" }}>{errors.date.message}</p>
               )}
             </Form.Group>
             <Button
@@ -185,7 +155,7 @@ const ExpenseForm = () => {
               type="submit"
               disabled={isPending}
             >
-              Add Expense
+              {isPending ? "Submitting..." : "Submit"}
             </Button>
           </Form>
         </div>

@@ -3,9 +3,25 @@ import connection from "../database.js";
 
 // Get all budgets
 export async function getBudget(req, res) {
+  const limit = parseInt(req.query._limit) || 10;
+  const page = parseInt(req.query._page) || 1;
+  const offset = (page - 1) * limit;
+
+  const offsetString = offset.toString();
+  const limitString = limit.toString();
   try {
-    const [rows] = await connection.execute("SELECT * FROM budget");
-    res.status(200).json({ data: rows });
+    const [rows] = await connection.execute(
+      "SELECT * FROM budget LIMIT ? OFFSET ?",
+      [limitString, offsetString]
+    );
+    const [totalItems] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM budget"
+    );
+    const total = totalItems[0]?.total || 0;
+    res.status(200).json({
+      data: rows,
+      meta: { totalPages: Math.ceil(total / limit), page, limit, total },
+    });
   } catch (error) {
     console.log("Error:", error);
     return res.status(500).json({

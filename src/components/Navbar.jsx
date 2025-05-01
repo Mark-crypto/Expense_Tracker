@@ -7,7 +7,7 @@ import { FaHistory } from "react-icons/fa";
 import { IoMdSettings } from "react-icons/io";
 import { MdLogout } from "react-icons/md";
 import { doSignOut } from "../services/auth";
-import { useAuth } from "../context/AuthContext";
+
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -76,7 +76,7 @@ const Navbar = () => {
             </a>
           </li>
           <li>
-            <a href="" onClick={handleLogout}>
+            <a href="#" onClick={handleLogout}>
               <MdLogout style={{ marginRight: "8px", fontSize: "25px" }} />
               Logout
             </a>

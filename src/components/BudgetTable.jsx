@@ -1,54 +1,68 @@
 import Table from "react-bootstrap/Table";
-import _ from "lodash";
-import { useState, useCallback } from "react";
+import debounce from "lodash/debounce";
+import { useState, useMemo, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import LoadingSpinner from "./LoadingSpinner";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogTrigger,
-// } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const BudgetTable = () => {
+  const [openDialogId, setOpenDialogId] = useState(null);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
+  //ADD PAGINATION
   const {
     data: budgetData,
     error,
     isLoading,
+    refetch: refetchAll,
   } = useQuery({
-    queryKey: ["budgets"],
+    queryKey: ["budgets", page],
     queryFn: async () => {
-      return await axiosInstance.get("/budget");
+      return await axiosInstance.get(`/budget?_page=${page}&_limit=10`);
     },
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+  });
+  const {
+    data: searchedItems,
+    isLoading: searchLoading,
+    refetch: refetchSearch,
+  } = useQuery({
+    queryKey: ["searchBudget", query],
+    queryFn: async () => {
+      return await axiosInstance.get(`/budgets/search?q=${query}`);
+    },
+    enabled: false,
+    keepPreviousData: true,
   });
 
-  const fetchData = async ({ searchItem }) => {
-    if (!searchItem) return [];
-    const response = await axiosInstance.get(`/search2?q=${searchItem}`);
-    return response.data.data;
-  };
-  const debouncedSearch = useCallback(
-    _.debounce(({ searchItem, resolve }) => {
-      fetchData(searchItem).then(resolve);
-    }, 300),
-    []
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value) => {
+        if (value.trim() === "") {
+          refetchAll();
+        } else {
+          refetchSearch();
+        }
+      }, 300),
+    [refetchAll, refetchSearch]
   );
 
-  const queryFn = () => {
-    new Promise((resolve) => debouncedSearch({ searchItem: query, resolve }));
-  };
-
-  const { data: searchedItems, isLoading: searchLoading } = useQuery({
-    queryKey: ["searchBudget", query],
-    queryFn,
-    enabled: !!query,
-  });
+  useEffect(() => {
+    debouncedSearch(query);
+    return () => debouncedSearch.cancel();
+  }, [query]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (id) => {
@@ -56,6 +70,8 @@ const BudgetTable = () => {
     },
     onSuccess: (data) => {
       toast.success(data.data.message);
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      setOpenDialogId(null);
     },
     onError: () => {
       toast.error("Something went wrong.");
@@ -63,7 +79,10 @@ const BudgetTable = () => {
   });
 
   const displayData =
-    query.trim() === "" ? budgetData?.data?.data : searchedItems?.data?.data;
+    query.trim() === ""
+      ? budgetData?.data?.data ?? []
+      : searchedItems?.data?.data ?? [];
+
   const handleDelete = (id) => {
     try {
       mutate(id);
@@ -71,6 +90,7 @@ const BudgetTable = () => {
       toast.error("Something went wrong.");
     }
   };
+
   if (isLoading || searchLoading) return <LoadingSpinner />;
   if (error) {
     toast.error("Something went wrong.");
@@ -89,6 +109,17 @@ const BudgetTable = () => {
         pauseOnHover
         theme="light"
       />
+      <div>
+        <input
+          type="text"
+          name=""
+          id=""
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name or category..."
+        />
+      </div>
+
       <Table striped bordered hover>
         <thead>
           <tr>
@@ -103,21 +134,23 @@ const BudgetTable = () => {
           {displayData?.length !== 0 ? (
             displayData.map((item) => {
               return (
-                <tr key={item.id}>
+                <tr key={item.budget_id}>
                   <td>{item.name}</td>
                   <td>{item.category}</td>
                   <td>{item.amount}</td>
 
                   <td>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(item.id)}
-                      disabled={isPending}
+                    <Dialog
+                      open={openDialogId === item.budget_id}
+                      onOpenChange={(open) =>
+                        setOpenDialogId(open ? item.budget_id : null)
+                      }
                     >
-                      {isPending ? "Deleting" : "Delete"}
-                    </Button>
-                    {/* <Dialog>
-                      <DialogTrigger>Delete</DialogTrigger>
+                      <DialogTrigger
+                        style={{ color: "red", fontWeight: "bold" }}
+                      >
+                        Delete
+                      </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Are you absolutely sure?</DialogTitle>
@@ -126,8 +159,15 @@ const BudgetTable = () => {
                             delete your budgets.
                           </DialogDescription>
                         </DialogHeader>
+                        <Button
+                          variant="danger"
+                          onClick={() => handleDelete(item.budget_id)}
+                          disabled={isPending}
+                        >
+                          {isPending ? "Deleting" : "Delete"}
+                        </Button>
                       </DialogContent>
-                    </Dialog> */}
+                    </Dialog>
                   </td>
                 </tr>
               );
@@ -135,12 +175,27 @@ const BudgetTable = () => {
           ) : (
             <tr>
               <td colSpan="7" style={{ textAlign: "center" }}>
-                No budget data available
+                No budgets to display
               </td>
             </tr>
           )}
         </tbody>
       </Table>
+      <button
+        onClick={() => setPage((prev) => prev - 1)}
+        disabled={page <= 1 || 1}
+      >
+        Previous Page
+      </button>
+      <p>
+        Page{page} of {budgetData?.data?.meta?.totalPages}
+      </p>
+      <button
+        onClick={() => setPage((prev) => prev + 1)}
+        disabled={page >= budgetData?.data?.meta?.total || 1}
+      >
+        Next Page
+      </button>
     </>
   );
 };

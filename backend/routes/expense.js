@@ -9,6 +9,6 @@ const router = Router();
 
 router.get("/expenses", getExpenses);
 router.post("/expenses", createExpense);
-router.delete("/expenses/:id", deleteExpense);
+router.put("/expenses", deleteExpense);
 
 export default router;

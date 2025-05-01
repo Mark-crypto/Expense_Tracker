@@ -1,6 +1,6 @@
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,18 +42,6 @@ const BudgetForm = () => {
   };
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
       <Form
         onSubmit={handleSubmit(addBudget)}
         style={{
@@ -90,7 +78,6 @@ const BudgetForm = () => {
           <Form.Select name="category" {...register("category")}>
             <option>Choose a Category</option>
             <option value="clothing">Clothing</option>
-            <option value="debt">Debt</option>
             <option value="education">Education</option>
             <option value="entertainment">Entertainment</option>
             <option value="food">Food</option>

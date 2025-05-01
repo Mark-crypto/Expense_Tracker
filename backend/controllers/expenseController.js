@@ -10,7 +10,7 @@ export const getExpenses = async (req, res) => {
 
   try {
     const [rows] = await connection.execute(
-      `SELECT * FROM expense ORDER BY date_created DESC LIMIT ? OFFSET ?`,
+      `SELECT * FROM expense WHERE status='active' ORDER BY date_created DESC LIMIT ? OFFSET ?`,
       [limitString, offsetString]
     );
 
@@ -50,7 +50,7 @@ export const createExpense = async (req, res) => {
   const randomMonth = Math.floor(Math.random() * months.length);
   try {
     const [response] = await connection.execute(
-      "INSERT INTO expense (amount , category , date_created, month, user_id) VALUES(?,?,?,?)",
+      "INSERT INTO expense (amount , category , date_created, month, user_id) VALUES(?,?,?,?,?)",
       [amount, category, date, months[randomMonth], 1]
     );
     if (response == 0) {
@@ -70,11 +70,9 @@ export const createExpense = async (req, res) => {
 };
 
 export const deleteExpense = async (req, res) => {
-  const { id } = req.params;
   try {
     const [response] = await connection.execute(
-      "DELETE FROM expense WHERE expense_id = ?",
-      [id]
+      "UPDATE expense SET status = 'inactive' "
     );
     if (response.length == 0) {
       return res.status(400).json({

@@ -1,27 +1,24 @@
 import Table from "react-bootstrap/Table";
-import ErrorPage from "./ErrorPage";
 import LoadingSpinner from "./LoadingSpinner";
-import { useContext, useState } from "react";
-import { ExpenseContext } from "../context/ExpenseContext";
-import axios from "axios";
+import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import ExpenseSearchBar from "./ExpenseSearchBar";
+import axiosInstance from "@/axiosInstance";
+import { toast } from "react-toastify";
 
 const HistoryTable = () => {
-  const { expenseAmount, setExpenseAmount } = useContext(ExpenseContext);
   const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({});
-
-  const { isLoading, error, data } = useQuery({
+  const {
+    isLoading,
+    error,
+    data: expenseData,
+  } = useQuery({
     queryKey: ["expense", page],
     queryFn: async () => {
-      const resp = await axios.get(
-        `http://localhost:5000/api/expenses?_limit=10&_page=${page}`
-      );
-      setMeta(resp.data.meta);
-      return resp.data;
+      return await axiosInstance.get(`/expenses?_limit=10&_page=${page}`);
     },
     placeholderData: keepPreviousData,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
   });
   const month = [
     "January",
@@ -37,39 +34,37 @@ const HistoryTable = () => {
     "November",
     "December",
   ];
-  const from = (page - 1) * meta.limit + 1;
-  const to = Math.min(page * meta.limit, meta.total);
-  if (error) return <ErrorPage />;
+
   if (isLoading) return <LoadingSpinner />;
+  const from = (page - 1) * expenseData?.data?.meta?.limit + 1;
+  const to = Math.min(
+    page * expenseData?.data?.meta?.limit,
+    expenseData?.data?.meta?.total
+  );
   return (
     <>
       <div>
         <strong>
-          Showing {from}–{to} of {meta.total} expenses
+          Showing {from}–{to} of {expenseData?.data?.meta?.total} expenses
         </strong>
       </div>
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>#</th>
             <th>Month</th>
             <th>Category</th>
             <th>Date</th>
             <th>Amount</th>
-            <th>Total Expenditure(All expenses)</th>
           </tr>
         </thead>
         <tbody>
-          {data.data.length > 0 ? (
-            data.data.map((item, index) => (
+          {expenseData?.data?.data?.length > 0 ? (
+            expenseData?.data?.data?.map((item) => (
               <tr key={item.expense_id}>
-                <td>{index + 1}</td>
                 <td>{month[new Date(item.date_created).getMonth()]}</td>
                 <td>{item.category}</td>
                 <td>{item.date_created.split("T")[0]}</td>
                 <td>{item.amount}</td>
-                <td>{expenseAmount}</td>
-                <td>{item.totalAmount}</td>
               </tr>
             ))
           ) : (
@@ -79,12 +74,14 @@ const HistoryTable = () => {
           )}
         </tbody>
       </Table>
-      <button onClick={() => setPage((prev) => prev - 1)} disabled={page <= 0}>
+      <button onClick={() => setPage((prev) => prev - 1)} disabled={page <= 1}>
         Previous Page
       </button>
       <button
         onClick={() => setPage((prev) => prev + 1)}
-        disabled={page >= meta.totalPages}
+        disabled={
+          !expenseData?.data?.meta || page >= expenseData.data.meta.totalPages
+        }
       >
         Next Page
       </button>

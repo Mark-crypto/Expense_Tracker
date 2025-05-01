@@ -24,10 +24,14 @@ export const reports = async (req, res) => {
       SUM(amount) OVER(ORDER BY expense_id) AS rolling_sum
       FROM expense
       LIMIT 5`);
+    const [debtAmount] = await connection.execute(` 
+        SELECT SUM(CASE WHEN category='debt' THEN amount ELSE 0 END) AS debt FROM expense
+        `);
 
     res.status(200).json({
       message: "Reports fetched successfully",
       topFive,
+      debtAmount,
       bottomFive,
       rollingSum,
     });

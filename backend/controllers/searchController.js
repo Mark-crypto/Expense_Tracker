@@ -28,8 +28,8 @@ export const budgetSearch = async (req, res) => {
       return res.status(400).json({ message: "No input was passed" });
 
     const [rows] = await connection.execute(
-      "SELECT * FROM budget WHERE MATCH(category,name) AGAINST(?) LIMIT 10",
-      [searchQuery]
+      "SELECT * FROM budget WHERE name LIKE ? OR category LIKE ? LIMIT 10",
+      [`%${searchQuery}%`, `%${searchQuery}%`]
     );
 
     res.status(200).json({ data: rows });
