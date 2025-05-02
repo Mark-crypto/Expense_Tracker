@@ -1,6 +1,23 @@
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "./Navbar.jsx";
+import axiosInstance from "@/axiosInstance.js";
+import LoadingSpinner from "@/components/LoadingSpinner.jsx";
+import { toast } from "react-toastify";
 
 const Prediction = () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["predictions"],
+    queryFn: async () => {
+      return await axiosInstance("/predictions");
+    },
+  });
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+  if (error) {
+    toast.error("Something went wrong");
+  }
   return (
     <div
       style={{
@@ -20,10 +37,11 @@ const Prediction = () => {
           width: "80%",
         }}
       >
-        <h1>
-          AI Predictions - total, debt, advised budget amount,month v
-          amount,future category vs expenditure
-        </h1>
+        <p>{data.data.monthlyAverage}</p>
+        <p>{data.data.topFiveCategories}</p>
+        <p>{data.data.bottomFiveCategories}</p>
+        <p>{data.data.budgetCategory}</p>
+        <p> {data.data.categoryExpense}</p>
       </div>
     </div>
   );
