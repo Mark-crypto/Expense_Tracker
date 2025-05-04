@@ -1,8 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import Navbar from "./Navbar.jsx";
+import Navbar from "../components/Navbar";
 import axiosInstance from "@/axiosInstance.js";
 import LoadingSpinner from "@/components/LoadingSpinner.jsx";
 import { toast } from "react-toastify";
+import CategoryBudget from "@/components/CategoryBudget.jsx";
+import CategoryExpense from "@/components/CategoryExpense.jsx";
+import TopFiveCategory from "@/components/TopFiveCategory.jsx";
+import BottomFive from "@/components/BottomFive.jsx";
+import MonthlyAverage from "@/components/MonthlyAverage.jsx";
 
 const Prediction = () => {
   const { data, isLoading, error } = useQuery({
@@ -31,17 +36,16 @@ const Prediction = () => {
       </div>
       <div
         style={{
-          backgroundColor: "#9D00FF",
           height: "100vh",
 
           width: "80%",
         }}
       >
-        <p>{data.data.monthlyAverage}</p>
-        <p>{data.data.topFiveCategories}</p>
-        <p>{data.data.bottomFiveCategories}</p>
-        <p>{data.data.budgetCategory}</p>
-        <p> {data.data.categoryExpense}</p>
+        <CategoryBudget data={data.data.budgetCategory} />
+        <CategoryExpense data={data.data.categoryExpense} />
+        <TopFiveCategory data={data.data.topFiveCategories} />
+        <BottomFive data={data.data.bottomFiveCategories} />
+        <MonthlyAverage data={data.data.monthlyAverage} />
       </div>
     </div>
   );

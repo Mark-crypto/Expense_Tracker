@@ -28,7 +28,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/expense-form" element={<ExpenseForm />} />
-          <Route path="/prediction" element={<Prediction />} />
+          <Route path="/predictions" element={<Prediction />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/history" element={<History />} />
           <Route path="/loading" element={<LoadingSpinner />} />
