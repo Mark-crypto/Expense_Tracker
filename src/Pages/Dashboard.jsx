@@ -6,6 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast, ToastContainer } from "react-toastify";
+import TopFiveRolling from "@/components/TopFiveRolling";
+import BottomFiveRolling from "@/components/BottomFiveRolling";
+import Rolling from "@/components/Rolling";
 
 const Dashboard = () => {
   const { data, error, isLoading } = useQuery({
@@ -14,6 +17,7 @@ const Dashboard = () => {
       return await axiosInstance.get("/dashboard");
     },
   });
+  console.log(data.data);
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -40,10 +44,10 @@ const Dashboard = () => {
       >
         <ToastContainer />
         <h2>Dashboard</h2>
-        <p>{data.topFive}</p>
-        <p>{data.debtAmount}</p>
-        <p>{data.bottomFive}</p>
-        <p>{data.rollingSum}</p>
+        <TopFiveRolling data={data.data.topFive} />
+        <BottomFiveRolling data={data.data.bottomFive} />
+        <Rolling data={data.data.rollingSum} />
+        <p>Debt : {data.data.debtAmount[0].debt}</p>
         <Cards />
         <div className="dashboard-graphs">
           <div className="dashboard-graph">
