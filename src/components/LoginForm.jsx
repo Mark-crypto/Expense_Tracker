@@ -1,51 +1,40 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { Link } from "react-router-dom";
-import loginValidation from "../schemas/loginValidation";
 import { toast, ToastContainer } from "react-toastify";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { btoa } from "btoa";
-// import bcrypt from "bcryptjs";
+import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import axiosInstance from "@/axiosInstance";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema } from "@/schemas/zodSchemas";
 
 const LoginForm = () => {
-  const url = "http://localhost:5000/api/login";
   const navigate = useNavigate();
-
-  // const formik = useFormik({
-  //   initialValues: {
-  //     email: "",
-  //     password: "",
-  //   },
-  //   validationSchema: loginValidation,
-  // });
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   const { email, password } = formik.values;
-  //   if (!email || !password) {
-  //     toast.error("Please fill all the fields");
-  //     return;
-  //   }
-  //   if (formik.errors.email || formik.errors.password) {
-  //     toast.error("Please fill all the fields");
-  //     return;
-  //   }
-  //   // const hashPassword = bcrypt.hashSync(password, 10);
-  //   const hashPassword = btoa(password);
-  //   const data = {
-  //     email: email,
-  //     password: hashPassword,
-  //   };
-  //   const response = await axios.post(url, data);
-  //   if (response.data.error) {
-  //     toast.error(response.data.error);
-  //   }
-  //   if (response.data.success) {
-  //     toast.success(response.data.message);
-  //     navigate("/");
-  //   }
-  // };
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data) => {
+      return await axiosInstance.post("/auth/login", { data });
+    },
+    onSuccess: () => {
+      reset();
+      navigate("/dashboard");
+    },
+    onError: () => {
+      toast.error("Invalid email or password");
+    },
+  });
+  const {
+    handleSubmit,
+    register,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(loginSchema), mode: "onBlur" });
+  const submitForm = (data) => {
+    try {
+      mutate(data);
+    } catch (error) {
+      toast.error("Something went wrong");
+    }
+  };
   return (
     <>
       <ToastContainer
@@ -60,20 +49,17 @@ const LoginForm = () => {
         pauseOnHover
         theme="light"
       />
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit(submitForm)}>
         <Form.Group className="mb-3">
           <Form.Label>Email address</Form.Label>
           <Form.Control
             type="email"
             placeholder="Enter email"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
+            {...register("email")}
             name="email"
-            required
           />
-          {formik.errors.email && formik.touched.email && (
-            <p style={{ color: "red" }}>{formik.errors.email}</p>
+          {errors.email && (
+            <p style={{ color: "red" }}>{errors.email.message}</p>
           )}
         </Form.Group>
         <Form.Group className="mb-3">
@@ -81,14 +67,11 @@ const LoginForm = () => {
           <Form.Control
             type="password"
             placeholder="Password"
-            value={formik.values.password}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
+            {...register("password")}
             name="password"
-            required
           />
-          {formik.errors.password && formik.touched.password && (
-            <p style={{ color: "red" }}>{formik.errors.password}</p>
+          {errors.password && (
+            <p style={{ color: "red" }}>{errors.password.message}</p>
           )}
         </Form.Group>
         <Button
@@ -98,8 +81,9 @@ const LoginForm = () => {
             width: "100%",
           }}
           type="submit"
+          disabled={isPending}
         >
-          Submit
+          {isPending ? "Logging in..." : "Login"}
         </Button>
         <br />
         <Form.Text className="text-muted">

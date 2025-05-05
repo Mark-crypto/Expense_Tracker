@@ -5,11 +5,9 @@ import Banner from "../components/Banner";
 import GoogleSignIn from "../components/GoogleSignIn";
 
 const Login = () => {
-  const { userLoggedIn } = useAuth();
-
+  // /auth/login
   return (
     <>
-      {userLoggedIn && <Navigate to={"/"} replace={true} />}
       <div className="login-page">
         {/* purple - #9D00FF, #B069DB, #6E00B3, #3C0061 */}
         <div className="login-form">

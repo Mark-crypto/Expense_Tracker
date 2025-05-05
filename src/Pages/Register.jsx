@@ -5,7 +5,7 @@ import Banner from "../components/Banner";
 
 const Register = () => {
   const { userLoggedIn } = useAuth();
-
+  //  /auth/signup
   return (
     <>
       {userLoggedIn && <Navigate to={"/"} replace={true} />}

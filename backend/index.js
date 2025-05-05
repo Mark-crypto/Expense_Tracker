@@ -5,6 +5,7 @@ dotenv.config();
 import apiRouter from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import { login, refresh, signUp } from "./controllers/authController.js";
 
 const app = express();
 const PORT = process.env.PORT;
@@ -23,6 +24,10 @@ const limiter = rateLimit({
   max: 100,
   message: "Too many requests, please try again later",
 });
+app.post("/auth/refresh", refresh);
+app.post("/auth/login", login);
+app.post("/auth/signup", signUp);
+
 app.use("/api", limiter);
 app.use("/api", apiRouter);
 
