@@ -46,7 +46,8 @@ const History = () => {
       style={{
         display: "flex",
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
+        minHeight: "100vh",
       }}
     >
       <div style={{ width: "20%" }}>
@@ -55,8 +56,8 @@ const History = () => {
       <div
         style={{
           backgroundColor: "rgb(240, 240, 240)",
-          height: "100vh",
-          width: "80%",
+          flex: 1,
+          padding: "20px",
         }}
       >
         <button

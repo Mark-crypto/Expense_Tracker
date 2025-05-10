@@ -20,7 +20,7 @@ const Navbar = () => {
   };
   return (
     <>
-      <div className="navbar">
+      <div className="navbar bg-white">
         <h3
           style={{
             fontStyle: "italic",
@@ -44,7 +44,7 @@ const Navbar = () => {
             </a>
           </li>
           <li>
-            <a href="/">
+            <a href="/dashboard">
               <MdSpaceDashboard
                 style={{ marginRight: "8px", fontSize: "25px" }}
               />
