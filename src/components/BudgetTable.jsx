@@ -1,3 +1,5 @@
+import { FaTrashAlt } from "react-icons/fa";
+import { motion } from "framer-motion";
 import Table from "react-bootstrap/Table";
 import debounce from "lodash/debounce";
 import { useState, useMemo, useEffect } from "react";
@@ -20,7 +22,7 @@ const BudgetTable = () => {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
-  //ADD PAGINATION
+
   const {
     data: budgetData,
     error,
@@ -34,6 +36,7 @@ const BudgetTable = () => {
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
   });
+
   const {
     data: searchedItems,
     isLoading: searchLoading,
@@ -92,9 +95,8 @@ const BudgetTable = () => {
   };
 
   if (isLoading || searchLoading) return <LoadingSpinner />;
-  if (error) {
-    toast.error("Something went wrong.");
-  }
+  if (error) toast.error("Something went wrong.");
+
   return (
     <>
       <ToastContainer
@@ -109,46 +111,52 @@ const BudgetTable = () => {
         pauseOnHover
         theme="light"
       />
-      <div>
+
+      <div className="flex justify-center mb-6">
         <input
           type="text"
-          name=""
-          id=""
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name or category..."
+          className="px-4 py-2 w-80 rounded-xl border border-gray-300 shadow focus:ring-2 focus:ring-purple-500 focus:outline-none"
         />
       </div>
 
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Budget Name</th>
-            <th>Category</th>
-            <th>Budget Amount</th>
-
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayData?.length !== 0 ? (
-            displayData.map((item) => {
-              return (
-                <tr key={item.budget_id}>
-                  <td>{item.name}</td>
-                  <td>{item.category}</td>
-                  <td>{item.amount}</td>
-
-                  <td>
+      <div className="overflow-x-auto shadow-xl rounded-xl">
+        <Table
+          responsive
+          className="w-full text-sm text-left text-gray-700 bg-white"
+        >
+          <thead className="bg-gradient-to-r from-purple-600 to-purple-500 text-white uppercase text-sm tracking-wide">
+            <tr>
+              <th className="px-4 py-3">Budget Name</th>
+              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Budget Amount</th>
+              <th className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {displayData?.length !== 0 ? (
+              displayData.map((item) => (
+                <motion.tr
+                  key={item.budget_id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="hover:bg-purple-100 transition-all duration-200"
+                >
+                  <td className="px-4 py-2">{item.name}</td>
+                  <td className="px-4 py-2">{item.category}</td>
+                  <td className="px-4 py-2">{item.amount}</td>
+                  <td className="px-4 py-2">
                     <Dialog
                       open={openDialogId === item.budget_id}
                       onOpenChange={(open) =>
                         setOpenDialogId(open ? item.budget_id : null)
                       }
                     >
-                      <DialogTrigger
-                        style={{ color: "red", fontWeight: "bold" }}
-                      >
+                      <DialogTrigger className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 transition font-semibold shadow-sm">
+                        <FaTrashAlt className="inline-block mr-1" />
                         Delete
                       </DialogTrigger>
                       <DialogContent>
@@ -156,7 +164,7 @@ const BudgetTable = () => {
                           <DialogTitle>Are you absolutely sure?</DialogTitle>
                           <DialogDescription>
                             This action cannot be undone. This will permanently
-                            delete your budgets.
+                            delete your budget.
                           </DialogDescription>
                         </DialogHeader>
                         <Button
@@ -164,38 +172,50 @@ const BudgetTable = () => {
                           onClick={() => handleDelete(item.budget_id)}
                           disabled={isPending}
                         >
-                          {isPending ? "Deleting" : "Delete"}
+                          {isPending ? "Deleting..." : "Delete"}
                         </Button>
                       </DialogContent>
                     </Dialog>
                   </td>
-                </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan="7" style={{ textAlign: "center" }}>
-                No budgets to display
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-      <button
-        onClick={() => setPage((prev) => prev - 1)}
-        disabled={page <= 1 || 1}
-      >
-        Previous Page
-      </button>
-      <p>
-        Page{page} of {budgetData?.data?.meta?.totalPages}
-      </p>
-      <button
-        onClick={() => setPage((prev) => prev + 1)}
-        disabled={page >= budgetData?.data?.meta?.total || 1}
-      >
-        Next Page
-      </button>
+                </motion.tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="4"
+                  className="text-center py-4 text-gray-500 italic"
+                >
+                  No budgets to display
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </Table>
+      </div>
+
+      <div className="flex justify-between items-center my-6">
+        <motion.button
+          onClick={() => setPage((prev) => prev - 1)}
+          disabled={page <= 1}
+          className="bg-purple-600 text-white py-2 px-4 rounded shadow hover:bg-purple-700 disabled:bg-gray-300 transition"
+          whileHover={{ scale: 1.05 }}
+        >
+          Previous Page
+        </motion.button>
+
+        <p className="text-center text-base text-gray-800 font-medium">
+          Page {page} of {budgetData?.data?.meta?.totalPages}
+        </p>
+
+        <motion.button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={page >= budgetData?.data?.meta?.totalPages}
+          className="bg-purple-600 text-white py-2 px-4 rounded shadow hover:bg-purple-700 disabled:bg-gray-300 transition"
+          whileHover={{ scale: 1.05 }}
+        >
+          Next Page
+        </motion.button>
+      </div>
     </>
   );
 };

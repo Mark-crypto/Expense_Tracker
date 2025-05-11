@@ -19,6 +19,7 @@ const BudgetForm = () => {
     resolver: zodResolver(budgetSchema),
     mode: "onBlur",
   });
+
   const { mutate, isPending } = useMutation({
     mutationFn: async (data) => {
       return await axiosInstance.post("/budget", data);
@@ -40,98 +41,88 @@ const BudgetForm = () => {
       toast.error("Error creating budget");
     }
   };
+
   return (
-    <>
-      <Form
-        onSubmit={handleSubmit(addBudget)}
+    <Form
+      onSubmit={handleSubmit(addBudget)}
+      className=" p-4  bg-white w-100"
+      style={{ maxWidth: "500px" }}
+    >
+      <Form.Group className="mb-3">
+        <Form.Label className="fw-semibold float-left">Budget Name</Form.Label>
+        <Form.Control
+          type="text"
+          placeholder="Enter budget name"
+          {...register("name")}
+          isInvalid={!!errors.name}
+        />
+        <Form.Control.Feedback type="invalid">
+          {errors.name?.message}
+        </Form.Control.Feedback>
+      </Form.Group>
+
+      <Form.Group className="mb-3">
+        <Form.Label className="fw-semibold float-left">Category</Form.Label>
+        <Form.Select {...register("category")} isInvalid={!!errors.category}>
+          <option>Choose a Category</option>
+          <option value="clothing">Clothing</option>
+          <option value="education">Education</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="food">Food</option>
+          <option value="gifts">Gifts</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="housing">Housing</option>
+          <option value="householdSupplies">Household Supplies</option>
+          <option value="insurance">Insurance</option>
+          <option value="personal">Personal</option>
+          <option value="retirement">Retirement</option>
+          <option value="transportation">Transportation</option>
+          <option value="utilities">Utilities</option>
+        </Form.Select>
+        <Form.Control.Feedback type="invalid">
+          {errors.category?.message}
+        </Form.Control.Feedback>
+      </Form.Group>
+
+      <Form.Group className="mb-3 ">
+        <Form.Label className="fw-semibold float-left">
+          Budget Amount
+        </Form.Label>
+        <Form.Control
+          type="number"
+          placeholder="Enter amount"
+          {...register("amount", { valueAsNumber: true })}
+          isInvalid={!!errors.amount}
+        />
+        <Form.Control.Feedback type="invalid">
+          {errors.amount?.message}
+        </Form.Control.Feedback>
+      </Form.Group>
+
+      <Form.Group className="mb-4 font-semibold float-left">
+        <Form.Check
+          type="checkbox"
+          label="Receive Email Reminders"
+          {...register("email")}
+          isInvalid={!!errors.email}
+        />
+        <Form.Control.Feedback type="invalid">
+          {errors.email?.message}
+        </Form.Control.Feedback>
+      </Form.Group>
+
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="w-100 fw-bold"
         style={{
-          width: "500px",
-          marginBottom: "20px",
-          marginTop: "100px",
-          border: "1px solid grey",
-          padding: "20px",
-          borderRadius: "10px",
-          backgroundColor: "white",
+          backgroundColor: "#9D00FF",
+          borderColor: "#9D00FF",
         }}
       >
-        <h3
-          style={{
-            color: "#9D00FF",
-            marginBottom: "20px",
-            textAlign: "center",
-          }}
-        >
-          Create a Budget
-        </h3>
-        <Form.Group className="mb-3">
-          <Form.Label>Budget name</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Enter budget name"
-            name="amount"
-            {...register("name")}
-          />
-          {errors.name && <p style={{ color: "red" }}>{errors.name.message}</p>}
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Category</Form.Label>
-          <Form.Select name="category" {...register("category")}>
-            <option>Choose a Category</option>
-            <option value="clothing">Clothing</option>
-            <option value="education">Education</option>
-            <option value="entertainment">Entertainment</option>
-            <option value="food">Food</option>
-            <option value="gifts">Gifts</option>
-            <option value="healthcare">Healthcare</option>
-            <option value="housing">Housing</option>
-            <option value="householdSupplies">Household Supplies</option>
-            <option value="insurance">Insurance</option>
-            <option value="personal">Personal</option>
-            <option value="retirement">Retirement</option>
-            <option value="transportation">Transportation</option>
-            <option value="utilities">Utilities</option>
-          </Form.Select>
-          {errors.category && (
-            <p style={{ color: "red" }}>{errors.category.message}</p>
-          )}
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Budget Amount</Form.Label>
-          <Form.Control
-            type="number"
-            placeholder="Enter amount"
-            name="amount"
-            {...register("amount", { valueAsNumber: true })}
-          />
-          {errors.amount && (
-            <p style={{ color: "red" }}>{errors.amount.message}</p>
-          )}
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Check
-            type="checkbox"
-            label="Receive Email Reminders"
-            name="email"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p style={{ color: "red" }}>{errors.email.message}</p>
-          )}
-        </Form.Group>
-        <Button
-          style={{
-            backgroundColor: "#9D00FF",
-            marginBottom: "20px",
-            width: "100%",
-            fontWeight: "bold",
-          }}
-          type="submit"
-          disabled={isPending}
-        >
-          {isPending ? "Creating..." : "Create Budget"}
-        </Button>
-      </Form>
-    </>
+        {isPending ? "Creating..." : "Create Budget"}
+      </Button>
+    </Form>
   );
 };
 

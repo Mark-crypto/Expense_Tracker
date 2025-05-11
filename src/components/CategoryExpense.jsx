@@ -1,7 +1,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -11,28 +10,54 @@ import {
 const CategoryExpense = ({ data }) => {
   return (
     <>
+      <h4
+        className="text-lg font-semibold text-purple-700 mb-4"
+        style={{
+          fontWeight: "650",
+          color: "#9D00FF",
+          fontSize: "18px",
+          marginBottom: "16px",
+        }}
+      >
+        Expense Predictions Based on Trends
+      </h4>
       <Table>
-        <TableCaption>Expenditure per category</TableCaption>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">#</TableHead>
-            <TableHead>Category Expense</TableHead>
-            <TableHead>Total Expense Expected </TableHead>
+          <TableRow className="bg-purple-100">
+            <TableHead className="w-[60px] font-semibold text-purple-700">
+              #
+            </TableHead>
+            <TableHead className="font-semibold text-purple-700">
+              Category
+            </TableHead>
+            <TableHead className="font-semibold text-purple-700">
+              Total Expense
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((expense, i) => {
-            return (
-              <TableRow key={i}>
-                <TableCell className="font-medium">{i + 1}</TableCell>
-                <TableCell>{expense.category}</TableCell>
-                <TableCell>{expense.total}</TableCell>
-              </TableRow>
-            );
-          })}
+          {data.map((expense, i) => (
+            <TableRow
+              key={i}
+              className={`hover:bg-purple-50 transition duration-200 ${
+                i % 2 === 0 ? "bg-gray-50" : "bg-white"
+              }`}
+            >
+              <TableCell className="font-medium text-gray-700">
+                {i + 1}
+              </TableCell>
+              <TableCell className="text-gray-800">
+                {expense.category}
+              </TableCell>
+              <TableCell className="text-gray-800">
+                KES {Number(expense.total).toLocaleString()}
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </>
   );
 };
+
 export default CategoryExpense;

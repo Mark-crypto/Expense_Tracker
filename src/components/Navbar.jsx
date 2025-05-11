@@ -1,89 +1,85 @@
-import { FaUserCircle } from "react-icons/fa";
-import { IoMdAdd } from "react-icons/io";
-import { MdSpaceDashboard } from "react-icons/md";
+import { FaUserCircle, FaWallet, FaHistory } from "react-icons/fa";
+import { IoMdAdd, IoMdSettings } from "react-icons/io";
+import { MdSpaceDashboard, MdLogout } from "react-icons/md";
 import { TbBulb } from "react-icons/tb";
-import { FaWallet } from "react-icons/fa";
-import { FaHistory } from "react-icons/fa";
-import { IoMdSettings } from "react-icons/io";
-import { MdLogout } from "react-icons/md";
+import { useNavigate, useLocation } from "react-router-dom";
 import { doSignOut } from "../services/auth";
-
-import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  // const {userLoggedIn, currentUser } = useAuth();
+  const location = useLocation();
+
   const handleLogout = () => {
     doSignOut().then(() => {
       navigate("/login");
     });
   };
+
+  const links = [
+    { label: "New Expense", icon: <IoMdAdd />, path: "/expense-form" },
+    { label: "Dashboard", icon: <MdSpaceDashboard />, path: "/dashboard" },
+    { label: "AI Predictions", icon: <TbBulb />, path: "/predictions" },
+    { label: "Budget", icon: <FaWallet />, path: "/budget" },
+    { label: "History", icon: <FaHistory />, path: "/history" },
+    // { label: "Settings", icon: <IoMdSettings />, path: "/settings" },
+  ];
+
+  const linkBaseStyles =
+    "flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition duration-200";
+  const hoverStyles = "hover:bg-purple-100 hover:text-purple-700";
+  const activeStyles = "bg-purple-100 text-purple-700 font-semibold";
+
   return (
-    <>
-      <div className="navbar bg-white">
-        <h3
-          style={{
-            fontStyle: "italic",
-            color: "#9D00FF",
-          }}
-        >
-          Expense Tracker
-        </h3>
-        <a href="/profile">
-          <button className="btn-nav">
-            <FaUserCircle style={{ marginRight: "8px", fontSize: "22px" }} />
-            {/* {currentUser.displayName ? currentUser.displayName : currentUser.email} */}
-            User Profile
-          </button>
-        </a>
-        <ul>
-          <li>
-            <a href="/expense-form">
-              <IoMdAdd style={{ marginRight: "8px", fontSize: "25px" }} />
-              New Expense
+    <aside className="h-screen w-64 bg-white/70 backdrop-blur-md border-r border-gray-200 shadow-xl flex flex-col justify-between fixed z-10">
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-center h-20 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-purple-700 italic tracking-wide">
+            Expense Tracker
+          </h2>
+        </div>
+
+        {/* User Profile */}
+        <div className="px-4 py-6 border-b border-gray-100">
+          <a
+            href="/profile"
+            className={`${linkBaseStyles} ${hoverStyles} ${
+              location.pathname === "/profile" ? activeStyles : ""
+            }`}
+          >
+            <FaUserCircle className="text-xl text-purple-500" />
+            <span>User Profile</span>
+          </a>
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="px-4 py-4 space-y-1">
+          {links.map((link) => (
+            <a
+              key={link.path}
+              href={link.path}
+              className={`${linkBaseStyles} ${hoverStyles} ${
+                location.pathname === link.path ? activeStyles : "text-gray-700"
+              }`}
+            >
+              <span className="text-lg text-purple-500">{link.icon}</span>
+              <span>{link.label}</span>
             </a>
-          </li>
-          <li>
-            <a href="/dashboard">
-              <MdSpaceDashboard
-                style={{ marginRight: "8px", fontSize: "25px" }}
-              />
-              Dashboard
-            </a>
-          </li>
-          <li>
-            <a href="/predictions">
-              <TbBulb style={{ marginRight: "8px", fontSize: "25px" }} />
-              AI Predictions
-            </a>
-          </li>
-          <li>
-            <a href="/budget">
-              <FaWallet style={{ marginRight: "8px", fontSize: "25px" }} />
-              Budget
-            </a>
-          </li>
-          <li>
-            <a href="/history">
-              <FaHistory style={{ marginRight: "8px", fontSize: "25px" }} />
-              History
-            </a>
-          </li>
-          <li>
-            <a href="/settings">
-              <IoMdSettings style={{ marginRight: "8px", fontSize: "25px" }} />
-              Settings
-            </a>
-          </li>
-          <li>
-            <a href="#" onClick={handleLogout}>
-              <MdLogout style={{ marginRight: "8px", fontSize: "25px" }} />
-              Logout
-            </a>
-          </li>
-        </ul>
+          ))}
+        </nav>
       </div>
-    </>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 text-sm text-red-600 font-medium rounded-xl transition hover:bg-red-100 hover:text-red-700 w-full text-left"
+        >
+          <MdLogout className="text-xl" />
+          Logout
+        </button>
+      </div>
+    </aside>
   );
 };
 

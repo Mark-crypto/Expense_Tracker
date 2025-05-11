@@ -13,10 +13,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
 
 const History = () => {
   const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
+
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
       return await axiosInstance.put("/expenses");
@@ -38,74 +40,60 @@ const History = () => {
       toast.error("Something went wrong");
     }
   };
+
   const handleDeleteClick = () => {
     setOpenModal(true);
   };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "flex-start",
-        minHeight: "100vh",
-      }}
-    >
-      <div style={{ width: "20%" }}>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className="w-1/5 border-r border-gray-200 bg-white shadow-md">
         <Navbar />
       </div>
-      <div
-        style={{
-          backgroundColor: "rgb(240, 240, 240)",
-          flex: 1,
-          padding: "20px",
-        }}
-      >
-        <button
-          style={{
-            backgroundColor: "#9d00ff",
-            color: "white",
-            border: "none",
-            padding: "10px",
-            margin: "40px 0 20px 10px",
-            borderRadius: "5px",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-          }}
+
+      {/* Main Content */}
+      <div className="flex-1 bg-gray-50 p-6">
+        {/* Clear History Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center gap-2 px-5 py-2 mb-6 text-white bg-purple-600 hover:bg-purple-700 font-semibold rounded shadow"
           onClick={handleDeleteClick}
         >
-          <MdDelete style={{ marginRight: "10px", fontSize: "20px" }} />
+          <MdDelete className="text-xl" />
           Clear All History
-        </button>
+        </motion.button>
+
+        {/* Dialog */}
         <Dialog open={openModal} onOpenChange={setOpenModal}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogTitle className="text-lg font-semibold">
+                Are you absolutely sure?
+              </DialogTitle>
               <DialogDescription>
                 This action cannot be undone. This will permanently clear all
                 your past expenses.
               </DialogDescription>
             </DialogHeader>
-            <button
-              style={{
-                backgroundColor: "red",
-                color: "white",
-                border: "none",
-                padding: "10px",
-                margin: "40px 0px 20px 10px",
-                borderRadius: "5px",
-                fontWeight: "bold",
-                textAlign: "center",
-              }}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 px-4 py-2 mt-6 text-white bg-red-600 hover:bg-red-700 rounded font-semibold"
               onClick={handleDelete}
               disabled={isPending}
             >
-              <MdDelete style={{ marginRight: "10px", fontSize: "20px" }} />
-              {isPending ? "Deleting..." : " Clear All History"}
-            </button>
+              <MdDelete className="text-xl" />
+              {isPending ? "Deleting..." : "Clear All History"}
+            </motion.button>
           </DialogContent>
         </Dialog>
-        <HistoryTable />
+
+        {/* History Table */}
+        <div className="mt-8">
+          <HistoryTable />
+        </div>
       </div>
     </div>
   );
