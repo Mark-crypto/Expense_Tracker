@@ -27,12 +27,10 @@ export const updateProfile = async (req, res) => {
       [name, email, goal, id]
     );
     if (!response) {
-      return res
-        .status(400)
-        .json({
-          error: true,
-          message: "Something went wrong. Try again later.",
-        });
+      return res.status(400).json({
+        error: true,
+        message: "Something went wrong. Try again later.",
+      });
     }
     res.status(200).json({ message: "Records updated successfully" });
   } catch (error) {

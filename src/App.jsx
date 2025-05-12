@@ -6,6 +6,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import SilentRefresh from "./SilentRefresh";
 import Unauthorized from "./Pages/Unauthorized";
 import ErrorPage from "./components/404Error";
+import ProfileForm from "./components/ProfileForm";
 
 const Register = lazy(() => import("./pages/Register"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -37,6 +38,7 @@ function App() {
             <Route path="/history" element={<History />} />
             <Route path="/loading" element={<LoadingSpinner />} />
             <Route path="/401" element={<Unauthorized />} />
+            <Route path="/profile-form/:id" element={<ProfileForm />} />
             <Route path="/*" element={<ErrorPage />} />
           </Routes>
         </BrowserRouter>
