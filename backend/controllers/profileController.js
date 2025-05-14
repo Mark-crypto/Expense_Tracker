@@ -20,11 +20,11 @@ export const getProfile = async (req, res) => {
 // Update profile
 export const updateProfile = async (req, res) => {
   const { id } = req.params;
-  const { name, email, goal } = req.body;
+  const { name, occupation, age, goal } = req.body;
   try {
     const response = await connection.execute(
-      "UPDATE profiles SET name=?, email=?, goal=? WHERE profile_id=?",
-      [name, email, goal, id]
+      "UPDATE profiles SET name=?, occupation=?, age=?, goal=? WHERE profile_id=?",
+      [name, occupation, age, goal, id]
     );
     if (!response) {
       return res.status(400).json({

@@ -12,124 +12,134 @@ import { registerSchema } from "@/schemas/zodSchemas";
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data) => {
-      return await axiosInstance.post("/auth/signup", data);
-    },
+    mutationFn: async (data) => await axiosInstance.post("/auth/signup", data),
     onSuccess: (data) => {
       reset();
       toast.success(data.data.message);
-      setTimeout(() => {
-        navigate("/");
-      }, 3000);
+      setTimeout(() => navigate("/"), 3000);
     },
     onError: () => {
-      toast.error("Something went wrong. Check you provided correct inputs.");
+      toast.error("Something went wrong. Check your inputs.");
     },
   });
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
+    reset,
   } = useForm({
     resolver: zodResolver(registerSchema),
     mode: "onBlur",
   });
+
   const password = watch("password");
+
   const submitForm = (data) => {
-    try {
-      mutate(data);
-    } catch (error) {
-      toast.error("Something went wrong");
-    }
+    mutate(data);
   };
+
   return (
     <>
       <ToastContainer />
-      <Form
-        onSubmit={handleSubmit(submitForm)}
-        style={{
-          marginBottom: "20px",
-        }}
-      >
-        <Form.Group className="mb-3">
-          <Form.Label>Fullname</Form.Label>
+      <Form onSubmit={handleSubmit(submitForm)} className="space-y-4">
+        {/* Full Name */}
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">
+            Full Name
+          </Form.Label>
           <Form.Control
             type="text"
             placeholder="Enter name"
             {...register("name")}
-            name="name"
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
           />
-          {errors.name && <p style={{ color: "red" }}>{errors.name.message}</p>}
+          {errors.name && (
+            <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+          )}
         </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Email address</Form.Label>
+
+        {/* Email */}
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">
+            Email address
+          </Form.Label>
           <Form.Control
             type="email"
             placeholder="Enter email"
             {...register("email")}
-            name="email"
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
           />
           {errors.email && (
-            <p style={{ color: "red" }}>{errors.email.message}</p>
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
           )}
         </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Password</Form.Label>
+
+        {/* Password */}
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">
+            Password
+          </Form.Label>
           <Form.Control
             type="password"
             placeholder="Password"
             {...register("password")}
-            name="password"
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
           />
           {errors.password && (
-            <p style={{ color: "red" }}>{errors.password.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
           )}
-          <br />
-          <Form.Text className="text-muted">
-            The password must contain:
-            <ul>
-              <li>a lowercase letter</li>
-              <li>an uppercase letter</li>
-              <li>a number</li>
-              <li>a special character</li>
-              <li>at least 8 characters long</li>
+          <Form.Text className="text-gray-600 text-sm block mt-2">
+            Password must contain:
+            <ul className="list-disc ml-6 mt-1">
+              <li>At least one lowercase letter</li>
+              <li>At least one uppercase letter</li>
+              <li>At least one number</li>
+              <li>At least one special character</li>
+              <li>Minimum 8 characters</li>
             </ul>
           </Form.Text>
         </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Confirm Password</Form.Label>
+
+        {/* Confirm Password */}
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">
+            Confirm Password
+          </Form.Label>
           <Form.Control
             type="password"
             placeholder="Confirm Password"
-            name="confirmPassword"
             {...register("confirmPassword", {
               validate: (value) =>
                 value === password || "Passwords do not match",
             })}
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
           />
+          {errors.confirmPassword && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.confirmPassword.message}
+            </p>
+          )}
         </Form.Group>
-        <Button
-          style={{
-            backgroundColor: "#9D00FF",
-            marginBottom: "20px",
-            width: "100%",
-          }}
+
+        {/* Submit Button */}
+        <button
           type="submit"
           disabled={isPending}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded transition-all duration-200 shadow-sm"
         >
-          {isPending ? "Submitting..." : "Submit"}
-        </Button>
-        <br />
-        <Form.Text className="text-muted">
+          {isPending ? "Submitting..." : "Register"}
+        </button>
+
+        {/* Already have an account? */}
+        <Form.Text className="text-gray-600 text-sm block text-center mt-4">
           Already have an account?{" "}
           <Link
             to="/login"
-            style={{
-              textDecoration: "none",
-              color: "#9D00FF",
-              fontWeight: "bold",
-            }}
+            className="text-purple-700 font-semibold hover:underline"
           >
             Sign in
           </Link>

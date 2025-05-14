@@ -1,106 +1,111 @@
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import axiosInstance from "@/axiosInstance";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/schemas/zodSchemas";
+import { motion } from "framer-motion";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data) => {
-      return await axiosInstance.post("/auth/login", { data });
-    },
+    mutationFn: async (data) =>
+      await axiosInstance.post("/auth/login", { data }),
     onSuccess: () => {
       reset();
       navigate("/dashboard");
     },
-    onError: () => {
-      toast.error("Invalid email or password");
-    },
+    onError: () => toast.error("Invalid email or password"),
   });
+
   const {
     handleSubmit,
     register,
+    reset,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(loginSchema), mode: "onBlur" });
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+  });
+
   const submitForm = (data) => {
     try {
       mutate(data);
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     }
   };
+
   return (
-    <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-      <Form onSubmit={handleSubmit(submitForm)}>
-        <Form.Group className="mb-3">
-          <Form.Label>Email address</Form.Label>
-          <Form.Control
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full"
+    >
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <form onSubmit={handleSubmit(submitForm)} className="space-y-5">
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Email address
+          </label>
+          <input
             type="email"
+            id="email"
             placeholder="Enter email"
             {...register("email")}
-            name="email"
+            className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-purple-600 focus:border-purple-600"
           />
           {errors.email && (
-            <p style={{ color: "red" }}>{errors.email.message}</p>
+            <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
           )}
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Password</Form.Label>
-          <Form.Control
+        </div>
+
+        <div>
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Password
+          </label>
+          <input
             type="password"
-            placeholder="Password"
+            id="password"
+            placeholder="Enter password"
             {...register("password")}
-            name="password"
+            className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-purple-600 focus:border-purple-600"
           />
           {errors.password && (
-            <p style={{ color: "red" }}>{errors.password.message}</p>
+            <p className="text-red-600 text-sm mt-1">
+              {errors.password.message}
+            </p>
           )}
-        </Form.Group>
-        <Button
-          style={{
-            backgroundColor: "#9D00FF",
-            marginBottom: "20px",
-            width: "100%",
-          }}
+        </div>
+
+        <button
           type="submit"
           disabled={isPending}
+          className="w-full bg-purple-700 text-white py-2 px-4 rounded hover:bg-purple-800 transition-colors duration-300 shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isPending ? "Logging in..." : "Login"}
-        </Button>
-        <br />
-        <Form.Text className="text-muted">
-          Don't have an account?{" "}
+        </button>
+
+        <p className="text-sm text-gray-600">
+          Don’t have an account?{" "}
           <Link
             to="/register"
-            style={{
-              textDecoration: "none",
-              color: "#9D00FF",
-              fontWeight: "bold",
-            }}
+            className="text-purple-700 font-semibold hover:underline"
           >
             Register
           </Link>
-        </Form.Text>
-      </Form>
-    </>
+        </p>
+      </form>
+    </motion.div>
   );
 };
 
