@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Login from "./pages/Login";
-import LoadingSpinner from "./components/LoadingSpinner";
+import Loading from "./components/Loading";
 import SilentRefresh from "./SilentRefresh";
 import Unauthorized from "./Pages/Unauthorized";
 import ErrorPage from "./components/404Error";
@@ -23,7 +23,7 @@ const ExpenseForm = lazy(() => import("./components/ExpenseForm"));
 function App() {
   return (
     <>
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense fallback={<Loading />}>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login />} />
