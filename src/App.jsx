@@ -30,15 +30,14 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dash" element={<Dash />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:id" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/expense-form" element={<ExpenseForm />} />
             <Route path="/predictions" element={<Prediction />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/history" element={<History />} />
-            <Route path="/loading" element={<LoadingSpinner />} />
             <Route path="/401" element={<Unauthorized />} />
-            <Route path="/profile-form/:id" element={<ProfileForm />} />
+            <Route path="/profile/:id/edit-form" element={<ProfileForm />} />
             <Route path="/*" element={<ErrorPage />} />
           </Routes>
         </BrowserRouter>

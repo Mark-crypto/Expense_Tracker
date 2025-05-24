@@ -2,10 +2,11 @@ import connection from "../database.js";
 
 // Get profile
 export const getProfile = async (req, res) => {
-  const { id } = req.params;
+  let { id } = req.params;
+  id = parseInt(id);
   try {
     const [row] = await connection.execute(
-      "SELECT * FROM profiles WHERE profile_id = ?",
+      "SELECT user_id, name, email, goal, age,occupation FROM users WHERE user_id = ?",
       [id]
     );
     res
@@ -19,11 +20,12 @@ export const getProfile = async (req, res) => {
 
 // Update profile
 export const updateProfile = async (req, res) => {
-  const { id } = req.params;
+  let { id } = req.params;
+  id = parseInt(id);
   const { name, occupation, age, goal } = req.body;
   try {
     const response = await connection.execute(
-      "UPDATE profiles SET name=?, occupation=?, age=?, goal=? WHERE profile_id=?",
+      "UPDATE users SET name=?, occupation=?, age=?, goal=? WHERE user_id=?",
       [name, occupation, age, goal, id]
     );
     if (!response) {
@@ -41,10 +43,11 @@ export const updateProfile = async (req, res) => {
 
 // Delete profile
 export const deleteProfile = async (req, res) => {
-  const { id } = req.params;
+  let { id } = req.params;
+  id = parseInt(id);
   try {
     const response = await connection.execute(
-      "DELETE FROM profiles WHERE profile_id = ?",
+      "DELETE FROM users WHERE user_id = ?",
       [id]
     );
     if (!response) {

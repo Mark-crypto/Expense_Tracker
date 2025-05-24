@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import axiosInstance from "@/axiosInstance";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "@/schemas/zodSchemas";
+import { loginSchema } from "@/zodSchemas/schemas.js";
 import { motion } from "framer-motion";
 
 const LoginForm = () => {

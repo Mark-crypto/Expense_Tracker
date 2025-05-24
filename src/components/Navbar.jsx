@@ -44,7 +44,7 @@ const Navbar = () => {
           <a
             href="/profile"
             className={`${linkBaseStyles} ${hoverStyles} ${
-              location.pathname === "/profile" ? activeStyles : ""
+              location.pathname === `/profile/1` ? activeStyles : ""
             }`}
           >
             <FaUserCircle className="text-xl text-purple-500" />

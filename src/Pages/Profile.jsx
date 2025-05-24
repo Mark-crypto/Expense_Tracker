@@ -4,14 +4,27 @@ import Navbar from "@/components/Navbar";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import ProfileForm from "@/components/ProfileForm";
 
 const Profile = () => {
+  let { id } = useParams();
+  id = parseInt(id);
   const { data, isLoading, error } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
-      return await axiosInstance.get("/profile");
+      return await axiosInstance.get(`/profile/${id}`);
     },
   });
+
   if (isLoading) {
     return <h1>Loading....</h1>;
   }
@@ -31,15 +44,31 @@ const Profile = () => {
           <div className="flex justify-center">
             <FaUserCircle className="text-gray-400 text-7xl" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">Mark Abong'o</h2>
-          <p className="text-gray-500">Occupation: Web Developer</p>
-          <p className="text-gray-500">Age: 29</p>
+          <h2 className="text-xl font-semibold text-gray-800">
+            {data?.data?.data?.name || "N/A"}
+          </h2>
+          <p className="text-gray-500">
+            Email: {data?.data?.data?.email || "N/A"}
+          </p>
+          <p className="text-gray-500">
+            Occupation: {data?.data?.data?.occupation || "N/A"}
+          </p>
+          <p className="text-gray-500">
+            Age: {data?.data?.data?.age || "N/A"} years
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed break-words whitespace-pre-line max-w-full">
+            <span className="font-medium text-gray-700">Goal:</span>{" "}
+            {data?.data?.data?.goal || "N/A"}
+          </p>
+
           <div className="flex justify-center space-x-4">
-            <a href={`/profile-form/${data?.data?.profile_id}`}>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-purple-700 transition">
-                Edit Profile
-              </button>
-            </a>
+            <Dialog>
+              <DialogTrigger className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-purple-700 transition">
+                <ProfileForm />
+              </DialogTrigger>
+              <DialogContent></DialogContent>
+            </Dialog>
+
             <a href="/history">
               <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm hover:bg-gray-300 transition">
                 View Expenses

@@ -4,7 +4,7 @@ import BarChart1 from "../components/BarChart1";
 import BarChart2 from "../components/BarChart2";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import Loading from "@/components/Loading";
 import { toast, ToastContainer } from "react-toastify";
 import TopFiveRolling from "@/components/TopFiveRolling";
 import BottomFiveRolling from "@/components/BottomFiveRolling";
@@ -19,7 +19,7 @@ const Dashboard = () => {
   });
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <Loading />;
   }
   if (error) {
     toast.error("Something went wrong");
