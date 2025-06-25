@@ -30,7 +30,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dash" element={<Dash />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/new/profile/:id" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/expense-form" element={<ExpenseForm />} />
             <Route path="/predictions" element={<Prediction />} />

@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "../components/Navbar";
 import axiosInstance from "@/axiosInstance.js";
-import LoadingSpinner from "@/components/LoadingSpinner.jsx";
 import { toast } from "react-toastify";
 import CategoryBudget from "@/components/CategoryBudget.jsx";
 import CategoryExpense from "@/components/CategoryExpense.jsx";
@@ -10,6 +9,7 @@ import BottomFive from "@/components/BottomFive.jsx";
 import MonthlyAverage from "@/components/MonthlyAverage.jsx";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Loading from "@/components/Loading";
 
 const Prediction = () => {
   const [amount, setAmount] = useState(0);
@@ -25,7 +25,7 @@ const Prediction = () => {
   const isHigh = amount > avgAmount;
   const result = isHigh ? "Unexpectedly High Expense" : "Expense Within Budget";
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) return <Loading />;
   if (error) toast.error("Something went wrong");
 
   return (

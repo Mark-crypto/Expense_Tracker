@@ -4,7 +4,6 @@ import Table from "react-bootstrap/Table";
 import debounce from "lodash/debounce";
 import { useState, useMemo, useEffect } from "react";
 import Button from "react-bootstrap/Button";
-import LoadingSpinner from "./LoadingSpinner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
@@ -16,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import Loading from "./Loading";
 
 const BudgetTable = () => {
   const [openDialogId, setOpenDialogId] = useState(null);
@@ -94,7 +94,7 @@ const BudgetTable = () => {
     }
   };
 
-  if (isLoading || searchLoading) return <LoadingSpinner />;
+  if (isLoading || searchLoading) return <Loading />;
   if (error) toast.error("Something went wrong.");
 
   return (

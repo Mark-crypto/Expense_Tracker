@@ -2,7 +2,7 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { toast } from "react-toastify";
-import LoadingSpinner from "./LoadingSpinner";
+import Loading from "./Loading";
 
 const HistoryTable = () => {
   const [page, setPage] = useState(1);
@@ -36,7 +36,7 @@ const HistoryTable = () => {
     "December",
   ];
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) return <Loading />;
 
   const from = (page - 1) * expenseData?.data?.meta?.limit + 1;
   const to = Math.min(

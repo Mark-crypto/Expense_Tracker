@@ -42,7 +42,7 @@ const Navbar = () => {
         {/* User Profile */}
         <div className="px-4 py-6 border-b border-gray-100">
           <a
-            href="/profile"
+            href="/new/profile/1"
             className={`${linkBaseStyles} ${hoverStyles} ${
               location.pathname === `/profile/1` ? activeStyles : ""
             }`}

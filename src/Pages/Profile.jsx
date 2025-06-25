@@ -5,15 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import ProfileForm from "@/components/ProfileForm";
+import Loading from "@/components/Loading";
 
 const Profile = () => {
   let { id } = useParams();
@@ -26,7 +20,7 @@ const Profile = () => {
   });
 
   if (isLoading) {
-    return <h1>Loading....</h1>;
+    return <Loading />;
   }
   if (error) {
     toast.error("SOmething went wrong");
