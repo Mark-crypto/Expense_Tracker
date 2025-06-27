@@ -5,13 +5,17 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import ProfileForm from "@/components/ProfileForm";
+import Button from "react-bootstrap/Button";
+// import ProfileForm from "@/components/ProfileForm";
 import Loading from "@/components/Loading";
+import { useState } from "react";
 
 const Profile = () => {
   let { id } = useParams();
   id = parseInt(id);
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
   const { data, isLoading, error } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -56,13 +60,27 @@ const Profile = () => {
           </p>
 
           <div className="flex justify-center space-x-4">
-            <Dialog>
-              <DialogTrigger className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-purple-700 transition">
-                <ProfileForm />
-              </DialogTrigger>
-              <DialogContent></DialogContent>
-            </Dialog>
+            <Button
+              onClick={handleShow}
+              className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-purple-700 transition"
+            >
+              Edit profile
+            </Button>
+            <Modal.Dialog>
+              <Modal.Header closeButton>
+                <Modal.Title>Modal title</Modal.Title>
+              </Modal.Header>
 
+              <Modal.Body>
+                <p>Modal body text goes here.</p>
+              </Modal.Body>
+
+              <Modal.Footer>
+                <Button variant="secondary">Close</Button>
+                <Button variant="primary">Save changes</Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+            {/* <ProfileForm show={show} handleClose={handleClose} /> */}
             <a href="/history">
               <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm hover:bg-gray-300 transition">
                 View Expenses
