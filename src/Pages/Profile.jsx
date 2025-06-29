@@ -66,21 +66,22 @@ const Profile = () => {
             >
               Edit profile
             </Button>
-            <Modal.Dialog>
+            <Modal show={show} onHide={handleClose}>
               <Modal.Header closeButton>
-                <Modal.Title>Modal title</Modal.Title>
+                <Modal.Title>Modal heading</Modal.Title>
               </Modal.Header>
-
               <Modal.Body>
-                <p>Modal body text goes here.</p>
+                <ProfileForm profileData={data} />
               </Modal.Body>
-
               <Modal.Footer>
-                <Button variant="secondary">Close</Button>
-                <Button variant="primary">Save changes</Button>
+                <Button variant="secondary" onClick={handleClose}>
+                  Close
+                </Button>
+                <Button variant="primary" onClick={handleClose}>
+                  Save Changes
+                </Button>
               </Modal.Footer>
-            </Modal.Dialog>
-            {/* <ProfileForm show={show} handleClose={handleClose} /> */}
+            </Modal>
             <a href="/history">
               <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm hover:bg-gray-300 transition">
                 View Expenses
