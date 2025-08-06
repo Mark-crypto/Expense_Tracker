@@ -6,7 +6,8 @@ import axiosInstance from "@/axiosInstance";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
 import Button from "react-bootstrap/Button";
-// import ProfileForm from "@/components/ProfileForm";
+import ProfileForm from "@/components/ProfileForm";
+import Modal from "react-bootstrap/Modal";
 import Loading from "@/components/Loading";
 import { useState } from "react";
 
@@ -73,14 +74,6 @@ const Profile = () => {
               <Modal.Body>
                 <ProfileForm profileData={data} />
               </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={handleClose}>
-                  Close
-                </Button>
-                <Button variant="primary" onClick={handleClose}>
-                  Save Changes
-                </Button>
-              </Modal.Footer>
             </Modal>
             <a href="/history">
               <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm hover:bg-gray-300 transition">

@@ -8,7 +8,7 @@ import cookieParser from "cookie-parser";
 import { login, refresh, signUp } from "./controllers/authController.js";
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5050;
 
 //middlewares
 app.use(express.json());

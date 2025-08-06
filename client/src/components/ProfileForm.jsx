@@ -97,7 +97,6 @@ const ProfileForm = (profileData) => {
           </button>
         </Form>
       </div>
-      ;
     </>
   );
 };
