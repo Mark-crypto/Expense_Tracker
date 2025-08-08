@@ -7,6 +7,7 @@ import SilentRefresh from "./SilentRefresh";
 import Unauthorized from "./Pages/Unauthorized";
 import ErrorPage from "./components/404Error";
 import ProfileForm from "./components/ProfileForm";
+import AdminDashboard from "./Pages/AdminDashboard.jsx"
 
 const Register = lazy(() => import("./pages/Register"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -38,6 +39,7 @@ function App() {
             <Route path="/history" element={<History />} />
             <Route path="/401" element={<Unauthorized />} />
             <Route path="/profile/:id/edit-form" element={<ProfileForm />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/*" element={<ErrorPage />} />
           </Routes>
         </BrowserRouter>

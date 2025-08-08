@@ -8,7 +8,7 @@ import {
 const router = Router();
 
 router.get("/profile/:id", getProfile);
-router.put("/profile/:id", updateProfile);
+router.put("/profile/:id/edit-form", updateProfile);
 router.delete("/profile/:id", deleteProfile);
 
 export default router;
