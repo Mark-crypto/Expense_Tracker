@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
+//check whether it is id or user_id
+
 export const signUp = async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -49,7 +51,7 @@ export const login = async (req, res) => {
         .json({ error: true, message: "Invalid email or password" });
     }
     const doPasswordsMatch = await bcrypt.compare(password, user[0].password);
-    if (doPasswordsMatch === false) {
+    if (!doPasswordsMatch) {
       return res
         .status(400)
         .json({ error: true, message: "Invalid email or password" });
@@ -64,7 +66,7 @@ export const login = async (req, res) => {
       process.env.JWT_REFRESH_TOKEN,
       { expiresIn: "7d" }
     );
-    const userId = user[0].user_id;
+    const userId = user[0].id;
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await connection.execute(
       "INSERT INTO refresh_tokens VALUES (user_id, token,expires_at )",
@@ -78,10 +80,12 @@ export const login = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       maxAge: 15 * 60 * 1000,
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production"
     });
     res.cookie("refreshToken", refreshToken, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production"
     });
     res.status(200).json({ message: "You have successfully logged in" });
   } catch (error) {

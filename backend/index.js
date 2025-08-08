@@ -9,6 +9,11 @@ import { login, refresh, signUp } from "./controllers/authController.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests, please try again later",
+});
 
 //middlewares
 app.use(express.json());
@@ -19,16 +24,13 @@ app.use(
     credentials: true,
   })
 );
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests, please try again later",
-});
-app.post("/auth/refresh", refresh);
-app.post("/auth/login", login);
-app.post("/auth/signup", signUp);
 
 app.use("/api", limiter);
+
+app.post("/api/auth/refresh", refresh);
+app.post("/api/auth/login", login);
+app.post("/api/auth/signup", signUp);
+
 app.use("/api", apiRouter);
 
 //server
