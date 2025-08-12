@@ -72,7 +72,7 @@ const Profile = () => {
                 <Modal.Title>Modal heading</Modal.Title>
               </Modal.Header>
               <Modal.Body>
-                <ProfileForm profileData={data} />
+                <ProfileForm profileData={data} setShow={setShow} />
               </Modal.Body>
             </Modal>
             <a href="/history">

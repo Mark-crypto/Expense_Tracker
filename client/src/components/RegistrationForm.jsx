@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { registerSchema } from "@/schemas/zodSchemas";
+import { registerSchema } from "@/zodSchemas/schemas.js";
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
@@ -138,7 +138,7 @@ const RegistrationForm = () => {
         <Form.Text className="text-gray-600 text-sm block text-center mt-4">
           Already have an account?{" "}
           <Link
-            to="/login"
+            to="/"
             className="text-purple-700 font-semibold hover:underline"
           >
             Sign in

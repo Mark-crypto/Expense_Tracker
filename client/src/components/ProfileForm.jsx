@@ -1,40 +1,37 @@
 import Form from "react-bootstrap/Form";
-import {useEffect} from "react"
+import { useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema } from "@/zodSchemas/schemas.js";
-import { useParams } from 'react-router-dom';
+import { useParams } from "react-router-dom";
 
-const ProfileForm = (profileData) => {
-  const {id} = useParams();
+const ProfileForm = ({ profileData, setShow }) => {
+  const { id } = useParams();
+  const queryClient = useQueryClient();
   const {
     handleSubmit,
     formState: { errors },
     register,
-    reset
+    reset,
   } = useForm({
     resolver: zodResolver(profileSchema),
     mode: "onBlur",
-
   });
-const userData = profileData?.data?.data?.data;  //{name,email,occupation,years,goal} 
-  // const {data:useData, error, isFetching} = useQuery({
-  //   queryKey:["profileFormData"],
-  //   queryFn:async()=>{
-  //     return await axiosInstance.get(`/profile/${id}`)
-  //   }
-  // }); OPTION TWO BALANCE
+  const userData = profileData?.data?.data;
   useEffect(() => {
     if (userData) {
-      reset(userData); 
+      reset(userData);
     }
   }, [userData, reset]);
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data) => await axiosInstance.put(`/profile/${id}/edit-form`, data),
+    mutationFn: async (data) =>
+      await axiosInstance.put(`/profile/${id}/edit-form`, data),
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      setShow(false);
       toast.success(data.data.message);
     },
     onError: () => toast.error("Error creating expense"),
@@ -47,9 +44,6 @@ const userData = profileData?.data?.data?.data;  //{name,email,occupation,years,
       toast.error("Something went wrong.");
     }
   };
-// if(error){
-// toast.error("Something went wrong")
-// }  OPTION TWO
 
   return (
     <>
@@ -88,7 +82,7 @@ const userData = profileData?.data?.data?.data;  //{name,email,occupation,years,
             <Form.Label className="font-medium">Age</Form.Label>
             <Form.Control
               type="number"
-              {...register("years", { valueAsNumber: true })}
+              {...register("age", { valueAsNumber: true })}
             />
             {errors.age && (
               <p className="text-sm text-red-600 mt-1">{errors.age.message}</p>
