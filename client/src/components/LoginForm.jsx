@@ -11,8 +11,9 @@ const LoginForm = () => {
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data) =>
-      await axiosInstance.post("/auth/login", { data }),
+    mutationFn: async (data) => {
+      return await axiosInstance.post("/auth/login", data);
+    },
     onSuccess: () => {
       reset();
       navigate("/dashboard");

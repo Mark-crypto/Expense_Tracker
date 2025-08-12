@@ -6,6 +6,7 @@ import apiRouter from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { login, refresh, signUp } from "./controllers/authController.js";
+import { isTokenVerified } from "./middlewares/verifyToken.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -31,7 +32,7 @@ app.post("/api/auth/refresh", refresh);
 app.post("/api/auth/login", login);
 app.post("/api/auth/signup", signUp);
 
-app.use("/api", apiRouter);
+app.use("/api", isTokenVerified, apiRouter);
 
 //server
 app.listen(PORT, () => {

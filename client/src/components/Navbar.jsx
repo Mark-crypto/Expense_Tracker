@@ -4,15 +4,29 @@ import { MdSpaceDashboard, MdLogout } from "react-icons/md";
 import { TbBulb } from "react-icons/tb";
 import { useNavigate, useLocation } from "react-router-dom";
 import { doSignOut } from "../services/auth";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/axiosInstance";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { mutate } = useMutation({
+    mutationFn: async () => {
+      return axiosInstance.post("/auth/logout", {});
+    },
+    onSuccess: () => {
+      navigate("/");
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+
   const handleLogout = () => {
-    doSignOut().then(() => {
-      navigate("/login");
-    });
+    mutate();
+    doSignOut().then(() => {});
   };
 
   const links = [

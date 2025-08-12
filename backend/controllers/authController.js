@@ -8,11 +8,13 @@ dotenv.config();
 
 export const signUp = async (req, res) => {
   const { name, email, password } = req.body;
+
   try {
     const [isExistingEmail] = await connection.execute(
       "SELECT * FROM users WHERE email = ?",
       [email]
     );
+    console.log(isExistingEmail);
     if (isExistingEmail[0]) {
       return res
         .status(500)
@@ -57,19 +59,19 @@ export const login = async (req, res) => {
         .json({ error: true, message: "Invalid email or password" });
     }
     const accessToken = jwt.sign(
-      { userId: user[0].id, name: user[0].name, role: user[0].role },
+      { userId: user[0].user_id, name: user[0].name, role: user[0].role },
       process.env.JWT_ACCESS_TOKEN,
       { expiresIn: "15m" }
     );
     const refreshToken = jwt.sign(
-      { userId: user[0].id, name: user[0].name, role: user[0].role },
+      { userId: user[0].user_id, name: user[0].name, role: user[0].role },
       process.env.JWT_REFRESH_TOKEN,
       { expiresIn: "7d" }
     );
-    const userId = user[0].id;
+    const userId = user[0].user_id;
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await connection.execute(
-      "INSERT INTO refresh_tokens VALUES (user_id, token,expires_at )",
+      "INSERT INTO refresh_tokens(user_id,token,expires_at) VALUES (?,?,?)",
       [userId, refreshToken, expiresAt]
     );
     if (!accessToken || !refreshToken) {
@@ -80,19 +82,19 @@ export const login = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       maxAge: 15 * 60 * 1000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production"
+      secure: process.env.NODE_ENV === "production",
     });
     res.cookie("refreshToken", refreshToken, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production"
+      secure: process.env.NODE_ENV === "production",
     });
     res.status(200).json({ message: "You have successfully logged in" });
   } catch (error) {
     res
       .status(500)
       .json({ error: true, message: "An error occurred. Try again later." });
-    console.log("Error:", error);
+    console.log("Login Error:", error);
   }
 };
 
