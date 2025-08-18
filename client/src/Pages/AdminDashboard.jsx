@@ -10,19 +10,19 @@ const userInfo = [
   { groupName: "Inactive Users", total: 10 },
 ];
 const AdminDashboard = () => {
-  // const { data, error, isLoading } = useQuery({
-  //   queryKey: ["admin-dashboard"],
-  //   queryFn: async () => {
-  //     return await axiosInstance.get("/admin-dashboard");
-  //   },
-  // });
-
-  // if (isLoading) {
-  //   return <Loading />;
-  // }
-  // if (error) {
-  //   toast.error("Something went wrong");
-  // }
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["admin-dashboard"],
+    queryFn: async () => {
+      return await axiosInstance.get("/admin-dashboard");
+    },
+  });
+  console.log(data.data);
+  if (isLoading) {
+    return <Loading />;
+  }
+  if (error) {
+    console.log("Something went wrong");
+  }
   return (
     <>
       <h1>Hello, Admin</h1>

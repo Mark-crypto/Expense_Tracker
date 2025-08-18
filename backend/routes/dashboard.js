@@ -6,6 +6,6 @@ const router = Router();
 
 router.get("/dashboard/:id", getReportData);
 router.get("/dashboard", reports);
-router.get("/admin-dashboard", isUserAdmin, adminDashboard);
+router.get("/admin-dashboard", adminDashboard);
 
 export default router;
