@@ -11,14 +11,18 @@ export const isTokenVerified = (req, res, next) => {
         message: "Access denied. Login to access resources.",
       });
     }
-    const user = jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN);
-    if (!user) {
+    const decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN);
+    if (!decoded) {
       return res.status(401).json({
         error: true,
         message: "Access denied. Login to access resources.",
       });
     }
-    req.userInfo = user;
+     req.user = {
+      userId: decoded.userId,
+      name: decoded.name,
+      role: decoded.role,
+    };
     next();
   } catch (error) {
     console.log("Error:", error);

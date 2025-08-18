@@ -4,11 +4,14 @@ import Loading from "../components/Loading.jsx";
 import UserCard from "@/components/UserCard.jsx";
 import UserTable from "@/components/UserTable.jsx";
 
-const userInfo = [
-  { groupName: "Total Users", total: 50 },
-  { groupName: "Active Users", total: 40 },
-  { groupName: "Inactive Users", total: 10 },
-];
+//npm install chart.js react-chartjs-2
+
+
+// const userInfo = [
+//   { groupName: "Total Users", total: 50 },
+//   { groupName: "Active Users", total: 40 },
+//   { groupName: "Inactive Users", total: 10 },
+// ];
 const AdminDashboard = () => {
   const { data, error, isLoading } = useQuery({
     queryKey: ["admin-dashboard"],
@@ -24,20 +27,31 @@ const AdminDashboard = () => {
     console.log("Something went wrong");
   }
   return (
-    <>
-      <h1>Hello, Admin</h1>
-      <div>
-        <UserCard />
-      </div>
-      <div>
-        <UserTable />
-      </div>
-      <div>
-        <p>Graph: line graph of users joining over the year</p>
-      </div>
-      <p> I will display: users, reports, and possibly logs</p>
-    </>
-  );
+  <div className="admin-dashboard">
+    <h1>Hello, Admin</h1>
+
+    <section>
+      <UserCard userInfo={userInfo} />
+    </section>
+
+    <section>
+      <UserTable users={data?.users} />
+    </section>
+
+    <section>
+      <UserGrowthGraph data={data?.userGraphData} />
+    </section>
+
+    <section>
+      <RecentReports reports={data?.reports} />
+    </section>
+
+    <section>
+      <AuditLogs logs={data?.logs} />
+    </section>
+  </div>
+);
+
 };
 
 export default AdminDashboard;

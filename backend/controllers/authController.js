@@ -3,8 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
-
-//check whether it is id or user_id
+//add crypto.randomBytes(64).toString('hex')
+//Check expires at on table token
+//look into winston for prpoduction logging
+//Sanitize inputs with express-validator
 
 export const signUp = async (req, res) => {
   const { name, email, password } = req.body;
@@ -17,7 +19,7 @@ export const signUp = async (req, res) => {
     console.log(isExistingEmail);
     if (isExistingEmail[0]) {
       return res
-        .status(500)
+        .status(409)
         .json({ error: true, message: "Email is already in use." });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,7 +64,7 @@ export const login = async (req, res) => {
       { userId: user[0].user_id, name: user[0].name, role: user[0].role },
       process.env.JWT_ACCESS_TOKEN,
       { expiresIn: "15m" }
-    );
+    ); 
     const refreshToken = jwt.sign(
       { userId: user[0].user_id, name: user[0].name, role: user[0].role },
       process.env.JWT_REFRESH_TOKEN,
@@ -82,11 +84,13 @@ export const login = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       maxAge: 15 * 60 * 1000,
       httpOnly: true,
+      sameSite:'strict',
       secure: process.env.NODE_ENV === "production",
     });
     res.cookie("refreshToken", refreshToken, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
+      sameSite:'strict',
       secure: process.env.NODE_ENV === "production",
     });
     res.status(200).json({ message: "You have successfully logged in" });
@@ -118,11 +122,15 @@ export const refresh = async (req, res) => {
       return res.status(401).json({ message: "Access denied. Log in " });
     }
     const token = await connection.execute(
-      "SELECT token FROM refresh_tokens WHERE token=?",
+      "SELECT token,expires_at FROM refresh_tokens WHERE token=?",
       [refreshToken]
     );
     if (!token.length) {
       return res.status(403).json({ message: "Access denied. Log in" });
+    }
+    const now = new Date();
+    if(new Date(token[0][0].expires_at) < now){
+      return res.status(403).json({ message: "Token expired. Log in again." });
     }
     const user = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);
     const newAccessToken = jwt.sign(
