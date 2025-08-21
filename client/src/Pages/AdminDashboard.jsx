@@ -2,7 +2,9 @@ import axiosInstance from "../axiosInstance.js";
 import { useQuery } from "@tanstack/react-query";
 import Loading from "../components/Loading.jsx";
 import UserCard from "@/components/UserCard.jsx";
-import UserTable from "@/components/UserTable.jsx";
+import UserTable from "@/components/UserTable.jsx"
+import RoleTable from "@/components/RoleTable.jsx";
+import LineGraph from "@/components/LineGraph.jsx";
 
 //npm install chart.js react-chartjs-2
 
@@ -24,7 +26,7 @@ const AdminDashboard = () => {
     <div className="admin-dashboard">
       <h1>Hello, Admin</h1>
       {data?.data?.data.map((user) => {
-        return (
+        return ( 
           <div key={user.user_id}>
             <p>{user.name}</p>
             <p>{user.email}</p>
@@ -42,25 +44,18 @@ const AdminDashboard = () => {
         <p>Name, job, goal</p>
         <p>User to roles</p>
       </div>
-      {/* <section>
-      <UserCard userInfo={userInfo} />
-    </section>
-
-    <section>
-      <UserTable users={data?.users} />
-    </section>
-
-    <section>
-      <UserGrowthGraph data={data?.userGraphData} />
-    </section>
-
-    <section>
-      <RecentReports reports={data?.reports} />
-    </section>
-
-    <section>
-      <AuditLogs logs={data?.logs} />
-    </section> */}
+      <div>
+        <UserCard/>
+      </div>
+      <div>
+        <UserTable/>
+      </div>
+      <div>
+        <LineGraph/>
+      </div>
+      <div>
+        <RoleTable/>
+      </div>
     </div>
   );
 };

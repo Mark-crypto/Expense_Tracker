@@ -2,7 +2,7 @@ const UserTable = () => {
   return (
     <>
       <div>UserTable</div>
-      <p>rows: no, name, email, status, action</p>
+      <p>rows: no, Name, email, job, goal</p>
     </>
   );
 };
