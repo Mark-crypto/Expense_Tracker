@@ -34,11 +34,11 @@ const AdminDashboard = () => {
         );
       })}
       <div>
-        <h1>
+        <h1> 
           Rows: user_id, name, email,status, role,occupation, age,goal,
           created_at
         </h1>
-        <p>Three cards: total users, active, inactive</p>
+        <p>Three cards: total users, active, inactive</p> {/**add react-countup library */}
         <p>growth rate:user to month</p>
         <p>Ability to revoke user permissions</p>
         <p>Name, job, goal</p>
