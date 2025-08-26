@@ -2,11 +2,9 @@ import axiosInstance from "../axiosInstance.js";
 import { useQuery } from "@tanstack/react-query";
 import Loading from "../components/Loading.jsx";
 import UserCard from "@/components/UserCard.jsx";
-import UserTable from "@/components/UserTable.jsx"
+import UserTable from "@/components/UserTable.jsx";
 import RoleTable from "@/components/RoleTable.jsx";
 import LineGraph from "@/components/LineGraph.jsx";
-
-//npm install chart.js react-chartjs-2
 
 const AdminDashboard = () => {
   const { data, error, isLoading } = useQuery({
@@ -26,38 +24,31 @@ const AdminDashboard = () => {
     <div className="admin-dashboard">
       <h1>Hello, Admin</h1>
       {data?.data?.data.map((user) => {
-        return ( 
+        return (
           <div key={user.user_id}>
             <p>{user.name}</p>
             <p>{user.email}</p>
           </div>
         );
       })}
+
       <div>
-        <h1> 
-          Rows: user_id, name, email,status, role,occupation, age,goal,
-          created_at
-        </h1>
-        <p>Three cards: total users, active, inactive</p> {/**add react-countup library */}
-        <p>growth rate:user to month</p>
-        <p>Ability to revoke user permissions</p>
-        <p>Name, job, goal</p>
-        <p>User to roles</p>
+        <UserCard />
       </div>
       <div>
-        <UserCard/>
+        <UserTable />
       </div>
       <div>
-        <UserTable/>
+        <LineGraph />
       </div>
       <div>
-        <LineGraph/>
-      </div>
-      <div>
-        <RoleTable/>
+        <RoleTable />
       </div>
     </div>
   );
 };
 
 export default AdminDashboard;
+
+// Rows: user_id, name, email,status, role,occupation, age,goal,
+// created_at
