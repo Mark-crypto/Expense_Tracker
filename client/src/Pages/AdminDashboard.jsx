@@ -51,4 +51,4 @@ const AdminDashboard = () => {
 export default AdminDashboard;
 
 // Rows: user_id, name, email,status, role,occupation, age,goal,
-// created_at // -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 64 | % {[char]$_})
+// created_at //
