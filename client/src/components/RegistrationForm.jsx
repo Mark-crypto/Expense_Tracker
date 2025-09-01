@@ -1,18 +1,17 @@
-import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import axiosInstance from "@/axiosInstance";
+import { publicAxios } from "@/axiosInstance";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "@/zodSchemas/schemas.js";
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data) => await axiosInstance.post("/auth/signup", data),
+    mutationFn: async (data) => await publicAxios.post("/auth/signup", data),
     onSuccess: (data) => {
       reset();
       toast.success(data.data.message);

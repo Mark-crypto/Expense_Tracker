@@ -22,7 +22,7 @@ const ExpenseForm = lazy(() => import("./components/ExpenseForm"));
 //Add id to the url
 
 function App() {
-  return (
+  return ( 
     <>
       <Suspense fallback={<Loading />}>
         <BrowserRouter>

@@ -8,6 +8,29 @@ dotenv.config();
 //look into winston for prpoduction logging
 //Sanitize inputs with express-validator
 
+
+export const me = (req,res)=>{
+try {
+     const accessToken = req.cookies.accessToken;
+    const refreshToken = req.cookies.refreshToken;
+
+     if (!accessToken && !refreshToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user =  jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET)
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ user });
+  } catch (err) {
+    console.error("Auth error:", err);
+    res.status(401).json({ message: "Token invalid or expired" });
+  }
+}
+
 export const signUp = async (req, res) => {
   const { name, email, password } = req.body;
 

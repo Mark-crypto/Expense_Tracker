@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import axiosInstance from "@/axiosInstance";
+import { publicAxios } from "@/axiosInstance";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/zodSchemas/schemas.js";
 import { motion } from "framer-motion";
@@ -12,7 +12,7 @@ const LoginForm = () => {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data) => {
-      return await axiosInstance.post("/auth/login", data);
+      return await publicAxios.post("/auth/login", data);
     },
     onSuccess: () => {
       reset();
