@@ -1,20 +1,20 @@
 // contexts/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from 'react';
-import axiosInstance from '@/axiosInstance';
+import { createContext, useContext, useEffect, useState } from "react";
+import axiosInstance from "@/axiosInstance";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     checkAuth();
@@ -22,8 +22,8 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const response = await axiosInstance.get('/auth/me');
-      setUser(response.data.user);
+      const response = await axiosInstance.get("/auth/me");
+      console.log(response.data.user);
     } catch (error) {
       setUser(null);
     } finally {
@@ -33,12 +33,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axiosInstance.post('/auth/logout');
+      await axiosInstance.post("/auth/logout");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setUser(null);
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
   };
 
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     checkAuth,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.role === "admin",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -11,10 +11,11 @@ import BottomFiveRolling from "@/components/BottomFiveRolling";
 import DashboardCard from "@/components/DashboardCard";
 
 const Dashboard = () => {
+  // const user = JSON.parse(localStorage.getItem("user"));
   const { data, error, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      return await axiosInstance.get("/dashboard");
+      return await axiosInstance.get(`/dashboard`);
     },
   });
 

@@ -107,14 +107,16 @@ export const reports = async (req, res) => {
 };
 
 export const getReportData = async (req, res) => {
-  // const id  = req.userInfo.userId;
+  const id = parseInt(req.query.id);
   try {
     const [expenseData] = await connection.execute(
-      "SELECT SUM(amount) AS spent_total  FROM expense" // WHERE USER_ID = ID
+      "SELECT SUM(amount) AS spent_total  FROM expense  WHERE user_id = ?",
+      [id]
     );
 
     const [budgetData] = await connection.execute(
-      "SELECT SUM(amount) AS budgeted_total FROM budget " // WHERE USER_ID = ID
+      "SELECT SUM(amount) AS budgeted_total FROM budget WHERE user_id = ?",
+      [id]
     );
     res.status(200).json({
       message: "Reports fetched successfully",

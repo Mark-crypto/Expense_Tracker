@@ -8,17 +8,16 @@ dotenv.config();
 //look into winston for prpoduction logging
 //Sanitize inputs with express-validator
 
-
-export const me = (req,res)=>{
-try {
-     const accessToken = req.cookies.accessToken;
+export const me = (req, res) => {
+  try {
+    const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
 
-     if (!accessToken && !refreshToken) {
+    if (!accessToken && !refreshToken) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
-    const user =  jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET)
+
+    const user = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -29,7 +28,7 @@ try {
     console.error("Auth error:", err);
     res.status(401).json({ message: "Token invalid or expired" });
   }
-}
+};
 
 export const signUp = async (req, res) => {
   const { name, email, password } = req.body;
@@ -87,7 +86,7 @@ export const login = async (req, res) => {
       { userId: user[0].user_id, name: user[0].name, role: user[0].role },
       process.env.JWT_ACCESS_TOKEN,
       { expiresIn: "15m" }
-    ); 
+    );
     const refreshToken = jwt.sign(
       { userId: user[0].user_id, name: user[0].name, role: user[0].role },
       process.env.JWT_REFRESH_TOKEN,
@@ -107,16 +106,24 @@ export const login = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       maxAge: 15 * 60 * 1000,
       httpOnly: true,
-      sameSite:'strict',
+      sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
     });
     res.cookie("refreshToken", refreshToken, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite:'strict',
+      sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
     });
-    res.status(200).json({ message: "You have successfully logged in" });
+    res.status(200).json({
+      message: "You have successfully logged in",
+      info: {
+        id: user[0].user_id,
+        name: user[0].name,
+        email: user[0].email,
+        role: user[0].role,
+      },
+    });
   } catch (error) {
     res
       .status(500)
@@ -152,7 +159,7 @@ export const refresh = async (req, res) => {
       return res.status(403).json({ message: "Access denied. Log in" });
     }
     const now = new Date();
-    if(new Date(token[0][0].expires_at) < now){
+    if (new Date(token[0][0].expires_at) < now) {
       return res.status(403).json({ message: "Token expired. Log in again." });
     }
     const user = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);

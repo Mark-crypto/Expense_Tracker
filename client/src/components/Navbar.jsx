@@ -11,6 +11,8 @@ import { toast } from "react-toastify";
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = JSON.parse(localStorage.getItem("user"));
+  console.log(user.id);
 
   const { mutate } = useMutation({
     mutationFn: async () => {
@@ -56,9 +58,11 @@ const Navbar = () => {
         {/* User Profile */}
         <div className="px-4 py-6 border-b border-gray-100">
           <a
-            href="/new/profile/1"
+            href={`/new/profile/${parseInt(user.id)}`}
             className={`${linkBaseStyles} ${hoverStyles} ${
-              location.pathname === `/profile/1` ? activeStyles : ""
+              location.pathname === `/profile/${parseInt(user.id)}`
+                ? activeStyles
+                : ""
             }`}
           >
             <FaUserCircle className="text-xl text-purple-500" />

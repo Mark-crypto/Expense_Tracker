@@ -10,12 +10,12 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")).render(
   <>
-    <ExpenseProvider>
-      <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-      </AuthProvider>
-    </ExpenseProvider>
+    <AuthProvider>
+      <ExpenseProvider>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </ExpenseProvider>
+    </AuthProvider>
   </>
 );

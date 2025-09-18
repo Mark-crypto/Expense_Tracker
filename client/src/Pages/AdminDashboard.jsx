@@ -9,25 +9,25 @@ import { useAuth } from "@/context/AuthenticationContext.jsx";
 import Unauthorized from "./Unauthorized.jsx";
 
 const AdminDashboard = () => {
-   const { user, loading, isAuthenticated, isAdmin } = useAuth();
+  const { user, loading, isAuthenticated, isAdmin } = useAuth();
   const { data, error, isLoading } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
       return await axiosInstance.get("/admin-dashboard");
     },
   });
-
-  if (isLoading || loading) {
+  console.log(data?.data);
+  if (isLoading) {
     return <Loading />;
   }
-   if (!isAuthenticated) return <Navigate to="/login" />;
-   if (!isAdmin) return <Unauthorized/>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!isAdmin) return <Unauthorized />;
   if (error) {
     console.log("Something went wrong");
   }
   return (
     <div className="admin-dashboard">
-      <h1>Hello, {user.name}</h1>
+      {/* <h1>Hello, {user.name}</h1> */}
       {data?.data?.data.map((user) => {
         return (
           <div key={user.user_id}>

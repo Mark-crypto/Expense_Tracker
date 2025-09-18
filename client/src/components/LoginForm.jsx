@@ -12,9 +12,12 @@ const LoginForm = () => {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data) => {
-      return await publicAxios.post("/auth/login", data);
+      const res = await publicAxios.post("/auth/login", data);
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log(data.info);
+      localStorage.setItem("user", JSON.stringify(data.info));
       reset();
       navigate("/dashboard");
     },
