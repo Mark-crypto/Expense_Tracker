@@ -5,11 +5,11 @@ import UserCard from "@/components/UserCard.jsx";
 import UserTable from "@/components/UserTable.jsx";
 import RoleTable from "@/components/RoleTable.jsx";
 import LineGraph from "@/components/LineGraph.jsx";
-import { useAuth } from "@/context/AuthenticationContext.jsx";
-import Unauthorized from "./Unauthorized.jsx";
+// import { useAuth } from "@/context/AuthenticationContext.jsx";
+// import Unauthorized from "./Unauthorized.jsx";
 
 const AdminDashboard = () => {
-  const { user, loading, isAuthenticated, isAdmin } = useAuth();
+  // const { user, loading, isAuthenticated, isAdmin } = useAuth();
   const { data, error, isLoading } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
@@ -20,8 +20,8 @@ const AdminDashboard = () => {
   if (isLoading) {
     return <Loading />;
   }
-  if (!isAuthenticated) return <Navigate to="/login" />;
-  if (!isAdmin) return <Unauthorized />;
+  // if (!isAuthenticated) return <Navigate to="/login" />;
+  // if (!isAdmin) return <Unauthorized />;
   if (error) {
     console.log("Something went wrong");
   }

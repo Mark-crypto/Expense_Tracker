@@ -1,17 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Users, UserCheck, UserX, UserPlus, TrendingUp, ArrowRight, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  UserCheck,
+  UserX,
+  UserPlus,
+  TrendingUp,
+  ArrowRight,
+  RefreshCw,
+} from "lucide-react";
 
-const UserCard = ({ title, value, change, icon: Icon, trend, color, loading }) => {
+const UserCard = ({
+  title,
+  value,
+  change,
+  icon: Icon,
+  trend,
+  color,
+  loading,
+}) => {
   const trendColors = {
-    up: { bg: 'bg-green-100', text: 'text-green-800', icon: TrendingUp },
-    down: { bg: 'bg-red-100', text: 'text-red-800', icon: TrendingUp }
+    up: { bg: "bg-green-100", text: "text-green-800", icon: TrendingUp },
+    down: { bg: "bg-red-100", text: "text-red-800", icon: TrendingUp },
   };
 
   const TrendIcon = trendColors[trend].icon;
 
   return (
-    <motion.div 
+    <motion.div
       className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 p-6"
       whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
@@ -30,9 +46,11 @@ const UserCard = ({ title, value, change, icon: Icon, trend, color, loading }) =
             {loading ? (
               <div className="h-6 w-20 bg-gray-200 animate-pulse rounded-full"></div>
             ) : (
-              <span className={`${trendColors[trend].bg} ${trendColors[trend].text} text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center`}>
+              <span
+                className={`${trendColors[trend].bg} ${trendColors[trend].text} text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center`}
+              >
                 <TrendIcon size={14} className="mr-1" />
-                {change} 
+                {change}
               </span>
             )}
             <span className="text-sm text-gray-500 ml-2">from last week</span>
@@ -52,7 +70,7 @@ const UserCard = ({ title, value, change, icon: Icon, trend, color, loading }) =
 
 const DashboardHeader = () => (
   <div className="mb-8">
-    <motion.h1 
+    <motion.h1
       className="text-3xl font-bold text-gray-800 mb-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -60,7 +78,7 @@ const DashboardHeader = () => (
     >
       User Analytics Dashboard
     </motion.h1>
-    <motion.p 
+    <motion.p
       className="text-gray-600"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -77,7 +95,7 @@ const UserStatsDashboard = () => {
     totalUsers: 0,
     activeUsers: 0,
     newUsers: 0,
-    inactiveUsers: 0
+    inactiveUsers: 0,
   });
 
   // Simulate fetching data from server
@@ -85,16 +103,16 @@ const UserStatsDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       // This would come from your server API in a real application
       setUserData({
         totalUsers: 1248,
         activeUsers: 893,
         newUsers: 124,
-        inactiveUsers: 355
+        inactiveUsers: 355,
       });
-      
+
       setLoading(false);
     };
 
@@ -109,7 +127,7 @@ const UserStatsDashboard = () => {
         totalUsers: 1253,
         activeUsers: 901,
         newUsers: 132,
-        inactiveUsers: 352
+        inactiveUsers: 352,
       });
       setLoading(false);
     }, 1000);
@@ -117,44 +135,44 @@ const UserStatsDashboard = () => {
 
   const userCards = [
     {
-      title: 'Total Users',
+      title: "Total Users",
       value: userData.totalUsers,
-      change: '+5.2%',
+      change: "+5.2%",
       icon: Users,
-      trend: 'up',
-      color: 'purple'
+      trend: "up",
+      color: "purple",
     },
     {
-      title: 'Active Users',
+      title: "Active Users",
       value: userData.activeUsers,
-      change: '+3.1%',
+      change: "+3.1%",
       icon: UserCheck,
-      trend: 'up',
-      color: 'green'
+      trend: "up",
+      color: "green",
     },
     {
-      title: 'New Users',
+      title: "New Users",
       value: userData.newUsers,
-      change: '+12.4%',
+      change: "+12.4%",
       icon: UserPlus,
-      trend: 'up',
-      color: 'blue'
+      trend: "up",
+      color: "blue",
     },
     {
-      title: 'Inactive Users',
+      title: "Inactive Users",
       value: userData.inactiveUsers,
-      change: '-2.3%',
+      change: "-2.3%",
       icon: UserX,
-      trend: 'down',
-      color: 'red'
-    }
+      trend: "down",
+      color: "red",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <DashboardHeader />
-        
+
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-800">User Overview</h2>
           <motion.button
@@ -164,11 +182,14 @@ const UserStatsDashboard = () => {
             disabled={loading}
             className="flex items-center text-purple-700 bg-purple-100 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
           >
-            <RefreshCw size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              size={18}
+              className={`mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh Data
           </motion.button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {userCards.map((card, index) => (
             <motion.div
@@ -181,8 +202,8 @@ const UserStatsDashboard = () => {
             </motion.div>
           ))}
         </div>
-        
-        <motion.div 
+
+        {/* <motion.div 
           className="mt-8 bg-white rounded-xl p-6 shadow-lg border border-gray-100"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -226,7 +247,7 @@ const UserStatsDashboard = () => {
               <p className="text-sm text-gray-600">Average session duration</p>
             </div>
           </div>
-        </motion.div>
+        </motion.div> */}
       </div>
     </div>
   );

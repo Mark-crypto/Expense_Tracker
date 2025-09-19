@@ -1,43 +1,116 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, ChevronUp, ChevronDown, Filter, User, Mail, Briefcase, Target } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Search,
+  ChevronUp,
+  ChevronDown,
+  Filter,
+  User,
+  Mail,
+  Briefcase,
+  Target,
+} from "lucide-react";
 
 const UserTable = () => {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [filter, setFilter] = useState('');
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "ascending",
+  });
+  const [filter, setFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   // Sample user data
   const users = [
-    { id: 1, name: 'Sarah Johnson', email: 'sarah@example.com', job: 'Product Manager', goal: 'Increase user engagement' },
-    { id: 2, name: 'Michael Chen', email: 'michael@example.com', job: 'Frontend Developer', goal: 'Improve site performance' },
-    { id: 3, name: 'Emma Wilson', email: 'emma@example.com', job: 'UX Designer', goal: 'Redesign onboarding flow' },
-    { id: 4, name: 'David Brown', email: 'david@example.com', job: 'Data Analyst', goal: 'Reduce churn rate' },
-    { id: 5, name: 'Priya Patel', email: 'priya@example.com', job: 'Backend Engineer', goal: 'Implement new API endpoints' },
-    { id: 6, name: 'James Wilson', email: 'james@example.com', job: 'Marketing Specialist', goal: 'Increase conversion rate' },
-    { id: 7, name: 'Lisa Garcia', email: 'lisa@example.com', job: 'Content Writer', goal: 'Publish 20 articles this month' },
-    { id: 8, name: 'Robert Kim', email: 'robert@example.com', job: 'QA Engineer', goal: 'Reduce bugs by 30%' },
-    { id: 9, name: 'Maria Lopez', email: 'maria@example.com', job: 'DevOps Engineer', goal: 'Improve deployment speed' },
-    { id: 10, name: 'Thomas Moore', email: 'thomas@example.com', job: 'Sales Executive', goal: 'Close 15 deals this quarter' }
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      email: "sarah@example.com",
+      job: "Product Manager",
+      goal: "Increase user engagement",
+    },
+    {
+      id: 2,
+      name: "Michael Chen",
+      email: "michael@example.com",
+      job: "Frontend Developer",
+      goal: "Improve site performance",
+    },
+    {
+      id: 3,
+      name: "Emma Wilson",
+      email: "emma@example.com",
+      job: "UX Designer",
+      goal: "Redesign onboarding flow",
+    },
+    {
+      id: 4,
+      name: "David Brown",
+      email: "david@example.com",
+      job: "Data Analyst",
+      goal: "Reduce churn rate",
+    },
+    {
+      id: 5,
+      name: "Priya Patel",
+      email: "priya@example.com",
+      job: "Backend Engineer",
+      goal: "Implement new API endpoints",
+    },
+    {
+      id: 6,
+      name: "James Wilson",
+      email: "james@example.com",
+      job: "Marketing Specialist",
+      goal: "Increase conversion rate",
+    },
+    {
+      id: 7,
+      name: "Lisa Garcia",
+      email: "lisa@example.com",
+      job: "Content Writer",
+      goal: "Publish 20 articles this month",
+    },
+    {
+      id: 8,
+      name: "Robert Kim",
+      email: "robert@example.com",
+      job: "QA Engineer",
+      goal: "Reduce bugs by 30%",
+    },
+    {
+      id: 9,
+      name: "Maria Lopez",
+      email: "maria@example.com",
+      job: "DevOps Engineer",
+      goal: "Improve deployment speed",
+    },
+    {
+      id: 10,
+      name: "Thomas Moore",
+      email: "thomas@example.com",
+      job: "Sales Executive",
+      goal: "Close 15 deals this quarter",
+    },
   ];
 
   // Filter users based on search input
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(filter.toLowerCase()) ||
-    user.email.toLowerCase().includes(filter.toLowerCase()) ||
-    user.job.toLowerCase().includes(filter.toLowerCase()) ||
-    user.goal.toLowerCase().includes(filter.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(filter.toLowerCase()) ||
+      user.email.toLowerCase().includes(filter.toLowerCase()) ||
+      user.job.toLowerCase().includes(filter.toLowerCase()) ||
+      user.goal.toLowerCase().includes(filter.toLowerCase())
   );
 
   // Sort users
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (sortConfig.key !== null) {
       if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === 'ascending' ? -1 : 1;
+        return sortConfig.direction === "ascending" ? -1 : 1;
       }
       if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === 'ascending' ? 1 : -1;
+        return sortConfig.direction === "ascending" ? 1 : -1;
       }
     }
     return 0;
@@ -50,9 +123,9 @@ const UserTable = () => {
 
   // Handle sort request
   const requestSort = (key) => {
-    let direction = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
     }
     setSortConfig({ key, direction });
   };
@@ -87,52 +160,52 @@ const UserTable = () => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center">
                   <User size={16} className="mr-2" />
-                  <button onClick={() => requestSort('name')} className="flex items-center focus:outline-none">
+                  <button
+                    onClick={() => requestSort("name")}
+                    className="flex items-center focus:outline-none"
+                  >
                     Name
-                    {sortConfig.key === 'name' && (
-                      sortConfig.direction === 'ascending' ? 
-                      <ChevronUp size={16} className="ml-1" /> : 
-                      <ChevronDown size={16} className="ml-1" />
-                    )}
+                    {sortConfig.key === "name" &&
+                      (sortConfig.direction === "ascending" ? (
+                        <ChevronUp size={16} className="ml-1" />
+                      ) : (
+                        <ChevronDown size={16} className="ml-1" />
+                      ))}
                   </button>
                 </div>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center">
                   <Mail size={16} className="mr-2" />
-                  <button onClick={() => requestSort('email')} className="flex items-center focus:outline-none">
+                  <button
+                    onClick={() => requestSort("email")}
+                    className="flex items-center focus:outline-none"
+                  >
                     Email
-                    {sortConfig.key === 'email' && (
-                      sortConfig.direction === 'ascending' ? 
-                      <ChevronUp size={16} className="ml-1" /> : 
-                      <ChevronDown size={16} className="ml-1" />
-                    )}
+                    {sortConfig.key === "email" &&
+                      (sortConfig.direction === "ascending" ? (
+                        <ChevronUp size={16} className="ml-1" />
+                      ) : (
+                        <ChevronDown size={16} className="ml-1" />
+                      ))}
                   </button>
                 </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center">
-                  <Briefcase size={16} className="mr-2" />
-                  <button onClick={() => requestSort('job')} className="flex items-center focus:outline-none">
-                    Job
-                    {sortConfig.key === 'job' && (
-                      sortConfig.direction === 'ascending' ? 
-                      <ChevronUp size={16} className="ml-1" /> : 
-                      <ChevronDown size={16} className="ml-1" />
-                    )}
-                  </button>
-                </div>
-              </th>
+
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center">
                   <Target size={16} className="mr-2" />
-                  <button onClick={() => requestSort('goal')} className="flex items-center focus:outline-none">
+                  <button
+                    onClick={() => requestSort("goal")}
+                    className="flex items-center focus:outline-none"
+                  >
                     Goal
-                    {sortConfig.key === 'goal' && (
-                      sortConfig.direction === 'ascending' ? 
-                      <ChevronUp size={16} className="ml-1" /> : 
-                      <ChevronDown size={16} className="ml-1" />
-                    )}
+                    {sortConfig.key === "goal" &&
+                      (sortConfig.direction === "ascending" ? (
+                        <ChevronUp size={16} className="ml-1" />
+                      ) : (
+                        <ChevronDown size={16} className="ml-1" />
+                      ))}
                   </button>
                 </div>
               </th>
@@ -141,7 +214,7 @@ const UserTable = () => {
           <tbody className="divide-y divide-gray-200">
             {currentUsers.length > 0 ? (
               currentUsers.map((user, index) => (
-                <motion.tr 
+                <motion.tr
                   key={user.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -152,22 +225,23 @@ const UserTable = () => {
                     <div className="flex items-center">
                       <div className="h-10 w-10 flex-shrink-0 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-purple-800 font-medium">
-                          {user.name.split(' ').map(n => n[0]).join('')}
+                          {user.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <div className="font-medium text-gray-900">
+                          {user.name}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="text-gray-900">{user.email}</div>
                   </td>
-                  <td className="px-4 py-4">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {user.job}
-                    </span>
-                  </td>
+
                   <td className="px-4 py-4 text-gray-900">{user.goal}</td>
                 </motion.tr>
               ))
@@ -186,10 +260,10 @@ const UserTable = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-6">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+            Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
             <span className="font-medium">
               {Math.min(startIndex + itemsPerPage, sortedUsers.length)}
-            </span>{' '}
+            </span>{" "}
             of <span className="font-medium">{sortedUsers.length}</span> results
           </div>
           <div className="flex space-x-2">
@@ -200,21 +274,21 @@ const UserTable = () => {
             >
               Previous
             </button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${
                   currentPage === page
-                    ? 'bg-purple-600 text-white'
-                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? "bg-purple-600 text-white"
+                    : "border border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 {page}
               </button>
             ))}
-            
+
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}

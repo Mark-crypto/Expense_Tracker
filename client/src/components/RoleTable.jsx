@@ -1,60 +1,126 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Filter, User, Mail, Shield, Edit3, Trash2, Plus, Check, X } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Search,
+  Filter,
+  User,
+  Mail,
+  Shield,
+  Edit3,
+  Trash2,
+  Plus,
+  Check,
+  X,
+} from "lucide-react";
 
 const RoleTable = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [editingUser, setEditingUser] = useState(null);
-  const [newRole, setNewRole] = useState('');
+  const [newRole, setNewRole] = useState("");
 
   // Sample user data with roles
   const [users, setUsers] = useState([
-    { id: 1, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'Admin', lastActive: '2 hours ago' },
-    { id: 2, name: 'Michael Chen', email: 'michael@example.com', role: 'Editor', lastActive: '5 hours ago' },
-    { id: 3, name: 'Emma Wilson', email: 'emma@example.com', role: 'Viewer', lastActive: '1 day ago' },
-    { id: 4, name: 'David Brown', email: 'david@example.com', role: 'Admin', lastActive: '3 hours ago' },
-    { id: 5, name: 'Priya Patel', email: 'priya@example.com', role: 'Editor', lastActive: '12 hours ago' },
-    { id: 6, name: 'James Wilson', email: 'james@example.com', role: 'Viewer', lastActive: '2 days ago' },
-    { id: 7, name: 'Lisa Garcia', email: 'lisa@example.com', role: 'Editor', lastActive: '6 hours ago' },
-    { id: 8, name: 'Robert Kim', email: 'robert@example.com', role: 'Viewer', lastActive: '3 days ago' },
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      email: "sarah@example.com",
+      role: "Admin",
+      lastActive: "2 hours ago",
+    },
+    {
+      id: 2,
+      name: "Michael Chen",
+      email: "michael@example.com",
+      role: "Editor",
+      lastActive: "5 hours ago",
+    },
+    {
+      id: 3,
+      name: "Emma Wilson",
+      email: "emma@example.com",
+      role: "Viewer",
+      lastActive: "1 day ago",
+    },
+    {
+      id: 4,
+      name: "David Brown",
+      email: "david@example.com",
+      role: "Admin",
+      lastActive: "3 hours ago",
+    },
+    {
+      id: 5,
+      name: "Priya Patel",
+      email: "priya@example.com",
+      role: "Editor",
+      lastActive: "12 hours ago",
+    },
+    {
+      id: 6,
+      name: "James Wilson",
+      email: "james@example.com",
+      role: "Viewer",
+      lastActive: "2 days ago",
+    },
+    {
+      id: 7,
+      name: "Lisa Garcia",
+      email: "lisa@example.com",
+      role: "Editor",
+      lastActive: "6 hours ago",
+    },
+    {
+      id: 8,
+      name: "Robert Kim",
+      email: "robert@example.com",
+      role: "Viewer",
+      lastActive: "3 days ago",
+    },
   ]);
 
   // Available roles
-  const roles = ['Admin', 'Editor', 'Viewer'];
+  const roles = ["Admin", "Editor", "Viewer"];
 
   // Filter users based on search term and role filter
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   // Handle role update
   const handleRoleUpdate = (userId) => {
     if (!newRole) return;
-    
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    ));
-    
+
+    setUsers(
+      users.map((user) =>
+        user.id === userId ? { ...user, role: newRole } : user
+      )
+    );
+
     setEditingUser(null);
-    setNewRole('');
+    setNewRole("");
   };
 
   // Handle user deletion
   const handleDeleteUser = (userId) => {
-    setUsers(users.filter(user => user.id !== userId));
+    setUsers(users.filter((user) => user.id !== userId));
   };
 
   // Role badge color mapping
   const getRoleColor = (role) => {
     switch (role) {
-      case 'Admin': return 'bg-red-100 text-red-800';
-      case 'Editor': return 'bg-blue-100 text-blue-800';
-      case 'Viewer': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "Admin":
+        return "bg-red-100 text-red-800";
+      case "Editor":
+        return "bg-blue-100 text-blue-800";
+      case "Viewer":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -62,10 +128,14 @@ const RoleTable = () => {
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">User Roles Management</h2>
-          <p className="text-gray-600 text-sm">Manage user permissions and access levels</p>
+          <h2 className="text-xl font-semibold text-gray-800">
+            User Roles Management
+          </h2>
+          <p className="text-gray-600 text-sm">
+            Manage user permissions and access levels
+          </p>
         </div>
-        
+
         <button className="mt-4 md:mt-0 flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
           <Plus size={18} className="mr-2" />
           Add User
@@ -86,17 +156,19 @@ const RoleTable = () => {
             className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           />
         </div>
-        
+
         <div className="flex items-center">
           <Filter size={18} className="text-gray-400 mr-2" />
-          <select 
+          <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           >
             <option value="all">All Roles</option>
-            {roles.map(role => (
-              <option key={role} value={role}>{role}</option>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
             ))}
           </select>
         </div>
@@ -119,9 +191,7 @@ const RoleTable = () => {
                   Role
                 </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Active
-              </th>
+
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -130,7 +200,7 @@ const RoleTable = () => {
           <tbody className="divide-y divide-gray-200">
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user, index) => (
-                <motion.tr 
+                <motion.tr
                   key={user.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -141,16 +211,21 @@ const RoleTable = () => {
                     <div className="flex items-center">
                       <div className="h-10 w-10 flex-shrink-0 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-purple-800 font-medium">
-                          {user.name.split(' ').map(n => n[0]).join('')}
+                          {user.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <div className="font-medium text-gray-900">
+                          {user.name}
+                        </div>
                         <div className="text-gray-500">{user.email}</div>
                       </div>
                     </div>
                   </td>
-                  
+
                   <td className="px-4 py-4">
                     {editingUser === user.id ? (
                       <div className="flex items-center">
@@ -159,8 +234,10 @@ const RoleTable = () => {
                           onChange={(e) => setNewRole(e.target.value)}
                           className="mr-2 px-2 py-1 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
                         >
-                          {roles.map(role => (
-                            <option key={role} value={role}>{role}</option>
+                          {roles.map((role) => (
+                            <option key={role} value={role}>
+                              {role}
+                            </option>
                           ))}
                         </select>
                         <button
@@ -178,7 +255,11 @@ const RoleTable = () => {
                       </div>
                     ) : (
                       <div className="flex items-center">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(user.role)}`}>
+                        <span
+                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(
+                            user.role
+                          )}`}
+                        >
                           {user.role}
                         </span>
                         <button
@@ -190,11 +271,7 @@ const RoleTable = () => {
                       </div>
                     )}
                   </td>
-                  
-                  <td className="px-4 py-4 text-gray-500">
-                    {user.lastActive}
-                  </td>
-                  
+
                   <td className="px-4 py-4">
                     <button
                       onClick={() => handleDeleteUser(user.id)}
@@ -219,9 +296,10 @@ const RoleTable = () => {
       {/* Table Summary */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6 pt-4 border-t border-gray-200">
         <div className="text-sm text-gray-700 mb-4 sm:mb-0">
-          Showing <span className="font-medium">{filteredUsers.length}</span> of <span className="font-medium">{users.length}</span> users
+          Showing <span className="font-medium">{filteredUsers.length}</span> of{" "}
+          <span className="font-medium">{users.length}</span> users
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-red-100 rounded-full mr-1"></div>
