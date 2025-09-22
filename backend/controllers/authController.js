@@ -182,3 +182,14 @@ export const refresh = async (req, res) => {
     console.log("Error:", error);
   }
 };
+
+/**
+ * 
+ * CREATE EVENT delete_expired_tokens
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_TIMESTAMP
+DO
+  DELETE FROM refresh_token
+  WHERE expires_at < NOW();
+
+ */

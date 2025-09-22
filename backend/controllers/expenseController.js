@@ -33,25 +33,27 @@ export const getExpenses = async (req, res) => {
 
 export const createExpense = async (req, res) => {
   const { amount, category, date } = req.body;
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const randomMonth = Math.floor(Math.random() * months.length);
+  // const months = [
+  //   "January",
+  //   "February",
+  //   "March",
+  //   "April",
+  //   "May",
+  //   "June",
+  //   "July",
+  //   "August",
+  //   "September",
+  //   "October",
+  //   "November",
+  //   "December",
+  // ];
+  // const randomMonth = Math.floor(Math.random() * months.length);
+  const month = new Date(date).toLocaleString("default", { month: "long" });
+  const userId = parseInt(req.user.userId);
   try {
     const [response] = await connection.execute(
       "INSERT INTO expense (amount , category , date_created, month, user_id) VALUES(?,?,?,?,?)",
-      [amount, category, date, months[randomMonth], 1]
+      [amount, category, date, month, userId]
     );
     if (response == 0) {
       return res.status(400).json({
