@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getReportData, reports } from "../controllers/dashboardController.js";
 import { adminDashboard } from "../controllers/adminDashboard.js";
-import { isUserAdmin } from "../middlewares/userRole.js";
+// import { isUserAdmin } from "../middlewares/userRole.js";
 const router = Router();
 
 router.get("/dashboard/:id", getReportData);

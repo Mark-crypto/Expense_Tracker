@@ -16,7 +16,7 @@ const AdminDashboard = () => {
       return await axiosInstance.get("/admin-dashboard");
     },
   });
-  console.log(data?.data);
+  //data.data.data.allUsers,totalUsers,newUsers,activeUsers,inactiveUsers,activeByMonth,
   if (isLoading) {
     return <Loading />;
   }
@@ -27,27 +27,22 @@ const AdminDashboard = () => {
   }
   return (
     <div className="admin-dashboard">
-      {/* <h1>Hello, {user.name}</h1> */}
-      {data?.data?.data.map((user) => {
-        return (
-          <div key={user.user_id}>
-            <p>{user.name}</p>
-            <p>{user.email}</p>
-          </div>
-        );
-      })}
-
       <div>
-        <UserCard />
+        <UserCard
+          activeUsers={data?.data?.data?.activeUsers}
+          inactiveUsers={data?.data?.data?.inactiveUsers}
+          newUsers={data?.data?.data?.newUsers}
+          totalUsers={data?.data?.data?.totalUsers}
+        />
       </div>
       <div>
-        <UserTable />
+        <UserTable users={data?.data?.data?.allUsers} />
       </div>
       <div>
-        <LineGraph />
+        <LineGraph data={data?.data?.data?.activeByMonth} />
       </div>
       <div>
-        <RoleTable />
+        <RoleTable roles={data?.data?.data?.allUsers} />
       </div>
     </div>
   );
