@@ -19,8 +19,8 @@ ChartJS.register(
 );
 
 const BarChart2 = ({ data }) => {
-  const categories = data.map((item) => item.category);
-  const totals = data.map((item) => item.total);
+  const categories = data?.map((item) => item.category);
+  const totals = data?.map((item) => item.total);
 
   const BarData = {
     labels: categories,
@@ -93,7 +93,11 @@ const BarChart2 = ({ data }) => {
 
   return (
     <div className="h-96 w-full">
-      <Bar options={options} data={BarData} />
+      {data.length > 0 ? (
+        <Bar options={options} data={BarData} />
+      ) : (
+        <p className="text-center text-gray-500 mt-20">No data available</p>
+      )}
     </div>
   );
 };

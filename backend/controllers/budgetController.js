@@ -3,6 +3,7 @@ import connection from "../database.js";
 
 // Get all budgets
 export async function getBudget(req, res) {
+  const id = parseInt(req.query.id);
   const limit = parseInt(req.query._limit) || 10;
   const page = parseInt(req.query._page) || 1;
   const offset = (page - 1) * limit;
@@ -11,11 +12,12 @@ export async function getBudget(req, res) {
   const limitString = limit.toString();
   try {
     const [rows] = await connection.execute(
-      "SELECT * FROM budget LIMIT ? OFFSET ?",
-      [limitString, offsetString]
+      "SELECT * FROM budget WHERE user_id = ? LIMIT ? OFFSET ?",
+      [id, limitString, offsetString]
     );
     const [totalItems] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM budget"
+      "SELECT COUNT(*) AS total FROM budget WHERE user_id = ?",
+      [id]
     );
     const total = totalItems[0]?.total || 0;
     res.status(200).json({
@@ -33,11 +35,12 @@ export async function getBudget(req, res) {
 
 // Get a single budget
 export async function getSingleBudget(req, res) {
-  const { id } = req.params;
+  const id = parseInt(req.query.id);
+  const userId = parseInt(req.user.userId);
   try {
     const [rows] = await connection.execute(
-      "SELECT * FROM budget WHERE budget_id = ?",
-      [id]
+      "SELECT * FROM budget WHERE budget_id = ? AND user_id = ?",
+      [id, userId]
     );
     res.status(200).json({ data: rows[0] });
   } catch (error) {
@@ -78,11 +81,12 @@ export async function addBudget(req, res) {
 
 // Delete a budget
 export async function deleteBudget(req, res) {
+  const userId = parseInt(req.user.userId);
   const { id } = req.params;
   try {
     const response = await connection.execute(
-      "DELETE FROM budget WHERE budget_id = ?",
-      [id]
+      "DELETE FROM budget WHERE budget_id = ? AND user_id = ?",
+      [id, userId]
     );
     if (response.length == 0) {
       return res.status(400).json({

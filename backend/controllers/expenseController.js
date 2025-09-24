@@ -4,18 +4,20 @@ export const getExpenses = async (req, res) => {
   const pageNumber = parseInt(req.query._page) || 1;
   const limit = parseInt(req.query._limit) || 10;
   const offset = (pageNumber - 1) * limit;
+  const userId = parseInt(req.user.userId);
 
   const limitString = limit.toString();
   const offsetString = offset.toString();
 
   try {
     const [rows] = await connection.execute(
-      `SELECT * FROM expense WHERE status='active' ORDER BY date_created DESC LIMIT ? OFFSET ?`,
-      [limitString, offsetString]
+      `SELECT * FROM expense WHERE user_id = ? ORDER BY date_created DESC LIMIT ? OFFSET ?`,
+      [userId, limitString, offsetString]
     );
 
     const [countResult] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM expense"
+      "SELECT COUNT(*) AS total FROM expense WHERE user_id = ?",
+      [userId]
     );
     const total = countResult[0]?.total || 0;
     res.status(200).json({
@@ -72,9 +74,11 @@ export const createExpense = async (req, res) => {
 };
 
 export const deleteExpense = async (req, res) => {
+  const userId = parseInt(req.user.userId);
   try {
     const [response] = await connection.execute(
-      "UPDATE expense SET status = 'inactive' "
+      "UPDATE expense SET status = 'inactive' WHERE user_id = ?",
+      [userId]
     );
     if (response.length == 0) {
       return res.status(400).json({

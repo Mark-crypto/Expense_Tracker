@@ -44,18 +44,21 @@ const Dashboard = () => {
             Dashboard
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <DashboardCard title="Debt" data={data.data.debtAmount[0].debt} />
+            <DashboardCard
+              title="Debt"
+              data={data?.data?.debtAmount[0]?.debt}
+            />
             <DashboardCard
               title="Top Category"
-              data={data.data.topCategory[0].category}
+              data={data?.data?.topCategory[0]?.category}
             />
             <DashboardCard
               title="Bottom Category"
-              data={data.data.lastCategory[0].category}
+              data={data?.data?.lastCategory[0]?.category}
             />
             <DashboardCard
               title="Total Spent"
-              data={data.data.totalExpense[0].total}
+              data={data?.data?.totalExpense[0]?.total}
             />
           </div>
 
@@ -77,7 +80,7 @@ const Dashboard = () => {
               >
                 Monthly Spend
               </h3>
-              <BarChart1 data={data.data.monthlySum} />
+              <BarChart1 data={data?.data?.monthlySum} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}

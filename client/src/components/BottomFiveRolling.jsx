@@ -40,7 +40,7 @@ const BottomFiveRolling = ({ data }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((bottom, i) => (
+          {data.length > 0 ? (
             <TableRow
               key={bottom.expense_id}
               className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
@@ -58,7 +58,16 @@ const BottomFiveRolling = ({ data }) => {
                 Sh. {Math.floor(bottom.rolling_sum).toLocaleString()}
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={4}
+                className="text-center text-sm text-gray-500"
+              >
+                No data available
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </>

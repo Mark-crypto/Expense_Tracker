@@ -19,8 +19,8 @@ ChartJS.register(
 );
 
 const BarChart1 = ({ data }) => {
-  const months = data.map((item) => item.month);
-  const totals = data.map((item) => item.monthly_sum);
+  const months = data?.map((item) => item.month);
+  const totals = data?.map((item) => item.monthly_sum);
 
   const BarData = {
     labels: months,
@@ -93,7 +93,11 @@ const BarChart1 = ({ data }) => {
 
   return (
     <div className="h-96 w-full">
-      <Bar options={options} data={BarData} />
+      {data.length > 0 ? (
+        <Bar data={BarData} options={options} />
+      ) : (
+        <p className="text-center text-gray-500 mt-20">No data available</p>
+      )}
     </div>
   );
 };

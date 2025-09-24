@@ -5,23 +5,28 @@ import UserCard from "@/components/UserCard.jsx";
 import UserTable from "@/components/UserTable.jsx";
 import RoleTable from "@/components/RoleTable.jsx";
 import LineGraph from "@/components/LineGraph.jsx";
-// import { useAuth } from "@/context/AuthenticationContext.jsx";
+import { useAuth } from "../hooks/useAuth.jsx";
+import { Navigate } from "react-router-dom";
+import Unauthorized from "./Unauthorized.jsx";
+import NotAdmin from "./NotAdmin.jsx";
 // import Unauthorized from "./Unauthorized.jsx";
 
 const AdminDashboard = () => {
-  // const { user, loading, isAuthenticated, isAdmin } = useAuth();
+  const { isAdmin, isAuthenticated, user } = useAuth();
   const { data, error, isLoading } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
       return await axiosInstance.get("/admin-dashboard");
     },
   });
-  //data.data.data.allUsers,totalUsers,newUsers,activeUsers,inactiveUsers,activeByMonth,
+
   if (isLoading) {
     return <Loading />;
   }
-  // if (!isAuthenticated) return <Navigate to="/login" />;
-  // if (!isAdmin) return <Unauthorized />;
+  if (!isAuthenticated) return <Unauthorized />;
+  if (!isAdmin) {
+    return <NotAdmin />;
+  }
   if (error) {
     console.log("Something went wrong");
   }

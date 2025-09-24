@@ -1,35 +1,10 @@
-// contexts/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext } from "react";
 import axiosInstance from "@/axiosInstance";
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem("user"));
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await axiosInstance.get("/auth/me");
-      console.log(response.data.user);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const logout = async () => {
     try {
@@ -44,9 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    loading,
     logout,
-    checkAuth,
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
   };

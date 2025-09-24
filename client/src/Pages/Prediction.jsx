@@ -83,7 +83,7 @@ const Prediction = () => {
             viewport={{ once: true }}
             className="bg-white p-4 rounded-lg shadow"
           >
-            <CategoryBudget data={data.data.budgetCategory} />
+            <CategoryBudget data={data?.data?.budgetCategory} />
           </motion.div>
 
           <motion.div
@@ -93,7 +93,7 @@ const Prediction = () => {
             viewport={{ once: true }}
             className="bg-white p-4 rounded-lg shadow"
           >
-            <CategoryExpense data={data.data.categoryExpense} />
+            <CategoryExpense data={data?.data?.categoryExpense} />
           </motion.div>
         </section>
 
@@ -106,7 +106,7 @@ const Prediction = () => {
             viewport={{ once: true }}
             className="bg-white p-4 rounded-lg shadow"
           >
-            <TopFiveCategory data={data.data.topFiveCategories} />
+            <TopFiveCategory data={data?.data?.topFiveCategories} />
           </motion.div>
 
           <motion.div
@@ -116,7 +116,7 @@ const Prediction = () => {
             viewport={{ once: true }}
             className="bg-white p-4 rounded-lg shadow"
           >
-            <BottomFive data={data.data.bottomFiveCategories} />
+            <BottomFive data={data?.data?.bottomFiveCategories} />
           </motion.div>
         </section>
 
@@ -128,7 +128,7 @@ const Prediction = () => {
           viewport={{ once: true }}
           className="bg-white p-4 rounded-lg shadow mb-10"
         >
-          <MonthlyAverage data={data.data.monthlyAverage} />
+          <MonthlyAverage data={data?.data?.monthlyAverage} />
         </motion.div>
       </main>
     </div>

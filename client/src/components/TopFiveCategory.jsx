@@ -37,21 +37,29 @@ const TopFiveCategory = ({ data }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((top, i) => (
-            <TableRow
-              key={i}
-              className={`hover:bg-green-50 transition duration-200 ${
-                i % 2 === 0 ? "bg-gray-50" : "bg-white"
-              }`}
-            >
-              <TableCell className="font-medium text-gray-700">
-                {i + 1}
-              </TableCell>
-              <TableCell className="text-gray-800 capitalize">
-                {top.category}
+          {data.length > 0 ? (
+            data.map((top, i) => (
+              <TableRow
+                key={i}
+                className={`hover:bg-green-50 transition duration-200 ${
+                  i % 2 === 0 ? "bg-gray-50" : "bg-white"
+                }`}
+              >
+                <TableCell className="font-medium text-gray-700">
+                  {i + 1}
+                </TableCell>
+                <TableCell className="text-gray-800 capitalize">
+                  {top.category}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={2} className="text-center py-4">
+                No data available
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </>

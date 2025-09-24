@@ -35,7 +35,7 @@ const DashboardCard = ({ title, data }) => {
             {title === "Total Spent" || title === "Debt" ? (
               <CountUp end={parseFloat(data)} duration={1.8} separator="," />
             ) : (
-              data
+              data || "N/A"
             )}
           </p>
         </CardContent>

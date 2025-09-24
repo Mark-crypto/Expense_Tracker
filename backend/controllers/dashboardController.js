@@ -1,12 +1,15 @@
 import connection from "../database.js";
 
 export const reports = async (req, res) => {
+  const id = parseInt(req.query.id);
   try {
-    const [bottomFive] = await connection.execute(`
+    const [bottomFive] = await connection.execute(
+      `
       WITH cte_rolling_sum AS (
       SELECT expense_id,amount, date_created,
       SUM(amount) OVER(ORDER BY expense_id) AS rolling_sum
       FROM expense
+      WHERE user_id = ?
       )
       SELECT * FROM (
       SELECT * FROM cte_rolling_sum
@@ -14,12 +17,16 @@ export const reports = async (req, res) => {
       LIMIT 5
       ) AS bottom_five
       ORDER BY expense_id
-      `);
-    const [totalExpense] = await connection.execute(`
+      `,
+      [id]
+    );
+    const [totalExpense] = await connection.execute(
+      `
          WITH cte_rolling_sum AS (
         SELECT expense_id,amount, date_created,
         SUM(amount) OVER(ORDER BY expense_id) AS rolling_sum
         FROM expense
+        WHERE user_id = ?
         )
         SELECT MAX(rolling_sum) AS total FROM (
         SELECT * FROM cte_rolling_sum
@@ -27,42 +34,57 @@ export const reports = async (req, res) => {
         LIMIT 5
         ) AS bottom_five
        
-        `);
-    const [topFive] = await connection.execute(` 
+        `,
+      [id]
+    );
+    const [topFive] = await connection.execute(
+      ` 
       SELECT expense_id,amount, date_created,
       SUM(amount) OVER(ORDER BY expense_id) AS rolling_sum
       FROM expense
-      LIMIT 5`);
-    const [debtAmount] = await connection.execute(` 
-        SELECT SUM(CASE WHEN category='debt' THEN amount ELSE 0 END) AS debt FROM expense
-        `);
+      WHERE user_id = ?
+      LIMIT 5`,
+      [id]
+    );
+    const [debtAmount] = await connection.execute(
+      ` 
+        SELECT SUM(CASE WHEN category='debt' THEN amount ELSE 0 END) AS debt FROM expense WHERE user_id = ?
+        `,
+      [id]
+    );
     const [lastCategory] = await connection.execute(
       `WITH cte_category AS (
       SELECT DISTINCT category,
       COUNT(category) OVER(PARTITION BY category) AS category_num
       FROM expense
+      WHERE user_id = ?
       )
       SELECT category 
       FROM cte_category
       ORDER BY category_num 
-      LIMIT 1`
+      LIMIT 1`,
+      [id]
     );
     const [topCategory] = await connection.execute(
       `WITH cte_category AS (
         SELECT DISTINCT category,
         COUNT(category) OVER(PARTITION BY category) AS category_num
-        FROM expense
+        FROM expense 
+        WHERE user_id = ?
         )
         SELECT category 
         FROM cte_category
         ORDER BY category_num DESC
-        LIMIT 1`
+        LIMIT 1`,
+      [id]
     );
-    const [monthlySum] = await connection.execute(`
+    const [monthlySum] = await connection.execute(
+      `
     SELECT 
     month,
     SUM(amount) AS monthly_sum
   FROM expense
+  WHERE user_id = ?
   GROUP BY month
   ORDER BY 
     (CASE month
@@ -78,13 +100,17 @@ export const reports = async (req, res) => {
       WHEN 'October' THEN 10
       WHEN 'November' THEN 11
       WHEN 'December' THEN 12
-    END);`);
+    END);`,
+      [id]
+    );
     const [allCategories] = await connection.execute(
       `SELECT  
       DISTINCT category,
       SUM(amount) OVER(PARTITION BY category) as total
       FROM expense
-      ORDER BY total DESC`
+      WHERE user_id = ?
+      ORDER BY total DESC`,
+      [id]
     );
     res.status(200).json({
       message: "Reports fetched successfully",

@@ -15,17 +15,6 @@ const Register = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* <GoogleSignIn /> */}
-
-            {/* Divider */}
-            <div className="flex items-center my-6">
-              <div className="flex-grow h-px bg-gray-300" />
-              <span className="mx-3 text-gray-400 text-sm">
-                sign in with email
-              </span>
-              <div className="flex-grow h-px bg-gray-300" />
-            </div>
-
             <RegistrationForm />
           </motion.div>
 

@@ -62,7 +62,7 @@ const HistoryTable = () => {
           </thead>
           <tbody>
             {expenseData?.data?.data?.length > 0 ? (
-              expenseData.data.data.map((item) => (
+              expenseData?.data?.data?.map((item) => (
                 <tr
                   key={item.expense_id}
                   className="hover:bg-gray-50 transition"

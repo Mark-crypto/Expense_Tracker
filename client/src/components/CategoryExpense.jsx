@@ -36,24 +36,32 @@ const CategoryExpense = ({ data }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((expense, i) => (
-            <TableRow
-              key={i}
-              className={`hover:bg-purple-50 transition duration-200 ${
-                i % 2 === 0 ? "bg-gray-50" : "bg-white"
-              }`}
-            >
-              <TableCell className="font-medium text-gray-700">
-                {i + 1}
-              </TableCell>
-              <TableCell className="text-gray-800">
-                {expense.category}
-              </TableCell>
-              <TableCell className="text-gray-800">
-                KES {Number(expense.total).toLocaleString()}
+          {data?.length > 0 ? (
+            data?.map((expense, i) => (
+              <TableRow
+                key={i}
+                className={`hover:bg-purple-50 transition duration-200 ${
+                  i % 2 === 0 ? "bg-gray-50" : "bg-white"
+                }`}
+              >
+                <TableCell className="font-medium text-gray-700">
+                  {i + 1}
+                </TableCell>
+                <TableCell className="text-gray-800">
+                  {expense.category}
+                </TableCell>
+                <TableCell className="text-gray-800">
+                  KES {Number(expense.total).toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-gray-500">
+                No data available
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </>
