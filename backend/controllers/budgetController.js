@@ -3,7 +3,8 @@ import connection from "../database.js";
 
 // Get all budgets
 export async function getBudget(req, res) {
-  const id = parseInt(req.query.id);
+  const id = parseInt(req.user.userId);
+
   const limit = parseInt(req.query._limit) || 10;
   const page = parseInt(req.query._page) || 1;
   const offset = (page - 1) * limit;

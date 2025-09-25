@@ -1,7 +1,7 @@
 import connection from "../database.js";
 
 export const reports = async (req, res) => {
-  const id = parseInt(req.query.id);
+  const id = parseInt(req.user.userId);
   try {
     const [bottomFive] = await connection.execute(
       `
@@ -112,6 +112,7 @@ export const reports = async (req, res) => {
       ORDER BY total DESC`,
       [id]
     );
+
     res.status(200).json({
       message: "Reports fetched successfully",
       topFive,
@@ -133,7 +134,7 @@ export const reports = async (req, res) => {
 };
 
 export const getReportData = async (req, res) => {
-  const id = parseInt(req.query.id);
+  const id = parseInt(req.user.userId);
   try {
     const [expenseData] = await connection.execute(
       "SELECT SUM(amount) AS spent_total  FROM expense  WHERE user_id = ?",

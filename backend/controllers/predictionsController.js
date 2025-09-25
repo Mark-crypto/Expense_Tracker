@@ -1,7 +1,7 @@
 import connection from "../database.js";
 
 export const getPredictions = async (req, res) => {
-  const id = parseInt(req.query.id);
+  const id = parseInt(req.user.userId);
   try {
     const [monthlyAverage] = await connection.execute(
       `

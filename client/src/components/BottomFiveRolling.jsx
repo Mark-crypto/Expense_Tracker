@@ -41,23 +41,27 @@ const BottomFiveRolling = ({ data }) => {
         </TableHeader>
         <TableBody>
           {data.length > 0 ? (
-            <TableRow
-              key={bottom.expense_id}
-              className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
-            >
-              <TableCell className="font-medium text-sm text-gray-700">
-                {i + 1}
-              </TableCell>
-              <TableCell className="text-sm text-gray-700">
-                Sh. {Math.floor(bottom.amount).toLocaleString()}
-              </TableCell>
-              <TableCell className="text-sm text-gray-700">
-                {bottom.date_created.split("T")[0]}
-              </TableCell>
-              <TableCell className="text-sm text-gray-700">
-                Sh. {Math.floor(bottom.rolling_sum).toLocaleString()}
-              </TableCell>
-            </TableRow>
+            data.map((bottom, i) => {
+              return (
+                <TableRow
+                  key={bottom.expense_id}
+                  className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                >
+                  <TableCell className="font-medium text-sm text-gray-700">
+                    {i + 1}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    Sh. {Math.floor(bottom.amount).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    {bottom.date_created.split("T")[0]}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    Sh. {Math.floor(bottom.rolling_sum).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell

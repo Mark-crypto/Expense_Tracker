@@ -1,7 +1,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -40,24 +39,28 @@ const TopFiveRolling = ({ data }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length > 0 ? (
-            <TableRow
-              key={bottom.expense_id}
-              className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
-            >
-              <TableCell className="font-medium text-sm text-gray-700">
-                {i + 1}
-              </TableCell>
-              <TableCell className="text-sm text-gray-700">
-                Sh. {Math.floor(bottom.amount).toLocaleString()}
-              </TableCell>
-              <TableCell className="text-sm text-gray-700">
-                {bottom.date_created.split("T")[0]}
-              </TableCell>
-              <TableCell className="text-sm text-gray-700">
-                Sh. {Math.floor(bottom.rolling_sum).toLocaleString()}
-              </TableCell>
-            </TableRow>
+          {data?.length > 0 ? (
+            data?.map((top, i) => {
+              return (
+                <TableRow
+                  key={top.expense_id}
+                  className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                >
+                  <TableCell className="font-medium text-sm text-gray-700">
+                    {i + 1}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    Sh. {Math.floor(top.amount).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    {top.date_created.split("T")[0]}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    Sh. {Math.floor(top.rolling_sum).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={4} className="text-center text-gray-500">

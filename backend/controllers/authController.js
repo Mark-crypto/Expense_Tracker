@@ -31,7 +31,7 @@ export const me = (req, res) => {
 };
 
 export const signUp = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, goal, age, occupation } = req.body;
 
   try {
     const [isExistingEmail] = await connection.execute(
@@ -46,8 +46,8 @@ export const signUp = async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const response = await connection.execute(
-      "INSERT INTO users (name, email, password) VALUES(?,?,?)",
-      [name, email, hashedPassword]
+      "INSERT INTO users (name, email, password,goal, age,occupation) VALUES(?,?,?,?,?,?)",
+      [name, email, hashedPassword, goal, age, occupation]
     );
     if (!response) {
       return res
@@ -182,14 +182,3 @@ export const refresh = async (req, res) => {
     console.log("Error:", error);
   }
 };
-
-/**
- * 
- * CREATE EVENT delete_expired_tokens
-ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_TIMESTAMP
-DO
-  DELETE FROM refresh_token
-  WHERE expires_at < NOW();
-
- */

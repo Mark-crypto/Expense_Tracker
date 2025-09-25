@@ -24,6 +24,7 @@ export const expenseSearch = async (req, res) => {
 
 export const budgetSearch = async (req, res) => {
   const searchQuery = req.query.q;
+  const userId = parseInt(req.user.userId);
   try {
     if (!searchQuery)
       return res.status(400).json({ message: "No input was passed" });

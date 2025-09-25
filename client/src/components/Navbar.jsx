@@ -1,18 +1,18 @@
 import { FaUserCircle, FaWallet, FaHistory } from "react-icons/fa";
-import { IoMdAdd, IoMdSettings } from "react-icons/io";
+import { IoMdAdd } from "react-icons/io";
 import { MdSpaceDashboard, MdLogout } from "react-icons/md";
 import { TbBulb } from "react-icons/tb";
 import { useNavigate, useLocation } from "react-router-dom";
-import { doSignOut } from "../services/auth";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/axiosInstance";
 import { toast } from "react-toastify";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user"));
-  console.log(user.id);
+  const { logout } = useAuth();
 
   const { mutate } = useMutation({
     mutationFn: async () => {
@@ -27,8 +27,8 @@ const Navbar = () => {
   });
 
   const handleLogout = () => {
-    mutate();
-    doSignOut().then(() => {});
+    logout();
+    navigate("/");
   };
 
   const links = [
@@ -37,7 +37,6 @@ const Navbar = () => {
     { label: "AI Predictions", icon: <TbBulb />, path: "/predictions" },
     { label: "Budget", icon: <FaWallet />, path: "/budget" },
     { label: "History", icon: <FaHistory />, path: "/history" },
-    // { label: "Settings", icon: <IoMdSettings />, path: "/settings" },
   ];
 
   const linkBaseStyles =
@@ -54,9 +53,13 @@ const Navbar = () => {
             Expense Tracker
           </h2>
         </div>
-
+        <div className="px-3 ">
+          <p className="text-lg pt-2 text-gray-600 font-medium">
+            Welcome, <span className="text-purple-700">{user.name}</span>!
+          </p>
+        </div>
         {/* User Profile */}
-        <div className="px-4 py-6 border-b border-gray-100">
+        <div className="px-4 border-b border-gray-100">
           <a
             href={`/new/profile/${parseInt(user.id)}`}
             className={`${linkBaseStyles} ${hoverStyles} ${
@@ -70,8 +73,23 @@ const Navbar = () => {
           </a>
         </div>
 
+        {/* Admin page link */}
+        {user && user.role === "admin" && (
+          <div className="px-4  border-b border-gray-100">
+            <a
+              href={`/admin-dashboard`}
+              className={`${linkBaseStyles} ${hoverStyles} ${
+                location.pathname === `/admin-dashboard` ? activeStyles : ""
+              }`}
+            >
+              <MdSpaceDashboard className="text-xl text-purple-500" />
+              <span>Admin Dashboard</span>
+            </a>
+          </div>
+        )}
+
         {/* Navigation Links */}
-        <nav className="px-4 py-4 space-y-1">
+        <nav className="px-4 py-2 space-y-1">
           {links.map((link) => (
             <a
               key={link.path}

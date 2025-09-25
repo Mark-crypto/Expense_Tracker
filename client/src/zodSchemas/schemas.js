@@ -19,6 +19,9 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   name: z.string().min(1, "Provide a valid name"),
+  goal: z.string().min(1, "Provide a valid goal"),
+  age: z.number("Enter a valid age").min(1, "Enter a valid age"),
+  occupation: z.string().min(1, "Provide a valid occupation"),
   email: z.string().email("Provide a valid email"),
   password: z.string().min(8, "Password has to be at least 8 characters"),
   confirmPassword: z

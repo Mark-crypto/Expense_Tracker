@@ -6,13 +6,12 @@ import UserTable from "@/components/UserTable.jsx";
 import RoleTable from "@/components/RoleTable.jsx";
 import LineGraph from "@/components/LineGraph.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
-import { Navigate } from "react-router-dom";
-import Unauthorized from "./Unauthorized.jsx";
+
 import NotAdmin from "./NotAdmin.jsx";
-// import Unauthorized from "./Unauthorized.jsx";
+import { toast, ToastContainer } from "react-toastify";
 
 const AdminDashboard = () => {
-  const { isAdmin, isAuthenticated, user } = useAuth();
+  const { isAdmin, isAuthenticated } = useAuth();
   const { data, error, isLoading } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
@@ -23,15 +22,16 @@ const AdminDashboard = () => {
   if (isLoading) {
     return <Loading />;
   }
-  if (!isAuthenticated) return <Unauthorized />;
+  if (!isAuthenticated) return <NotAdmin />;
   if (!isAdmin) {
     return <NotAdmin />;
   }
   if (error) {
-    console.log("Something went wrong");
+    toast.error("Something went wrong");
   }
   return (
     <div className="admin-dashboard">
+      <ToastContainer />
       <div>
         <UserCard
           activeUsers={data?.data?.data?.activeUsers}
@@ -40,13 +40,13 @@ const AdminDashboard = () => {
           totalUsers={data?.data?.data?.totalUsers}
         />
       </div>
-      <div>
+      <div className="mt-6 mx-6">
         <UserTable users={data?.data?.data?.allUsers} />
       </div>
-      <div>
+      <div className="mt-6 mx-6">
         <LineGraph data={data?.data?.data?.activeByMonth} />
       </div>
-      <div>
+      <div className="mt-6 mb-6 mx-6 ">
         <RoleTable roles={data?.data?.data?.allUsers} />
       </div>
     </div>
@@ -54,6 +54,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-// Rows: user_id, name, email,status, role,occupation, age,goal,
-// created_at //

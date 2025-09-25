@@ -11,7 +11,6 @@ import BottomFiveRolling from "@/components/BottomFiveRolling";
 import DashboardCard from "@/components/DashboardCard";
 
 const Dashboard = () => {
-  // const user = JSON.parse(localStorage.getItem("user"));
   const { data, error, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -23,6 +22,7 @@ const Dashboard = () => {
     return <Loading />;
   }
   if (error) {
+    console.log(error);
     toast.error("Something went wrong");
   }
   return (
@@ -99,7 +99,7 @@ const Dashboard = () => {
               >
                 All Categories
               </h3>
-              <BarChart2 data={data.data.allCategories} />
+              <BarChart2 data={data?.data?.allCategories} />
             </motion.div>
           </div>
 
@@ -110,7 +110,7 @@ const Dashboard = () => {
               transition={{ duration: 0.4 }}
               className="bg-white rounded-xl shadow p-4"
             >
-              <TopFiveRolling data={data.data.topFive} />
+              <TopFiveRolling data={data?.data?.topFive} />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -118,7 +118,7 @@ const Dashboard = () => {
               transition={{ duration: 0.4, delay: 0.1 }}
               className="bg-white rounded-xl shadow p-4"
             >
-              <BottomFiveRolling data={data.data.bottomFive} />
+              <BottomFiveRolling data={data?.data?.bottomFive} />
             </motion.div>
           </div>
         </div>

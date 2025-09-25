@@ -28,7 +28,7 @@ const Profile = () => {
     return <Loading />;
   }
   if (error) {
-    toast.error("SOmething went wrong");
+    toast.error("Something went wrong");
   }
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -69,7 +69,7 @@ const Profile = () => {
             </Button>
             <Modal show={show} onHide={handleClose}>
               <Modal.Header closeButton>
-                <Modal.Title>Modal heading</Modal.Title>
+                <Modal.Title>Edit profile</Modal.Title>
               </Modal.Header>
               <Modal.Body>
                 <ProfileForm profileData={data} setShow={setShow} />

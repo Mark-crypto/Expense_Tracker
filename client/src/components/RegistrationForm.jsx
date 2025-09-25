@@ -75,6 +75,51 @@ const RegistrationForm = () => {
           )}
         </Form.Group>
 
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">
+            Goal
+          </Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter goal"
+            {...register("goal")}
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+          />
+          {errors.goal && (
+            <p className="text-red-500 text-sm mt-1">{errors.goal.message}</p>
+          )}
+        </Form.Group>
+
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">Age</Form.Label>
+          <Form.Control
+            type="number"
+            placeholder="Enter age"
+            {...register("age", { valueAsNumber: true })}
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+          />
+          {errors.age && (
+            <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>
+          )}
+        </Form.Group>
+
+        <Form.Group>
+          <Form.Label className="font-semibold text-purple-800">
+            Occupation
+          </Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter occupation"
+            {...register("occupation")}
+            className="rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+          />
+          {errors.occupation && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.occupation.message}
+            </p>
+          )}
+        </Form.Group>
+
         {/* Password */}
         <Form.Group>
           <Form.Label className="font-semibold text-purple-800">

@@ -16,7 +16,6 @@ const LoginForm = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      console.log(data.info);
       localStorage.setItem("user", JSON.stringify(data.info));
       reset();
       navigate("/dashboard");
