@@ -6,6 +6,7 @@ import Loading from "./Loading";
 
 const HistoryTable = () => {
   const [page, setPage] = useState(1);
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
   const {
     isLoading,
@@ -36,6 +37,18 @@ const HistoryTable = () => {
     "December",
   ];
 
+  const toggleRow = (expenseId) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(expenseId)) {
+        newSet.delete(expenseId);
+      } else {
+        newSet.add(expenseId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading) return <Loading />;
 
   const from = (page - 1) * expenseData?.data?.meta?.limit + 1;
@@ -54,34 +67,89 @@ const HistoryTable = () => {
         <table className="min-w-full bg-white border border-gray-200 text-sm text-left text-gray-700">
           <thead className="bg-gray-100 text-xs uppercase font-semibold text-gray-600">
             <tr>
+              <th className="py-3 px-4 border-b"></th>
               <th className="py-3 px-4 border-b">Month</th>
               <th className="py-3 px-4 border-b">Category</th>
+              <th colSpan="2" className="py-3 px-4 border-b text-center">
+                Subcategory Details
+              </th>
               <th className="py-3 px-4 border-b">Date</th>
               <th className="py-3 px-4 border-b">Amount</th>
+            </tr>
+            <tr className="bg-gray-50">
+              <th className="py-2 px-4 border-b"></th>
+              <th className="py-2 px-4 border-b"></th>
+              <th className="py-2 px-4 border-b"></th>
+              <th className="py-2 px-4 border-b">Name</th>
+              <th className="py-2 px-4 border-b">Amount</th>
+              <th className="py-2 px-4 border-b"></th>
+              <th className="py-2 px-4 border-b"></th>
             </tr>
           </thead>
           <tbody>
             {expenseData?.data?.data?.length > 0 ? (
               expenseData?.data?.data?.map((item) => (
-                <tr
-                  key={item.expense_id}
-                  className="hover:bg-gray-50 transition"
-                >
-                  <td className="py-3 px-4 border-b">
-                    {month[new Date(item.date_created).getMonth()]}
-                  </td>
-                  <td className="py-3 px-4 border-b">{item.category}</td>
-                  <td className="py-3 px-4 border-b">
-                    {item.date_created.split("T")[0]}
-                  </td>
-                  <td className="py-3 px-4 border-b text-purple-700 font-semibold">
-                    KES {Number(item.amount).toLocaleString()}
-                  </td>
-                </tr>
+                <>
+                  {/* Main Row */}
+                  <tr
+                    key={item.expense_id}
+                    className="hover:bg-gray-50 transition cursor-pointer bg-gray-50"
+                    onClick={() => toggleRow(item.expense_id)}
+                  >
+                    <td className="py-3 px-4 border-b">
+                      <span
+                        className={`transform transition-transform ${
+                          expandedRows.has(item.expense_id) ? "rotate-90" : ""
+                        }`}
+                      >
+                        ▶
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 border-b font-medium">
+                      {month[new Date(item.date_created).getMonth()]}
+                    </td>
+                    <td className="py-3 px-4 border-b font-medium">
+                      {item.category}
+                    </td>
+                    <td
+                      colSpan="2"
+                      className="py-3 px-4 border-b text-center text-gray-600"
+                    >
+                      {item.subcategories?.length || 0} subcategories
+                    </td>
+                    <td className="py-3 px-4 border-b">
+                      {item.date_created.split("T")[0]}
+                    </td>
+                    <td className="py-3 px-4 border-b text-purple-700 font-semibold">
+                      KES {Number(item.amount).toLocaleString()}
+                    </td>
+                  </tr>
+
+                  {/* Nested Subcategory Rows */}
+                  {expandedRows.has(item.expense_id) &&
+                    item.subcategories?.map((subcategory, index) => (
+                      <tr
+                        key={`${item.expense_id}-${index}`}
+                        className="bg-white hover:bg-gray-50 transition-all duration-200"
+                      >
+                        <td className="py-2 px-4 border-b"></td>
+                        <td className="py-2 px-4 border-b"></td>
+                        <td className="py-2 px-4 border-b"></td>
+                        <td className="py-2 px-4 border-b pl-8 border-l-2 border-purple-300">
+                          {subcategory.name}
+                        </td>
+                        <td className="py-2 px-4 border-b border-l-2 border-purple-300">
+                          KES {Number(subcategory.amount).toLocaleString()}
+                        </td>
+                        <td className="py-2 px-4 border-b"></td>
+                        <td className="py-2 px-4 border-b"></td>
+                      </tr>
+                    ))}
+                </>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="py-4 px-4 text-center text-gray-500">
+                <td colSpan="7" className="py-4 px-4 text-center text-gray-500">
                   No expenses found
                 </td>
               </tr>

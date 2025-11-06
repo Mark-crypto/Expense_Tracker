@@ -21,6 +21,7 @@ const BudgetTable = () => {
   const [openDialogId, setOpenDialogId] = useState(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [expandedRows, setExpandedRows] = useState(new Set());
   const queryClient = useQueryClient();
 
   const {
@@ -94,6 +95,18 @@ const BudgetTable = () => {
     }
   };
 
+  const toggleRow = (budgetId) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(budgetId)) {
+        newSet.delete(budgetId);
+      } else {
+        newSet.add(budgetId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading || searchLoading) return <Loading />;
   if (error) toast.error("Something went wrong.");
 
@@ -131,58 +144,112 @@ const BudgetTable = () => {
             <tr>
               <th className="px-4 py-3">Budget Name</th>
               <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Budget Amount</th>
+              <th colSpan="2" className="px-4 py-3 text-center">
+                Subcategory Details
+              </th>
               <th className="px-4 py-3">Actions</th>
+            </tr>
+            <tr className="bg-gradient-to-r from-purple-500 to-purple-400">
+              <th className="px-4 py-2"></th>
+              <th className="px-4 py-2"></th>
+              <th className="px-4 py-2">Name</th>
+              <th className="px-4 py-2">Amount</th>
+              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {displayData?.length !== 0 ? (
               displayData.map((item) => (
-                <motion.tr
-                  key={item.budget_id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="hover:bg-purple-100 transition-all duration-200"
-                >
-                  <td className="px-4 py-2">{item.name}</td>
-                  <td className="px-4 py-2">{item.category}</td>
-                  <td className="px-4 py-2">{item.amount}</td>
-                  <td className="px-4 py-2">
-                    <Dialog
-                      open={openDialogId === item.budget_id}
-                      onOpenChange={(open) =>
-                        setOpenDialogId(open ? item.budget_id : null)
-                      }
-                    >
-                      <DialogTrigger className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 transition font-semibold shadow-sm">
-                        <FaTrashAlt className="inline-block mr-1" />
-                        Delete
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Are you absolutely sure?</DialogTitle>
-                          <DialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete your budget.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleDelete(item.budget_id)}
-                          disabled={isPending}
+                <>
+                  {/* Main Row */}
+                  <motion.tr
+                    key={item.budget_id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="hover:bg-purple-100 transition-all duration-200 cursor-pointer bg-purple-50"
+                    onClick={() => toggleRow(item.budget_id)}
+                  >
+                    <td className="px-4 py-2 font-semibold">
+                      <div className="flex items-center">
+                        <span
+                          className={`transform transition-transform ${
+                            expandedRows.has(item.budget_id) ? "rotate-90" : ""
+                          }`}
                         >
-                          {isPending ? "Deleting..." : "Delete"}
-                        </Button>
-                      </DialogContent>
-                    </Dialog>
-                  </td>
-                </motion.tr>
+                          ▶
+                        </span>
+                        <span className="ml-2">{item.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 font-semibold">{item.category}</td>
+                    <td
+                      colSpan="2"
+                      className="px-4 py-2 text-center text-gray-600"
+                    >
+                      {item.subcategories?.length || 0} subcategories
+                    </td>
+                    <td className="px-4 py-2">
+                      <Dialog
+                        open={openDialogId === item.budget_id}
+                        onOpenChange={(open) =>
+                          setOpenDialogId(open ? item.budget_id : null)
+                        }
+                      >
+                        <DialogTrigger
+                          className="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 transition font-semibold shadow-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <FaTrashAlt className="inline-block mr-1" />
+                          Delete
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Are you absolutely sure?</DialogTitle>
+                            <DialogDescription>
+                              This action cannot be undone. This will
+                              permanently delete your budget.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Button
+                            variant="danger"
+                            onClick={() => handleDelete(item.budget_id)}
+                            disabled={isPending}
+                          >
+                            {isPending ? "Deleting..." : "Delete"}
+                          </Button>
+                        </DialogContent>
+                      </Dialog>
+                    </td>
+                  </motion.tr>
+
+                  {/* Nested Subcategory Rows */}
+                  {expandedRows.has(item.budget_id) &&
+                    item.subcategories?.map((subcategory, index) => (
+                      <motion.tr
+                        key={`${item.budget_id}-${index}`}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-gray-50 hover:bg-gray-100 transition-all duration-200"
+                      >
+                        <td className="px-4 py-2"></td>
+                        <td className="px-4 py-2"></td>
+                        <td className="px-4 py-2 pl-8 border-l-2 border-purple-300">
+                          {subcategory.name}
+                        </td>
+                        <td className="px-4 py-2 border-l-2 border-purple-300">
+                          KES {Number(subcategory.amount).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-2"></td>
+                      </motion.tr>
+                    ))}
+                </>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan="4"
+                  colSpan="5"
                   className="text-center py-4 text-gray-500 italic"
                 >
                   No budgets to display

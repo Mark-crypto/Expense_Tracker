@@ -3,15 +3,36 @@ import { z } from "zod";
 export const budgetSchema = z.object({
   name: z.string().min(1, "Enter a valid budget name"),
   email: z.boolean(),
-  amount: z.number("Enter a valid number").min(1, "Enter a valid number"),
+  subcategories: z
+    .array(
+      z.object({
+        name: z.string().optional().or(z.literal("")),
+        amount: z.number().optional(),
+      })
+    )
+    .refine(
+      (subs) => subs.length > 0 && subs.every((s) => s.name && s.amount),
+      "Each subcategory must have a name and amount"
+    ),
   category: z.string().min(1, "Choose a valid category"),
 });
 
 export const expenseSchema = z.object({
-  amount: z.number("Enter a valid number").min(1, "Enter a valid number"),
   category: z.string().min(1, "Choose a valid category"),
-  date: z.date("Enter a valid date"),
+  subcategories: z
+    .array(
+      z.object({
+        name: z.string().optional().or(z.literal("")),
+        amount: z.number().optional(),
+      })
+    )
+    .refine(
+      (subs) => subs.length > 0 && subs.every((s) => s.name && s.amount),
+      "Each subcategory must have a name and amount"
+    ),
+  date: z.date({ message: "Enter a valid date" }),
 });
+
 export const loginSchema = z.object({
   email: z.string().email("Provide a valid email"),
   password: z.string().min(8, "Password is at least 8 characters long"),

@@ -56,12 +56,19 @@ export async function getSingleBudget(req, res) {
 // Add a budget
 export async function addBudget(req, res) {
   const userId = parseInt(req.user.userId);
-  const { name, category, amount, email_checked } = req.body;
+  const { name, category, amount, email_checked, subcategories } = req.body;
   const send_email = email_checked ? "checked" : "unchecked";
   try {
     const [response] = await connection.execute(
-      "INSERT INTO budget (name,category, amount, email_checked, user_id ) VALUES(?,?,?,?,?)",
-      [name, category, amount, send_email, userId]
+      "INSERT INTO budget (name,category, amount, email_checked, user_id, subcategories) VALUES(?,?,?,?,?,?)",
+      [
+        name,
+        category,
+        amount,
+        send_email,
+        userId,
+        JSON.stringify(subcategories),
+      ]
     );
     if (response.length == 0) {
       return res.status(400).json({
