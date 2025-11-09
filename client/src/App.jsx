@@ -8,6 +8,7 @@ import Unauthorized from "./Pages/Unauthorized";
 import ErrorPage from "./components/404Error";
 import ProfileForm from "./components/ProfileForm";
 import AdminDashboard from "./Pages/AdminDashboard.jsx";
+import LimitNotification from "./components/LimitNotification";
 
 const Register = lazy(() => import("./pages/Register"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -29,7 +30,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
-
+            <Route path="/notification" element={<LimitNotification />} />
             <Route path="/register" element={<Register />} />
             <Route path="/new/profile/:id" element={<Profile />} />
 

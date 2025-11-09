@@ -31,6 +31,9 @@ const BudgetForm = () => {
       category: "",
       subcategories: [{ name: "", amount: "" }],
       email: false,
+      timeLimit: false,
+      startDate: null,
+      endDate: null,
     },
     shouldUnregister: true,
   });
@@ -173,16 +176,126 @@ const BudgetForm = () => {
         </h6>
       </div>
 
-      <Form.Group className="mb-4 font-semibold float-left mt-6">
-        <Form.Check
-          type="checkbox"
-          label="Receive Email Reminders"
-          {...register("email")}
-          isInvalid={!!errors.email}
-        />
-        <Form.Control.Feedback type="invalid">
-          {errors.email?.message}
-        </Form.Control.Feedback>
+      <Form.Group className="mb-6">
+        <div className="space-y-3">
+          {/* Clean header */}
+          <div>
+            <Form.Label className="font-semibold text-gray-800 text-base block mb-2">
+              Budget Duration
+            </Form.Label>
+          </div>
+
+          {/* Minimal checkbox design */}
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+            <Form.Check
+              type="checkbox"
+              id="timeLimit"
+              {...register("timeLimit")}
+              isInvalid={!!errors.timeLimit}
+              className="mt-0.5"
+            />
+            <div>
+              <label
+                htmlFor="timeLimit"
+                className="text-gray-700 font-medium cursor-pointer"
+              >
+                Set specific start and end dates
+              </label>
+              <p className="text-gray-500 text-sm mt-1">
+                Uncheck for ongoing budget
+              </p>
+            </div>
+          </div>
+
+          {/* Error state */}
+          <Form.Control.Feedback type="invalid" className="d-block">
+            {errors.timeLimit?.message}
+          </Form.Control.Feedback>
+        </div>
+      </Form.Group>
+
+      {watch("timeLimit") && (
+        <div className="mt-4 mb-4">
+          <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-4">
+              <i className="bi bi-calendar-check text-blue-600"></i>
+              <span className="font-semibold text-gray-800">
+                Set Time Period
+              </span>
+            </div>
+
+            {/* Date inputs side by side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form.Group>
+                <Form.Label className="font-medium text-sm text-gray-700 mb-2">
+                  Start Date
+                </Form.Label>
+                <Form.Control
+                  type="date"
+                  {...register("startDate", { valueAsDate: true })}
+                  className="border-gray-300 rounded-lg"
+                />
+                {errors.startDate && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.startDate.message}
+                  </p>
+                )}
+              </Form.Group>
+
+              <Form.Group>
+                <Form.Label className="font-medium text-sm text-gray-700 mb-2">
+                  End Date
+                </Form.Label>
+                <Form.Control
+                  type="date"
+                  {...register("endDate", { valueAsDate: true })}
+                  className="border-gray-300 rounded-lg"
+                />
+                {errors.endDate && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.endDate.message}
+                  </p>
+                )}
+              </Form.Group>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Form.Group className="mb-6">
+        {/* Card container with border */}
+        <div className="border border-gray-200 rounded-lg p-4 bg-white">
+          {/* Checkbox */}
+          <div className="flex items-start gap-3 mb-2">
+            <Form.Check
+              type="checkbox"
+              id="emailReminders"
+              {...register("email")}
+              isInvalid={!!errors.email}
+              className="mt-0.5"
+            />
+            <label
+              htmlFor="emailReminders"
+              className="text-gray-800 font-medium cursor-pointer"
+            >
+              Receive email reminders
+            </label>
+          </div>
+
+          {/* Description paragraph */}
+          <p className="text-gray-600 text-sm leading-relaxed mb-0">
+            Get notified via email when your expenses are approaching or exceed
+            your budget limits.
+          </p>
+
+          {/* Error message */}
+          {errors.email && (
+            <div className="mt-2 text-red-600 text-sm">
+              {errors.email.message}
+            </div>
+          )}
+        </div>
       </Form.Group>
 
       <Button

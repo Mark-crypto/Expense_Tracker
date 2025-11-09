@@ -14,6 +14,9 @@ export const budgetSchema = z.object({
       (subs) => subs.length > 0 && subs.every((s) => s.name && s.amount),
       "Each subcategory must have a name and amount"
     ),
+  timeLimit: z.boolean(),
+  startDate: z.date().optional().nullable(),
+  endDate: z.date().optional().nullable(),
   category: z.string().min(1, "Choose a valid category"),
 });
 
@@ -30,6 +33,7 @@ export const expenseSchema = z.object({
       (subs) => subs.length > 0 && subs.every((s) => s.name && s.amount),
       "Each subcategory must have a name and amount"
     ),
+  budgeted: z.boolean(),
   date: z.date({ message: "Enter a valid date" }),
 });
 

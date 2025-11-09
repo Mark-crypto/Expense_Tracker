@@ -33,6 +33,7 @@ const ExpenseForm = () => {
       category: "",
       subcategories: [{ name: "", amount: "" }],
       date: "",
+      budgeted: false,
     },
     shouldUnregister: true,
   });
@@ -78,22 +79,16 @@ const ExpenseForm = () => {
 
   return (
     <div className="flex">
-      {/* Sidebar */}
       <div className="w-64">
         <Navbar />
       </div>
-
-      {/* Main Content */}
       <div className="flex-1 min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <ToastContainer position="top-right" autoClose={3000} theme="light" />
-
         <div className="bg-white shadow-md rounded-2xl p-8 w-full max-w-lg">
           <h3 className="text-center text-2xl font-bold text-purple-700 mb-6">
             Add Expense
           </h3>
-
           <Form onSubmit={handleSubmit(addExpense)}>
-            {/* Category */}
             <Form.Group className="mb-4">
               <Form.Label className="font-medium">Expense Category</Form.Label>
               <Form.Select {...register("category")} required>
@@ -186,6 +181,34 @@ const ExpenseForm = () => {
                   {errors.date.message}
                 </p>
               )}
+            </Form.Group>
+
+            <Form.Group className="mb-4 font-semibold mt-6">
+              <Form.Label className="fw-semibold mb-1">
+                Is this expense part of a budget you have already created?
+              </Form.Label>
+
+              <div className="d-flex align-items-start">
+                <Form.Check
+                  type="checkbox"
+                  id="budgeted"
+                  {...register("budgeted")}
+                  isInvalid={!!errors.budgeted}
+                  label="Yes, count this expense toward my active budget for this category"
+                  className="me-2"
+                />
+              </div>
+
+              <Form.Text className="text-muted" style={{ fontSize: "0.9rem" }}>
+                <i className="bi bi-info-circle me-1"></i>
+                Check this box only if this expense belongs to a budget you have
+                already set for the same category. Leave it unchecked if this is
+                a one-off or unbudgeted expense.
+              </Form.Text>
+
+              <Form.Control.Feedback type="invalid">
+                {errors.budgeted?.message}
+              </Form.Control.Feedback>
             </Form.Group>
 
             {/* Submit Button */}
