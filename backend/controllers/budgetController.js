@@ -2,6 +2,22 @@ import connection from "../database.js";
 //GET ID FROM req.userInfo
 
 // Get all budgets
+export async function getBudgetNames(req, res) {
+  const id = parseInt(req.user.userId);
+  try {
+    const [rows] = await connection.execute(
+      "SELECT budget_id,name FROM budget WHERE user_id = ?",
+      [id]
+    );
+    res.status(200).json({ data: rows });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. No budget names were found.",
+    });
+  }
+}
 export async function getBudget(req, res) {
   const id = parseInt(req.user.userId);
 
@@ -56,11 +72,20 @@ export async function getSingleBudget(req, res) {
 // Add a budget
 export async function addBudget(req, res) {
   const userId = parseInt(req.user.userId);
-  const { name, category, amount, email_checked, subcategories } = req.body;
-  const send_email = email_checked ? "checked" : "unchecked";
+  const {
+    name,
+    category,
+    amount,
+    email,
+    subcategories,
+    startDate,
+    endDate,
+    timeLimit,
+  } = req.body;
+  const send_email = email ? "checked" : "unchecked";
   try {
     const [response] = await connection.execute(
-      "INSERT INTO budget (name,category, amount, email_checked, user_id, subcategories) VALUES(?,?,?,?,?,?)",
+      "INSERT INTO budget (name,category, amount, email_checked, user_id, subcategories, start_date, end_date, has_time_limit) VALUES(?,?,?,?,?,?,?,?,?)",
       [
         name,
         category,
@@ -68,6 +93,9 @@ export async function addBudget(req, res) {
         send_email,
         userId,
         JSON.stringify(subcategories),
+        startDate,
+        endDate,
+        timeLimit,
       ]
     );
     if (response.length == 0) {
@@ -111,3 +139,69 @@ export async function deleteBudget(req, res) {
     });
   }
 }
+
+/**
+ * 
+ * SELECT 
+  b.id AS budget_id,
+  b.user_id,
+  b.category,
+  b.limit_amount,
+  b.has_time_limit,
+  b.start_date,
+  b.end_date,
+  b.status,
+  COALESCE(SUM(
+    CASE 
+      WHEN b.has_time_limit = 1 
+           AND e.created_at BETWEEN b.start_date AND b.end_date 
+           THEN e.amount
+      WHEN b.has_time_limit = 0 
+           THEN e.amount
+      ELSE 0
+    END
+  ), 0) AS total_spent,
+  (b.limit_amount - COALESCE(SUM(
+    CASE 
+      WHEN b.has_time_limit = 1 
+           AND e.created_at BETWEEN b.start_date AND b.end_date 
+           THEN e.amount
+      WHEN b.has_time_limit = 0 
+           THEN e.amount
+      ELSE 0
+    END
+  ), 0)) AS remaining_balance
+FROM budgets b
+LEFT JOIN expenses e 
+  ON e.user_id = b.user_id
+  AND e.category = b.category
+  AND e.budgeted = 1
+WHERE b.user_id = ?
+GROUP BY b.id, b.limit_amount, b.has_time_limit, b.start_date, b.end_date, b.status;
+
+ */
+
+/**
+ * UPDATE budgets b
+JOIN (
+  SELECT b.id, 
+         COALESCE(SUM(
+           CASE 
+             WHEN b.has_time_limit = 1 
+                  AND e.created_at BETWEEN b.start_date AND b.end_date 
+                  THEN e.amount
+             WHEN b.has_time_limit = 0 
+                  THEN e.amount
+             ELSE 0
+           END
+         ), 0) AS total_spent
+  FROM budgets b
+  LEFT JOIN expenses e 
+    ON e.user_id = b.user_id
+    AND e.category = b.category
+    AND e.budgeted = 1
+  GROUP BY b.id
+) x ON x.id = b.id
+SET b.status = CASE WHEN x.total_spent > b.limit_amount THEN 'exceeded' ELSE 'active' END;
+
+ */

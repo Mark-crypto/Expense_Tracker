@@ -18,10 +18,11 @@ export const isTokenVerified = (req, res, next) => {
         message: "Access denied. Login to access resources.",
       });
     }
-     req.user = {
+    req.user = {
       userId: decoded.userId,
       name: decoded.name,
       role: decoded.role,
+      email: decoded.email,
     };
     next();
   } catch (error) {

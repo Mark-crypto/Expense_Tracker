@@ -34,6 +34,7 @@ export const expenseSchema = z.object({
       "Each subcategory must have a name and amount"
     ),
   budgeted: z.boolean(),
+  budgetNames: z.string().optional().or(z.literal("")),
   date: z.date({ message: "Enter a valid date" }),
 });
 

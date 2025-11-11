@@ -1,7 +1,7 @@
 import Form from "react-bootstrap/Form";
 import Navbar from "./Navbar.jsx";
 import { toast, ToastContainer } from "react-toastify";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "@/axiosInstance";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
@@ -33,6 +33,7 @@ const ExpenseForm = () => {
       category: "",
       subcategories: [{ name: "", amount: "" }],
       date: "",
+      budgetNames: "",
       budgeted: false,
     },
     shouldUnregister: true,
@@ -63,6 +64,14 @@ const ExpenseForm = () => {
       setTimeout(() => navigate("/history"), 3000);
     },
     onError: () => toast.error("Error creating expense"),
+  });
+
+  const { data: budgetData, isLoading } = useQuery({
+    queryKey: ["budgets"],
+    queryFn: async () => {
+      return await axiosInstance.get(`/budget/names`);
+    },
+    keepPreviousData: true,
   });
 
   const addExpense = (data) => {
@@ -183,34 +192,66 @@ const ExpenseForm = () => {
               )}
             </Form.Group>
 
-            <Form.Group className="mb-4 font-semibold mt-6">
-              <Form.Label className="fw-semibold mb-1">
-                Is this expense part of a budget you have already created?
-              </Form.Label>
+            <Form.Group className="mb-6">
+              {/* Card container with border */}
+              <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                {/* Checkbox */}
+                <div className="flex items-start gap-3 mb-2">
+                  <Form.Check
+                    type="checkbox"
+                    id="budgeted"
+                    {...register("budgeted")}
+                    isInvalid={!!errors.budgeted}
+                    className="mt-0.5"
+                  />
+                  <label
+                    htmlFor="budgeted"
+                    className="text-gray-800 font-medium cursor-pointer"
+                  >
+                    Do you want this expense to be tracked against your budget?
+                  </label>
+                </div>
 
-              <div className="d-flex align-items-start">
-                <Form.Check
-                  type="checkbox"
-                  id="budgeted"
-                  {...register("budgeted")}
-                  isInvalid={!!errors.budgeted}
-                  label="Yes, count this expense toward my active budget for this category"
-                  className="me-2"
-                />
+                {/* Description paragraph */}
+                <p className="text-gray-600 text-sm leading-relaxed mb-0">
+                  Enabling this option allows the system to monitor your
+                  expenses against your set budget limits.
+                </p>
+
+                {/* Error message */}
+                {errors.budgeted && (
+                  <div className="mt-2 text-red-600 text-sm">
+                    {errors.budgeted.message}
+                  </div>
+                )}
               </div>
-
-              <Form.Text className="text-muted" style={{ fontSize: "0.9rem" }}>
-                <i className="bi bi-info-circle me-1"></i>
-                Check this box only if this expense belongs to a budget you have
-                already set for the same category. Leave it unchecked if this is
-                a one-off or unbudgeted expense.
-              </Form.Text>
-
-              <Form.Control.Feedback type="invalid">
-                {errors.budgeted?.message}
-              </Form.Control.Feedback>
             </Form.Group>
 
+            {watch("budgeted") && (
+              <>
+                <Form.Group className="mb-4">
+                  <Form.Label className="font-medium">
+                    Available Budgets
+                  </Form.Label>
+                  <Form.Select {...register("budgetNames")} required>
+                    <option value="">Choose a Budget</option>
+                    {budgetData?.data?.data?.map((budget) => {
+                      return (
+                        <option key={budget.budget_id} value={budget.name}>
+                          {budget.name}
+                        </option>
+                      );
+                    })}
+                  </Form.Select>
+
+                  {errors.budgetNames && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {errors.budgetNames.message}
+                    </p>
+                  )}
+                </Form.Group>
+              </>
+            )}
             {/* Submit Button */}
             <button
               type="submit"

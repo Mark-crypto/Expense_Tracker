@@ -83,12 +83,22 @@ export const login = async (req, res) => {
         .json({ error: true, message: "Invalid email or password" });
     }
     const accessToken = jwt.sign(
-      { userId: user[0].user_id, name: user[0].name, role: user[0].role },
+      {
+        userId: user[0].user_id,
+        name: user[0].name,
+        role: user[0].role,
+        email: user[0].email,
+      },
       process.env.JWT_ACCESS_TOKEN,
       { expiresIn: "15m" }
     );
     const refreshToken = jwt.sign(
-      { userId: user[0].user_id, name: user[0].name, role: user[0].role },
+      {
+        userId: user[0].user_id,
+        name: user[0].name,
+        role: user[0].role,
+        email: user[0].email,
+      },
       process.env.JWT_REFRESH_TOKEN,
       { expiresIn: "7d" }
     );
@@ -164,7 +174,12 @@ export const refresh = async (req, res) => {
     }
     const user = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);
     const newAccessToken = jwt.sign(
-      { name: user.name, userId: user.userId, role: user.role },
+      {
+        name: user.name,
+        userId: user.userId,
+        role: user.role,
+        email: user.email,
+      },
       process.env.JWT_ACCESS_TOKEN,
       { expiresIn: "15m" }
     );

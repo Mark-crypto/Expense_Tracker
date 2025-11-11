@@ -1,6 +1,5 @@
-// components/ProtectedRoute.jsx
-import { useAuth } from '@/contexts/AuthContext';
-import Loading from './Loading';
+import { useAuth } from "@/contexts/AuthContext";
+import Loading from "./Loading";
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { isAuthenticated, isAdmin, loading, user } = useAuth();
@@ -10,12 +9,12 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   }
 
   if (!isAuthenticated) {
-    window.location.href = '/login';
+    window.location.href = "/login";
     return null;
   }
 
   if (requiredRole && user.role !== requiredRole) {
-    window.location.href = '/403';
+    window.location.href = "/403";
     return null;
   }
 

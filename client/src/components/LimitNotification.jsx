@@ -1,7 +1,32 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, XCircle, CheckCircle } from "lucide-react";
 
 const LimitNotification = () => {
-  const [selectedAction, setSelectedAction] = useState("");
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    const eventSource = new EventSource(
+      "http://localhost:5050/api/notifications",
+      {
+        withCredentials: true,
+      }
+    );
+
+    eventSource.addEventListener("notification", (event) => {
+      const data = JSON.parse(event.data);
+      // If server sends a list, flatten it
+      const newItems = Array.isArray(data) ? data : [data];
+      setNotifications((prev) => [...newItems, ...prev]);
+    });
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error:", err);
+      eventSource.close();
+    };
+
+    return () => eventSource.close();
+  }, []);
 
   const actions = [
     {
@@ -15,127 +40,110 @@ const LimitNotification = () => {
       id: "increase-budget",
       label: "Increase budget automatically",
       description:
-        "Raise limit by 15% to KES 5,750 to match your current spending pattern",
+        "Raise limit by 15% to KES 5,750 to match your spending pattern",
       badge: "+15%",
     },
     {
       id: "set-new-limit",
-      label: "Set custom budget limit",
+      label: "Set new limit",
       description:
-        "Manually choose a new amount that works better for your financial plan",
+        "Manually choose a custom amount that fits your financial plan",
       badge: "Custom",
     },
     {
       id: "deactivate-budget",
-      label: "Deactivate budget tracking",
-      description: "Stop monitoring expenses for this category entirely",
+      label: "Deactivate budget",
+      description: "Stop tracking expenses for this category",
       badge: "Stop",
     },
   ];
 
+  const handleAction = (actionId, notification) => {
+    console.log(
+      `Action [${actionId}] selected for notification:`,
+      notification
+    );
+    // TODO: send POST to backend to apply chosen action
+  };
+
   return (
-    <div className="w-80 bg-white rounded-2xl shadow-2xl border border-gray-200/60 overflow-hidden">
-      {/* Elegant Header */}
-      <div className="relative p-4 bg-gradient-to-br from-slate-900 to-slate-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center border border-red-500/30">
-              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-sm">Budget Alert</h3>
-              <p className="text-slate-300 text-xs">10% over limit</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-white text-sm font-bold">KES 500</div>
-            <div className="text-red-400 text-xs">over budget</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Visual Indicator */}
-      <div className="px-4 pt-3">
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
-          <span>Budget</span>
-          <span>110%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full transition-all duration-1000"
-            style={{ width: "110%" }}
-          ></div>
-        </div>
-      </div>
-
-      {/* Action Selection */}
-      <div className="p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          Choose how to handle this budget limit:
-        </label>
-
-        <div className="space-y-3">
-          {actions.map((action) => (
-            <div
-              key={action.id}
-              onClick={() => setSelectedAction(action.id)}
-              className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                selectedAction === action.id
-                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                  : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-start gap-3 flex-1">
-                <div
-                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-                    selectedAction === action.id
-                      ? "border-blue-500 bg-blue-500"
-                      : "border-gray-400"
-                  }`}
-                >
-                  {selectedAction === action.id && (
-                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-800 mb-1">
-                    {action.label}
-                  </div>
-                  <div className="text-xs text-gray-600 leading-relaxed">
-                    {action.description}
-                  </div>
-                </div>
-              </div>
-              <span
-                className={`text-xs px-2 py-1 rounded-full h-fit ${
-                  selectedAction === action.id
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {action.badge}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 mt-4">
-          <button className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-            Ignore
-          </button>
-          <button
-            className={`flex-1 py-2.5 text-sm text-white rounded-xl transition-all ${
-              selectedAction
-                ? "bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg hover:shadow-xl"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
-            disabled={!selectedAction}
+    <div className="fixed bottom-6 right-6 z-50 w-96 space-y-4">
+      <AnimatePresence>
+        {notifications.map((notif, i) => (
+          <motion.div
+            key={notif.id || i}
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl border border-gray-200 p-4"
           >
-            Apply
-          </button>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Bell className="w-5 h-5 text-indigo-600" />
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200">
+                  {notif.title || "Budget Limit Reached"}
+                </h4>
+              </div>
+              <button
+                onClick={() =>
+                  setNotifications((prev) => prev.filter((_, idx) => idx !== i))
+                }
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              {notif.message ||
+                "Your expenses have exceeded the set budget limit."}
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {actions.map((action) => (
+                <button
+                  key={action.id}
+                  onClick={() => handleAction(action.id, notif)}
+                  className="group border border-gray-200 rounded-xl p-2 hover:bg-indigo-50 transition"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-indigo-700">
+                      {action.label}
+                    </span>
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-lg">
+                      {action.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {action.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-end mt-3">
+              <button
+                className="flex items-center space-x-1 text-xs text-green-600 hover:text-green-700"
+                onClick={() => {
+                  setNotifications((prev) =>
+                    prev.filter((_, idx) => idx !== i)
+                  );
+                }}
+              >
+                <CheckCircle size={14} /> <span>Mark as read</span>
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {notifications.length === 0 && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-2xl shadow-lg p-4 flex items-center justify-center space-x-2">
+          <Bell className="text-gray-400" />
+          <span className="text-gray-500 text-sm">No new notifications</span>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import connection from "../database.js";
+import { sendEmail } from "../utils/emailAlert.js";
 
 export const getExpenses = async (req, res) => {
   const pageNumber = parseInt(req.query._page) || 1;
@@ -19,6 +20,7 @@ export const getExpenses = async (req, res) => {
       "SELECT COUNT(*) AS total FROM expense WHERE user_id = ?",
       [userId]
     );
+
     const total = countResult[0]?.total || 0;
     res.status(200).json({
       data: rows,
@@ -34,27 +36,118 @@ export const getExpenses = async (req, res) => {
 };
 
 export const createExpense = async (req, res) => {
-  const { amount, category, date, subcategories } = req.body;
-
+  const { amount, category, date, subcategories, budgeted, budgetNames } =
+    req.body;
+  const isBudgeted = budgeted ? 1 : 0;
   const month = new Date(date).toLocaleString("default", { month: "long" });
   const userId = parseInt(req.user.userId);
 
   try {
-    // First, process subcategories and add new ones to suggestions
     if (subcategories && Array.isArray(subcategories)) {
       await processSubcategories(subcategories, category);
     }
+    const [budgetID] = await connection.execute(
+      `SELECT budget_id FROM budget WHERE name = ? AND user_id = ?`,
+      [budgetNames, userId]
+    );
+    const budgetIdValue = budgetID.length > 0 ? budgetID[0].budget_id : null;
 
     const [response] = await connection.execute(
-      "INSERT INTO expense (amount , category , date_created, month, user_id, subcategories) VALUES(?,?,?,?,?,?)",
-      [amount, category, date, month, userId, JSON.stringify(subcategories)]
+      "INSERT INTO expense (amount , category , date_created, month, user_id, subcategories, budgeted, budget_id) VALUES(?,?,?,?,?,?,?,?)",
+      [
+        amount,
+        category,
+        date,
+        month,
+        userId,
+        JSON.stringify(subcategories),
+        isBudgeted,
+        budgetIdValue,
+      ]
     );
 
-    if (response == 0) {
+    if (response.affectedRows == 0) {
       return res.status(400).json({
         error: true,
         message: "An error occurred. Expense was not created.",
       });
+    }
+
+    if (budgetIdValue) {
+      const [[budget]] = await connection.execute(
+        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = ? AND user_id = ?`,
+        [budgetIdValue, userId]
+      );
+
+      const [[{ total_spent }]] = await connection.execute(
+        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
+        [budgetIdValue]
+      );
+
+      if (
+        Number(budget.amount) < Number(total_spent) &&
+        budget.status !== "exceeded"
+      ) {
+        await connection.execute(
+          `UPDATE budget SET status = 'exceeded' WHERE budget_id = ?`,
+          [budgetIdValue]
+        );
+        const message = `Your budget "${
+          budget.name
+        }" has been exceeded by KES ${
+          total_spent - budget.amount
+        }. You have spent a total of KES ${total_spent}, which is over your budget amount of KES ${
+          budget.amount
+        }. Please review your expenses.`;
+        const html = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
+    <h2 style="color: #d32f2f;">Budget Limit Exceeded</h2>
+    <p>Hi ${req.user?.name || "there"},</p>
+    <p>
+      Your budget for <strong style="color: #1565c0;">${budget.name}</strong> 
+      has been <strong style="color: #d32f2f;">exceeded</strong> by 
+      <strong>KES ${(total_spent - budget.amount).toLocaleString()}</strong>.
+    </p>
+
+    <p>
+      You have spent a total of 
+      <strong style="color: #2e7d32;">KES ${total_spent.toLocaleString()}</strong>, 
+      which is over your budget limit of 
+      <strong style="color: #d32f2f;">KES ${budget.amount.toLocaleString()}</strong>.
+    </p>
+
+    <p style="margin-top: 20px;">
+      Please review your expenses to stay on track.
+    </p>
+
+    <hr style="margin: 25px 0; border: none; border-top: 1px solid #ddd;">
+    <p style="font-size: 12px; color: #777;">
+      This is an automated message from Budget Tracker. Please do not reply to this email.
+    </p>
+  </div>
+`;
+
+        if (budget.email_checked === "checked") {
+          const email = req.user.email;
+          console.log(email);
+          const title = "BUDGET LIMIT EXCEEDED ALERT";
+
+          await sendEmail(email, title, message, html);
+        }
+
+        const [[existingNotification]] = await connection.execute(
+          `SELECT id FROM notifications WHERE user_id = ? AND budget_id = ? AND type = 'budget_exceeded'`,
+          [userId, budgetIdValue]
+        );
+
+        if (!existingNotification) {
+          await connection.execute(
+            `INSERT INTO notifications (user_id, budget_id, type, message) VALUES (?, ?, 'budget_exceeded', ?)`,
+            [userId, budgetIdValue, message]
+          );
+          console.log("📨 Notification inserted:", existingNotification);
+        }
+      }
     }
     res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
