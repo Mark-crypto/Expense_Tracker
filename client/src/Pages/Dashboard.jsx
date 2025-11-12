@@ -9,6 +9,7 @@ import { toast, ToastContainer } from "react-toastify";
 import TopFiveRolling from "@/components/TopFiveRolling";
 import BottomFiveRolling from "@/components/BottomFiveRolling";
 import DashboardCard from "@/components/DashboardCard";
+import LimitNotification from "@/components/LimitNotification";
 
 const Dashboard = () => {
   const { data, error, isLoading } = useQuery({
@@ -34,6 +35,7 @@ const Dashboard = () => {
 
         <div className="w-4/5 p-6 space-y-6">
           <ToastContainer />
+          <LimitNotification />
           <motion.h2
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

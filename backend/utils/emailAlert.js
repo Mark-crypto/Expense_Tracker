@@ -1,8 +1,9 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
+import connection from "../database.js";
 
-export const sendEmail = async (to, subject, text, html) => {
+export const sendEmail = async (to, subject, text, html, budgetId) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -21,6 +22,10 @@ export const sendEmail = async (to, subject, text, html) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
+    await connection.execute(
+      "UPDATE budget SET notify_email = 1 WHERE budget_id = ?",
+      [budgetId]
+    );
     console.log(`Email sent to ${to}: ${info.messageId}`);
   } catch (error) {
     console.error("Error sending email:", error);

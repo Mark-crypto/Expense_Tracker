@@ -132,7 +132,7 @@ export const createExpense = async (req, res) => {
           console.log(email);
           const title = "BUDGET LIMIT EXCEEDED ALERT";
 
-          await sendEmail(email, title, message, html);
+          await sendEmail(email, title, message, html, budgetIdValue);
         }
 
         const [[existingNotification]] = await connection.execute(
@@ -145,7 +145,7 @@ export const createExpense = async (req, res) => {
             `INSERT INTO notifications (user_id, budget_id, type, message) VALUES (?, ?, 'budget_exceeded', ?)`,
             [userId, budgetIdValue, message]
           );
-          console.log("📨 Notification inserted:", existingNotification);
+          console.log("Notification inserted:", existingNotification);
         }
       }
     }

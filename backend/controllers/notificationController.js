@@ -1,40 +1,92 @@
 import connection from "../database.js";
 
 export const getNotifications = async (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders();
-
   const userId = req.user.userId;
+  try {
+    const [notifications] = await connection.execute(
+      " SELECT * FROM notifications WHERE user_id = ? AND status = 'unread' ORDER BY created_at DESC ",
+      [userId]
+    );
+    res.status(200).json({ data: notifications });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. No notifications were found.",
+    });
+  }
+};
 
-  res.write(
-    `data: ${JSON.stringify({
-      message: "Connected to notification stream",
-    })}\n\n`
-  );
+export const markNotificationAsRead = async (req, res) => {
+  const userId = req.user.userId;
+  let { notificationId } = req.params;
+  notificationId = Number(notificationId);
+  try {
+    const [result] = await connection.execute(
+      " UPDATE notifications SET status = 'read' WHERE id = ? AND user_id = ? ",
+      [notificationId, userId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        error: true,
+        message: "Notification not found or already marked as read.",
+      });
+    }
+    await connection.execute(
+      " UPDATE budgets SET notified_exceeded = 1 WHERE budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+      [notificationId]
+    );
+
+    res.status(200).json({ message: "Notification marked as read." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({
+      error: true,
+      message:
+        "An error occurred. The notification could not be marked as read.",
+    });
+  }
+};
+
+export const implementNotificationAction = async (req, res) => {
+  const userId = req.user.userId;
+  let { notificationId } = req.params;
+  notificationId = Number(notificationId);
+  const { action, newAmount } = req.body;
 
   try {
-    const interval = setInterval(async () => {
-      const [rows] = await connection.execute(
-        "SELECT * FROM notifications WHERE user_id = ? AND status = 'unread' ORDER BY created_at DESC LIMIT 5",
-        [userId]
+    if (action === "deactivate-budget") {
+      await connection.execute(
+        " UPDATE budgets SET status = 'inactive' WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+        [userId, notificationId]
       );
-      if (rows.length > 0) {
-        res.write(`data: ${JSON.stringify(rows)}\n\n`);
-        await connection.execute(
-          "UPDATE notifications SET status = 'resolved' WHERE user_id = ? AND status = 'unread'",
-          [userId]
-        );
-      }
-    }, 30000);
-
-    req.on("close", () => {
-      clearInterval(interval);
-      res.end();
-    });
+    } else if (action === "keep-active") {
+      // No action needed for keep-active
+    } else if (action === "increase-budget") {
+      await connection.execute(
+        " UPDATE budgets SET amount = amount * 1.15 WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+        [userId, notificationId]
+      );
+    } else if (action === "set-custom-limit" && newAmount) {
+      await connection.execute(
+        " UPDATE budgets SET amount = ? WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+        [newAmount, userId, notificationId]
+      );
+    } else {
+      return res.status(400).json({
+        error: true,
+        message: "Invalid action or missing parameters.",
+      });
+    }
+    res
+      .status(200)
+      .json({ message: "Notification action implemented successfully." });
   } catch (error) {
-    console.error("SSE Error:", error);
-    res.status(500).json({ error: "Server-Sent Events error occurred" });
+    console.log("Error for notification action:", error);
+    return res.status(500).json({
+      error: true,
+      message:
+        "An error occurred. The notification action could not be implemented.",
+    });
   }
 };
