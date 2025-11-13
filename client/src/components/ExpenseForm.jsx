@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { expenseSchema } from "@/zodSchemas/schemas.js";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { FaMinusCircle } from "react-icons/fa";
+import LimitNotification from "./LimitNotification.jsx";
 
 const ExpenseForm = () => {
   const queryClient = useQueryClient();
@@ -92,6 +93,7 @@ const ExpenseForm = () => {
         <Navbar />
       </div>
       <div className="flex-1 min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <LimitNotification />
         <ToastContainer position="top-right" autoClose={3000} theme="light" />
         <div className="bg-white shadow-md rounded-2xl p-8 w-full max-w-lg">
           <h3 className="text-center text-2xl font-bold text-purple-700 mb-6">

@@ -11,9 +11,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
+import LimitNotification from "@/components/LimitNotification";
 
 const History = () => {
   const queryClient = useQueryClient();
@@ -54,6 +54,7 @@ const History = () => {
 
       {/* Main Content */}
       <div className="flex-1 bg-gray-50 p-6">
+        <LimitNotification />
         {/* Clear History Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}

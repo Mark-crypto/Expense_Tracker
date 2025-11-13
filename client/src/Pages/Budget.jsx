@@ -3,6 +3,7 @@ import BudgetTable from "../components/BudgetTable";
 import { useState } from "react";
 import BudgetForm from "../components/BudgetForm";
 import { FaChartBar } from "react-icons/fa";
+import LimitNotification from "../components/LimitNotification";
 
 const Budget = () => {
   const [show, setShow] = useState(false);
@@ -17,6 +18,7 @@ const Budget = () => {
       {/* Main content */}
       <main className="w-4/5 flex items-center justify-center p-6 overflow-y-auto">
         <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-2xl text-center">
+          <LimitNotification />
           <h3
             style={{
               fontWeight: "500",

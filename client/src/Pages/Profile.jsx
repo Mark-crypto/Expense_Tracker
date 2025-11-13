@@ -10,6 +10,7 @@ import ProfileForm from "@/components/ProfileForm";
 import Modal from "react-bootstrap/Modal";
 import Loading from "@/components/Loading";
 import { useState } from "react";
+import LimitNotification from "@/components/LimitNotification";
 
 const Profile = () => {
   let { id } = useParams();
@@ -34,6 +35,7 @@ const Profile = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Navbar />
       <main className="flex-grow flex items-center justify-center p-8">
+        <LimitNotification />
         <motion.div
           className="max-w-md mx-auto bg-white  shadow-2xl rounded-2xl p-6 text-center space-y-4 border border-gray-100"
           initial={{ opacity: 0, y: 30 }}

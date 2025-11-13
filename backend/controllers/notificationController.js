@@ -33,7 +33,7 @@ export const markNotificationAsRead = async (req, res) => {
       });
     }
     await connection.execute(
-      " UPDATE budgets SET notified_exceeded = 1 WHERE budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+      " UPDATE budget SET notified_exceeded = 1 WHERE budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
       [notificationId]
     );
 
@@ -57,19 +57,19 @@ export const implementNotificationAction = async (req, res) => {
   try {
     if (action === "deactivate-budget") {
       await connection.execute(
-        " UPDATE budgets SET status = 'inactive' WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+        " UPDATE budget SET status = 'inactive' WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
         [userId, notificationId]
       );
     } else if (action === "keep-active") {
       // No action needed for keep-active
     } else if (action === "increase-budget") {
       await connection.execute(
-        " UPDATE budgets SET amount = amount * 1.15 WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+        " UPDATE budget SET amount = amount * 1.15 WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
         [userId, notificationId]
       );
     } else if (action === "set-custom-limit" && newAmount) {
       await connection.execute(
-        " UPDATE budgets SET amount = ? WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
+        " UPDATE budget SET amount = ? WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
         [newAmount, userId, notificationId]
       );
     } else {

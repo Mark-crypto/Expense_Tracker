@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, X, CheckCircle2, Trash2 } from "lucide-react";
+import { Bell, X, CheckCircle2 } from "lucide-react";
 import axiosInstance from "@/axiosInstance";
 import { motion, AnimatePresence } from "framer-motion";
 import { Form } from "react-bootstrap";
@@ -39,8 +39,14 @@ const LimitNotification = () => {
       await axiosInstance.patch(
         `/notifications/mark-as-read/${selectedNotification.id}`
       );
+      setSelectedNotification(null);
+      setSelectedOption("");
+      setCustomAmount("");
+      setDrawerOpen(false);
       refetch();
-    } catch (error) {}
+    } catch (error) {
+      console.log("An error occurred");
+    }
   };
   return (
     <>

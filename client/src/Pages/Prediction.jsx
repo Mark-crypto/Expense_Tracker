@@ -10,6 +10,7 @@ import MonthlyAverage from "@/components/MonthlyAverage.jsx";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Loading from "@/components/Loading";
+import LimitNotification from "@/components/LimitNotification";
 
 const Prediction = () => {
   const [amount, setAmount] = useState(0);
@@ -37,6 +38,7 @@ const Prediction = () => {
 
       {/* Main content */}
       <main className="ml-64 flex-1 p-6 space-y-6 overflow-auto">
+        <LimitNotification />
         {/* Prediction Input Box */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
