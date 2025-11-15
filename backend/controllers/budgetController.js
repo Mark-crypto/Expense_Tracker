@@ -1,5 +1,49 @@
 import connection from "../database.js";
-//GET ID FROM req.userInfo
+import ExcelJS from "exceljs";
+
+export const getBudgetReport = async (req, res) => {
+  const id = parseInt(req.user.userId);
+  try {
+    const [budgets] = await connection.execute(
+      `SELECT * FROM budget WHERE user_id = ?`,
+      [id]
+    );
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Budgets Report");
+
+    sheet.columns = [
+      { header: "Name", key: "name", width: 15 },
+      { header: "Category", key: "category", width: 20 },
+      { header: "Amount", key: "amount", width: 15 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Subcategories", key: "subcategories", width: 30 },
+    ];
+
+    budgets.forEach((budget) => {
+      sheet.addRow({
+        name: budget.name,
+        category: budget.category,
+        amount: budget.amount,
+        email: budget.email,
+        subcategories: budget.subcategories,
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=budgets.xlsx");
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.log("Error during budget report generation:", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred while generating the budget report.",
+    });
+  }
+};
 
 // Get all budgets
 export async function getBudgetNames(req, res) {

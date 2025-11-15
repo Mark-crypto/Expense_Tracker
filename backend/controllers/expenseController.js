@@ -1,5 +1,47 @@
 import connection from "../database.js";
 import { sendEmail } from "../utils/emailAlert.js";
+import ExcelJS from "exceljs";
+
+export const getExpenseReport = async (req, res) => {
+  const id = parseInt(req.user.userId);
+  try {
+    const [expenses] = await connection.execute(
+      `SELECT * FROM expense WHERE user_id = ?`,
+      [id]
+    );
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Expenses Report");
+
+    sheet.columns = [
+      { header: "Amount", key: "amount", width: 15 },
+      { header: "Category", key: "category", width: 20 },
+      { header: "Date", key: "date", width: 15 },
+      { header: "Subcategories", key: "subcategories", width: 30 },
+    ];
+    expenses.forEach((exp) => {
+      sheet.addRow({
+        date: exp.date_created,
+        category: exp.category,
+        amount: exp.amount,
+        subcategories: exp.subcategories,
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=expenses.xlsx");
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.log("Error downloading expense report", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred while downloading the expense report.",
+    });
+  }
+};
 
 export const getExpenses = async (req, res) => {
   const pageNumber = parseInt(req.query._page) || 1;

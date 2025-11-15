@@ -6,11 +6,13 @@ import {
   getSubcategorySuggestions,
   getAllSubcategoriesForCategory,
   addSubcategorySuggestion,
+  getExpenseReport,
 } from "../controllers/expenseController.js";
 
 const router = Router();
 
 router.get("/expenses", getExpenses);
+router.get("/expenses/report", getExpenseReport);
 router.post("/expenses", createExpense);
 router.put("/expenses", deleteExpense);
 

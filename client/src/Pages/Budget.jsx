@@ -28,7 +28,6 @@ const Budget = () => {
           >
             Budget Management
           </h3>
-
           {/* Budget Form */}
           <div className="mb-6 flex items-center justify-center">
             <BudgetForm />
