@@ -148,6 +148,7 @@ const BudgetTable = () => {
                 Subcategory Details
               </th>
               <th className="px-4 py-3">Actions</th>
+              <th> Total</th>
             </tr>
             <tr className="bg-gradient-to-r from-purple-500 to-purple-400">
               <th className="px-4 py-2"></th>
@@ -221,6 +222,7 @@ const BudgetTable = () => {
                         </DialogContent>
                       </Dialog>
                     </td>
+                    <td className="px-4 py-2 font-semibold">{item.amount}</td>
                   </motion.tr>
 
                   {/* Nested Subcategory Rows */}
