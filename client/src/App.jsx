@@ -7,20 +7,15 @@ import SilentRefresh from "./SilentRefresh";
 import Unauthorized from "./Pages/Unauthorized";
 import ErrorPage from "./components/404Error";
 import ProfileForm from "./components/ProfileForm";
-import AdminDashboard from "./Pages/AdminDashboard.jsx";
-import LimitNotification from "./components/LimitNotification";
 
 const Register = lazy(() => import("./pages/Register"));
 const Profile = lazy(() => import("./pages/Profile"));
-
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Prediction = lazy(() => import("./pages/Prediction"));
 const Budget = lazy(() => import("./pages/Budget"));
 const History = lazy(() => import("./pages/History"));
-
 const ExpenseForm = lazy(() => import("./components/ExpenseForm"));
-
-//Add id to the url
+const AdminDashboard = lazy(() => import("./Pages/AdminDashboard.jsx"));
 
 function App() {
   return (
@@ -30,10 +25,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/notification" element={<LimitNotification />} />
             <Route path="/register" element={<Register />} />
             <Route path="/new/profile/:id" element={<Profile />} />
-
             <Route path="/expense-form" element={<ExpenseForm />} />
             <Route path="/predictions" element={<Prediction />} />
             <Route path="/budget" element={<Budget />} />

@@ -267,7 +267,7 @@ const LimitNotification = () => {
                           </div>
                           <div className="flex-1">
                             <h3 className="text-xl font-bold text-white">
-                              Budget Limit Exceeded Alert
+                              Budget Limit Exceeded
                             </h3>
                             <p className="text-purple-100 text-sm mt-1">
                               Action required for your budget

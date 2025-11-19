@@ -71,6 +71,7 @@ const BudgetForm = () => {
     try {
       const formattedData = {
         ...data,
+        name: data.name.trim().toLowerCase(),
         amount: totalAmount,
       };
       mutate(formattedData);
@@ -216,7 +217,6 @@ const BudgetForm = () => {
         {watch("timeLimit") && (
           <div className="mt-4 mb-4">
             <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
-              {/* Header */}
               <div className="flex items-center gap-2 mb-4">
                 <i className="bi bi-calendar-check text-blue-600"></i>
                 <span className="font-semibold text-gray-800">
@@ -231,6 +231,7 @@ const BudgetForm = () => {
                   </Form.Label>
                   <Form.Control
                     type="date"
+                    min={new Date().toISOString().split("T")[0]}
                     {...register("startDate", { valueAsDate: true })}
                     className="border-gray-300 rounded-lg"
                   />
@@ -247,6 +248,7 @@ const BudgetForm = () => {
                   </Form.Label>
                   <Form.Control
                     type="date"
+                    min={new Date().toISOString().split("T")[0]}
                     {...register("endDate", { valueAsDate: true })}
                     className="border-gray-300 rounded-lg"
                   />

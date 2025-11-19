@@ -3,10 +3,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
-//add crypto.randomBytes(64).toString('hex')
-//Check expires at on table token
-//look into winston for prpoduction logging
-//Sanitize inputs with express-validator
 
 export const me = (req, res) => {
   try {

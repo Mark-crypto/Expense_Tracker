@@ -67,11 +67,41 @@ export const implementNotificationAction = async (req, res) => {
         " UPDATE budget SET amount = amount * 1.15 WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
         [userId, notificationId]
       );
+      const [[budget]] = await connection.execute(
+        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = ? AND user_id = ?`,
+        [budgetIdValue, userId]
+      );
+
+      const [[{ total_spent }]] = await connection.execute(
+        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
+        [budgetIdValue]
+      );
+      if (Number(total_spent) <= Number(budget.amount)) {
+        await connection.execute(
+          " UPDATE budget SET notified_exceeded = 0, notify_email = 0, status = 'active' WHERE budget_id = ? AND user_id = ? ",
+          [budget.budget_id, userId]
+        );
+      }
     } else if (action === "set-custom-limit" && newAmount) {
       await connection.execute(
         " UPDATE budget SET amount = ? WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
         [newAmount, userId, notificationId]
       );
+      const [[budget]] = await connection.execute(
+        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = ? AND user_id = ?`,
+        [budgetIdValue, userId]
+      );
+
+      const [[{ total_spent }]] = await connection.execute(
+        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
+        [budgetIdValue]
+      );
+      if (Number(total_spent) <= Number(budget.amount)) {
+        await connection.execute(
+          " UPDATE budget SET notified_exceeded = 0, notify_email = 0, status = 'active' WHERE budget_id = ? AND user_id = ? ",
+          [budget.budget_id, userId]
+        );
+      }
     } else {
       return res.status(400).json({
         error: true,

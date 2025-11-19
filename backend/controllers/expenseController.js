@@ -142,36 +142,39 @@ export const createExpense = async (req, res) => {
           budget.amount
         }. Please review your expenses.`;
         const html = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
-    <h2 style="color: #d32f2f;">Budget Limit Exceeded</h2>
-    <p>Hi ${req.user?.name || "there"},</p>
-    <p>
-      Your budget for <strong style="color: #1565c0;">${budget.name}</strong> 
-      has been <strong style="color: #d32f2f;">exceeded</strong> by 
-      <strong>KES ${(total_spent - budget.amount).toLocaleString()}</strong>.
-    </p>
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
+        <h2 style="color: #d32f2f;">Budget Limit Exceeded</h2>
+        <p>Hi ${req.user?.name.toUpperCase() || "there"},</p>
+        <p>
+          Your budget for <strong style="color: #1565c0;">${
+            budget.name
+          }</strong> 
+          has been <strong style="color: #d32f2f;">exceeded</strong> by 
+          <strong>KES ${(
+            total_spent - budget.amount
+          ).toLocaleString()}</strong>.
+        </p>
 
-    <p>
-      You have spent a total of 
-      <strong style="color: #2e7d32;">KES ${total_spent.toLocaleString()}</strong>, 
-      which is over your budget limit of 
-      <strong style="color: #d32f2f;">KES ${budget.amount.toLocaleString()}</strong>.
-    </p>
+        <p>
+          You have spent a total of 
+          <strong style="color: #2e7d32;">KES ${total_spent.toLocaleString()}</strong>, 
+          which is over your budget limit of 
+          <strong style="color: #d32f2f;">KES ${budget.amount.toLocaleString()}</strong>.
+        </p>
 
-    <p style="margin-top: 20px;">
-      Please review your expenses to stay on track.
-    </p>
+        <p style="margin-top: 20px;">
+          Please review your expenses to stay on track.
+        </p>
 
-    <hr style="margin: 25px 0; border: none; border-top: 1px solid #ddd;">
-    <p style="font-size: 12px; color: #777;">
-      This is an automated message from Budget Tracker. Please do not reply to this email.
-    </p>
-  </div>
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #ddd;">
+        <p style="font-size: 12px; color: #777;">
+          This is an automated message from Budget Tracker. Please do not reply to this email.
+        </p>
+      </div>
 `;
 
         if (budget.email_checked === "checked") {
           const email = req.user.email;
-          console.log(email);
           const title = "BUDGET LIMIT EXCEEDED ALERT";
 
           await sendEmail(email, title, message, html, budgetIdValue);
@@ -187,7 +190,6 @@ export const createExpense = async (req, res) => {
             `INSERT INTO notifications (user_id, budget_id, type, message) VALUES (?, ?, 'budget_exceeded', ?)`,
             [userId, budgetIdValue, message]
           );
-          console.log("Notification inserted:", existingNotification);
         }
       }
     }
@@ -224,12 +226,10 @@ export const deleteExpense = async (req, res) => {
   }
 };
 
-// New function to get subcategory suggestions
 export const getSubcategorySuggestions = async (req, res) => {
   const { search, category, limit = 4 } = req.query;
 
   try {
-    // Validate required parameters
     if (!category) {
       return res.status(400).json({
         error: true,
@@ -269,7 +269,6 @@ export const getSubcategorySuggestions = async (req, res) => {
   }
 };
 
-// Helper function to process subcategories and add new ones
 const processSubcategories = async (subcategories, category) => {
   try {
     for (const subcategory of subcategories) {
@@ -278,32 +277,24 @@ const processSubcategories = async (subcategories, category) => {
       if (name && name.trim()) {
         const cleanName = name.trim();
 
-        // Check if subcategory already exists for this category
         const [existing] = await connection.execute(
           "SELECT id FROM subcategory_suggestions WHERE category = ? AND subcategory = ?",
           [category, cleanName]
         );
 
-        // If it doesn't exist, add it
         if (existing.length === 0) {
           await connection.execute(
             "INSERT INTO subcategory_suggestions (subcategory, category) VALUES (?, ?)",
             [cleanName, category]
-          );
-          console.log(
-            `Added new subcategory suggestion: ${cleanName} for category: ${category}`
           );
         }
       }
     }
   } catch (error) {
     console.log("Error processing subcategories:", error);
-    // Don't throw error here - we don't want to break the expense creation
-    // if subcategory processing fails
   }
 };
 
-// Optional: Function to get all subcategories for a category (for admin purposes)
 export const getAllSubcategoriesForCategory = async (req, res) => {
   const { category } = req.params;
 
@@ -326,7 +317,6 @@ export const getAllSubcategoriesForCategory = async (req, res) => {
   }
 };
 
-// Optional: Function to manually add a subcategory suggestion
 export const addSubcategorySuggestion = async (req, res) => {
   const { subcategory, category } = req.body;
 
@@ -338,7 +328,6 @@ export const addSubcategorySuggestion = async (req, res) => {
       });
     }
 
-    // Check if already exists
     const [existing] = await connection.execute(
       "SELECT id FROM subcategory_suggestions WHERE category = ? AND subcategory = ?",
       [category, subcategory.trim()]

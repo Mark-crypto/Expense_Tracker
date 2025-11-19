@@ -66,7 +66,7 @@ const ExpenseForm = () => {
     onError: () => toast.error("Error creating expense"),
   });
 
-  const { data: budgetData, isLoading } = useQuery({
+  const { data: budgetData } = useQuery({
     queryKey: ["budgets"],
     queryFn: async () => {
       return await axiosInstance.get(`/budget/names`);
@@ -181,6 +181,7 @@ const ExpenseForm = () => {
               <Form.Label className="font-medium">Date</Form.Label>
               <Form.Control
                 type="date"
+                min={new Date().toISOString().split("T")[0]}
                 {...register("date", { valueAsDate: true })}
               />
               {errors.date && (
@@ -191,9 +192,7 @@ const ExpenseForm = () => {
             </Form.Group>
 
             <Form.Group className="mb-6">
-              {/* Card container with border */}
               <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                {/* Checkbox */}
                 <div className="flex items-start gap-3 mb-2">
                   <Form.Check
                     type="checkbox"
@@ -210,13 +209,11 @@ const ExpenseForm = () => {
                   </label>
                 </div>
 
-                {/* Description paragraph */}
                 <p className="text-gray-600 text-sm leading-relaxed mb-0">
                   Enabling this option allows the system to monitor your
                   expenses against your set budget limits.
                 </p>
 
-                {/* Error message */}
                 {errors.budgeted && (
                   <div className="mt-2 text-red-600 text-sm">
                     {errors.budgeted.message}
@@ -236,7 +233,7 @@ const ExpenseForm = () => {
                     {budgetData?.data?.data?.map((budget) => {
                       return (
                         <option key={budget.budget_id} value={budget.name}>
-                          {budget.name}
+                          {budget.name.toUpperCase()}
                         </option>
                       );
                     })}

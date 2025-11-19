@@ -36,7 +36,16 @@ const RegistrationForm = () => {
   const password = watch("password");
 
   const submitForm = (data) => {
-    mutate(data);
+    try {
+      const formattedData = {
+        ...data,
+        name: data.name.trim().toLowerCase(),
+        email: data.email.trim().toLowerCase(),
+        goal: data.goal.trim(),
+        occupation: data.occupation.trim(),
+      };
+      mutate(formattedData);
+    } catch (error) {}
   };
 
   return (

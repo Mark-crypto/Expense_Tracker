@@ -77,11 +77,7 @@ const Prediction = () => {
   const budgetProgressMessage = predictionData.budgetProgressMessage || "";
   const projectionMessage = predictionData.projectionMessage || "";
 
-  const currentMonthTotal =
-    monthlyTotal?.[0]?.total ||
-    monthlyTotal?.[0]?.monthly_total ||
-    monthlyTotal?.[0] ||
-    0;
+  const currentMonthTotal = monthlyTotal?.[1]?.monthly_total || 0;
 
   if (isLoading) return <Loading />;
   if (error) {
@@ -462,7 +458,7 @@ const Prediction = () => {
                       />
                     </div>
                     <div className="mt-1 text-[10px] text-gray-500">
-                      {formatCurrency((cat.percent / 100) * currentMonthTotal)}
+                      {formatCurrency(cat.total)}
                     </div>
                   </motion.div>
                 ))
@@ -524,11 +520,7 @@ const Prediction = () => {
                     animate={{ scale: 1 }}
                     className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2"
                   >
-                    {formatCurrency(
-                      monthlyTotal[1]?.total ||
-                        monthlyTotal[1]?.monthly_total ||
-                        monthlyTotal[1]
-                    )}
+                    {formatCurrency(monthlyTotal[1]?.monthly_total || 0)}
                   </motion.p>
 
                   <div className="flex items-center gap-2">
@@ -561,11 +553,7 @@ const Prediction = () => {
                     animate={{ scale: 1 }}
                     className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2"
                   >
-                    {formatCurrency(
-                      monthlyTotal[0]?.total ||
-                        monthlyTotal[0]?.monthly_total ||
-                        monthlyTotal[0]
-                    )}
+                    {formatCurrency(monthlyTotal[0]?.monthly_total || 0)}
                   </motion.p>
 
                   <div className="flex items-center gap-2">
@@ -600,11 +588,7 @@ const Prediction = () => {
                     animate={{ scale: 1 }}
                     className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2"
                   >
-                    {formatCurrency(
-                      monthlyTotal[0]?.total ||
-                        monthlyTotal[0]?.monthly_total ||
-                        monthlyTotal[0]
-                    )}
+                    {formatCurrency(monthlyTotal[0]?.monthly_total || 0)}
                   </motion.p>
 
                   <div className="flex items-center gap-2">

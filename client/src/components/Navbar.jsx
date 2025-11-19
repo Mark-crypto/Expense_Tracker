@@ -42,7 +42,8 @@ const Navbar = () => {
         </div>
         <div className="px-3 ">
           <p className="text-lg pt-2 text-gray-600 font-medium">
-            Welcome, <span className="text-purple-700">{user.name}</span>!
+            Welcome,{" "}
+            <span className="text-purple-700">{user.name.toUpperCase()}</span>
           </p>
         </div>
         {/* User Profile */}

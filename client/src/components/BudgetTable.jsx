@@ -172,7 +172,7 @@ const BudgetTable = () => {
                         >
                           ▶
                         </span>
-                        <span className="ml-2">{item.name}</span>
+                        <span className="ml-2">{item.name.toUpperCase()}</span>
                       </div>
                     </td>
                     <td className="px-4 py-2 font-semibold">{item.category}</td>

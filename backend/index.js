@@ -7,6 +7,11 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { login, refresh, signUp } from "./controllers/authController.js";
 import { isTokenVerified } from "./middlewares/verifyToken.js";
+import "./cron/budgetExpiration.js";
+import "./cron/deleteExpiredTokens.js";
+
+//look into winston for production logging
+//Sanitize inputs with express-validator
 
 const app = express();
 const PORT = process.env.PORT || 5050;

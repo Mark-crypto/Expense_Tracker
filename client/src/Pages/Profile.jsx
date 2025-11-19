@@ -45,9 +45,9 @@ const Profile = () => {
           <div className="flex justify-center">
             <FaUserCircle className="text-gray-400 text-7xl" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            {data?.data?.data?.name || "N/A"}
-          </h2>
+          <h4 className="text-xl font-semibold text-gray-800">
+            {data?.data?.data?.name.toUpperCase() || "N/A"}
+          </h4>
           <p className="text-gray-500">
             Email: {data?.data?.data?.email || "N/A"}
           </p>
