@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Loading from "./Loading";
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
-  const { isAuthenticated, isAdmin, loading, user } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return <Loading />;

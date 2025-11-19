@@ -22,7 +22,6 @@ const RoleTable = ({ roles }) => {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Header */}
       <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
@@ -37,7 +36,6 @@ const RoleTable = ({ roles }) => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>

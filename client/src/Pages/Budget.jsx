@@ -10,12 +10,10 @@ const Budget = () => {
 
   return (
     <div className="flex h-full min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-1/5 bg-white shadow-md">
+      <aside className="w-1/5 ">
         <Navbar />
       </aside>
 
-      {/* Main content */}
       <main className="w-4/5 flex items-center justify-center p-6 overflow-y-auto">
         <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-2xl text-center">
           <LimitNotification />
@@ -28,12 +26,10 @@ const Budget = () => {
           >
             Budget Management
           </h3>
-          {/* Budget Form */}
           <div className="mb-6 flex items-center justify-center">
             <BudgetForm />
           </div>
 
-          {/* Toggle Button */}
           <button
             onClick={() => setShow((prev) => !prev)}
             className="flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded transition duration-200 w-full"
@@ -42,7 +38,6 @@ const Budget = () => {
             {show ? "Hide Budget Table" : "Show Budget Table"}
           </button>
 
-          {/* Budget Table */}
           {show && (
             <div className="mt-8">
               <BudgetTable />

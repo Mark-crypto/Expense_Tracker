@@ -43,7 +43,6 @@ const RegistrationForm = () => {
     <>
       <ToastContainer />
       <Form onSubmit={handleSubmit(submitForm)} className="space-y-4">
-        {/* Full Name */}
         <Form.Group>
           <Form.Label className="font-semibold text-purple-800">
             Full Name
@@ -59,7 +58,6 @@ const RegistrationForm = () => {
           )}
         </Form.Group>
 
-        {/* Email */}
         <Form.Group>
           <Form.Label className="font-semibold text-purple-800">
             Email address
@@ -120,7 +118,6 @@ const RegistrationForm = () => {
           )}
         </Form.Group>
 
-        {/* Password */}
         <Form.Group>
           <Form.Label className="font-semibold text-purple-800">
             Password
@@ -148,7 +145,6 @@ const RegistrationForm = () => {
           </Form.Text>
         </Form.Group>
 
-        {/* Confirm Password */}
         <Form.Group>
           <Form.Label className="font-semibold text-purple-800">
             Confirm Password
@@ -169,7 +165,6 @@ const RegistrationForm = () => {
           )}
         </Form.Group>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isPending}
@@ -178,7 +173,6 @@ const RegistrationForm = () => {
           {isPending ? "Submitting..." : "Register"}
         </button>
 
-        {/* Already have an account? */}
         <Form.Text className="text-gray-600 text-sm block text-center mt-4">
           Already have an account?{" "}
           <Link

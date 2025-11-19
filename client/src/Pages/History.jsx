@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import LimitNotification from "@/components/LimitNotification";
+import ExpenseDownloadBtn from "@/components/ExpenseDownloadBtn";
 
 const History = () => {
   const queryClient = useQueryClient();
@@ -47,26 +48,26 @@ const History = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <div className="w-1/5 border-r border-gray-200 bg-white shadow-md">
+      <div className="w-1/5  ">
         <Navbar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-gray-50 p-6">
+      <div className="flex-1  p-6">
         <LimitNotification />
-        {/* Clear History Button */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2 px-5 py-2 mb-6 text-white bg-purple-600 hover:bg-purple-700 font-semibold rounded shadow"
-          onClick={handleDeleteClick}
-        >
-          <MdDelete className="text-xl" />
-          Clear All History
-        </motion.button>
 
-        {/* Dialog */}
+        <div className="flex items-center gap-4 mb-6">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 px-5 py-2 text-white bg-purple-600 hover:bg-purple-700 font-semibold rounded shadow"
+            onClick={handleDeleteClick}
+          >
+            <MdDelete className="text-xl" />
+            Clear All History
+          </motion.button>
+
+          <ExpenseDownloadBtn />
+        </div>
         <Dialog open={openModal} onOpenChange={setOpenModal}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -91,7 +92,6 @@ const History = () => {
           </DialogContent>
         </Dialog>
 
-        {/* History Table */}
         <div className="mt-8">
           <HistoryTable />
         </div>

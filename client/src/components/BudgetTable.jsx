@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Loading from "./Loading";
+import BudgetDownloadBtn from "./BudgetDownloadBtn";
 
 const BudgetTable = () => {
   const [openDialogId, setOpenDialogId] = useState(null);
@@ -112,29 +113,21 @@ const BudgetTable = () => {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+      <ToastContainer />
 
-      <div className="flex justify-center mb-6">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name or category..."
-          className="px-4 py-2 w-80 rounded-xl border border-gray-300 shadow focus:ring-2 focus:ring-purple-500 focus:outline-none"
-        />
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex-1 max-w-md">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or category..."
+            className="px-4 py-2 w-full rounded-xl border border-gray-300 shadow focus:ring-2 focus:ring-purple-500 focus:outline-none"
+          />
+        </div>
+
+        <BudgetDownloadBtn />
       </div>
-
       <div className="overflow-x-auto shadow-xl rounded-xl">
         <Table
           responsive
@@ -162,7 +155,6 @@ const BudgetTable = () => {
             {displayData?.length !== 0 ? (
               displayData.map((item) => (
                 <>
-                  {/* Main Row */}
                   <motion.tr
                     key={item.budget_id}
                     initial={{ opacity: 0 }}
@@ -225,7 +217,6 @@ const BudgetTable = () => {
                     <td className="px-4 py-2 font-semibold">{item.amount}</td>
                   </motion.tr>
 
-                  {/* Nested Subcategory Rows */}
                   {expandedRows.has(item.budget_id) &&
                     item.subcategories?.map((subcategory, index) => (
                       <motion.tr

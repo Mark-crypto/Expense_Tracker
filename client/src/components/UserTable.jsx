@@ -1,9 +1,8 @@
-import { User, Mail, Target, Search, Filter } from "lucide-react";
+import { User, Mail, Target } from "lucide-react";
 
 const UserTable = ({ users }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Header */}
       <div className="px-6 py-3 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
@@ -17,7 +16,6 @@ const UserTable = ({ users }) => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>

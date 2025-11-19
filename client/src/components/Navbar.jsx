@@ -3,10 +3,8 @@ import { IoMdAdd } from "react-icons/io";
 import { MdSpaceDashboard, MdLogout } from "react-icons/md";
 import { TbBulb } from "react-icons/tb";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import axiosInstance from "@/axiosInstance";
-import { toast } from "react-toastify";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -14,20 +12,9 @@ const Navbar = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const { logout } = useAuth();
 
-  const { mutate } = useMutation({
-    mutationFn: async () => {
-      return axiosInstance.post("/auth/logout", {});
-    },
-    onSuccess: () => {
-      navigate("/");
-    },
-    onError: () => {
-      toast.error("Something went wrong");
-    },
-  });
-
   const handleLogout = () => {
     logout();
+    toast.success("Logout successful");
     navigate("/");
   };
 
@@ -36,7 +23,7 @@ const Navbar = () => {
     { label: "Dashboard", icon: <MdSpaceDashboard />, path: "/dashboard" },
     { label: "AI Predictions", icon: <TbBulb />, path: "/predictions" },
     { label: "Budget", icon: <FaWallet />, path: "/budget" },
-    { label: "History", icon: <FaHistory />, path: "/history" },
+    { label: "Expense History", icon: <FaHistory />, path: "/history" },
   ];
 
   const linkBaseStyles =

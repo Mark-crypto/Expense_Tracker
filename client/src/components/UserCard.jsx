@@ -1,11 +1,5 @@
 import { motion } from "framer-motion";
-import {
-  FaUsers,
-  FaUserCheck,
-  FaUserClock,
-  FaUserPlus,
-  FaChartLine,
-} from "react-icons/fa";
+import { FaUsers, FaUserCheck, FaUserClock, FaUserPlus } from "react-icons/fa";
 
 const UserCard = ({ activeUsers, inactiveUsers, newUsers, totalUsers }) => {
   const cardVariants = {
@@ -75,10 +69,8 @@ const UserCard = ({ activeUsers, inactiveUsers, newUsers, totalUsers }) => {
           }}
           className={`relative overflow-hidden rounded-2xl shadow-lg border ${stat.borderColor} backdrop-blur-sm`}
         >
-          {/* Background Gradient */}
           <div className={`absolute inset-0 ${stat.color} opacity-90`}></div>
 
-          {/* Animated Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute -top-4 -right-4 w-20 h-20 bg-white rounded-full"></div>
             <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white rounded-full"></div>
@@ -113,7 +105,6 @@ const UserCard = ({ activeUsers, inactiveUsers, newUsers, totalUsers }) => {
             </div>
           </div>
 
-          {/* Shine Effect on Hover */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
             initial={{ x: -100 }}

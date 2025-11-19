@@ -194,7 +194,6 @@ const LimitNotification = () => {
                                   }`}
                         onClick={() => setSelectedNotification(notification)}
                       >
-                        {/* Unread indicator */}
                         {notification.status === "unread" && (
                           <div className="absolute top-3 left-2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
                         )}
@@ -261,7 +260,6 @@ const LimitNotification = () => {
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {/* Header */}
                       <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 p-6 relative">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -467,7 +465,6 @@ const LimitNotification = () => {
                                   />
                                 </div>
 
-                                {/* Confirm Button */}
                                 <div className="px-4 pb-6 pt-2">
                                   <div className="flex justify-center">
                                     <button

@@ -90,7 +90,6 @@ const HistoryTable = () => {
             {expenseData?.data?.data?.length > 0 ? (
               expenseData?.data?.data?.map((item) => (
                 <>
-                  {/* Main Row */}
                   <tr
                     key={item.expense_id}
                     className="hover:bg-gray-50 transition cursor-pointer bg-gray-50"
@@ -125,7 +124,6 @@ const HistoryTable = () => {
                     </td>
                   </tr>
 
-                  {/* Nested Subcategory Rows */}
                   {expandedRows.has(item.expense_id) &&
                     item.subcategories?.map((subcategory, index) => (
                       <tr

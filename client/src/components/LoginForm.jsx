@@ -17,6 +17,7 @@ const LoginForm = () => {
     },
     onSuccess: (data) => {
       localStorage.setItem("user", JSON.stringify(data.info));
+      toast.success("Login successful");
       reset();
       navigate("/dashboard");
     },
@@ -48,7 +49,7 @@ const LoginForm = () => {
       transition={{ duration: 0.5 }}
       className="w-full"
     >
-      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <ToastContainer />
       <form onSubmit={handleSubmit(submitForm)} className="space-y-5">
         <div>
           <label

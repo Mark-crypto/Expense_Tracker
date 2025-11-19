@@ -30,7 +30,6 @@ const ExpenseSearchBar = () => {
     queryKey: ["searchExpense", query],
     queryFn,
     enabled: !!query,
-    // staleTime: 5000,
   });
 
   return (

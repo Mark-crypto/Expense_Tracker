@@ -8,7 +8,6 @@ const Register = () => {
     <>
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-white px-4">
         <div className="w-full max-w-6xl flex flex-col lg:flex-row shadow-2xl rounded-3xl overflow-hidden bg-white border border-gray-100">
-          {/* Left: Form Section */}
           <motion.div
             className="w-full lg:w-1/2 p-10 flex flex-col justify-center"
             initial={{ opacity: 0, x: -40 }}
@@ -18,7 +17,6 @@ const Register = () => {
             <RegistrationForm />
           </motion.div>
 
-          {/* Right: Banner Section */}
           <motion.div
             className="w-full lg:w-1/2 bg-purple-50  "
             initial={{ opacity: 0, x: 40 }}

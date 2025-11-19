@@ -51,7 +51,6 @@ const NotAdmin = () => {
         animate="visible"
         className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 text-center"
       >
-        {/* Animated Lock Icon */}
         <motion.div
           variants={iconVariants}
           className="flex justify-center mb-6"
@@ -75,7 +74,6 @@ const NotAdmin = () => {
           </div>
         </motion.div>
 
-        {/* Warning Icon */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -85,7 +83,6 @@ const NotAdmin = () => {
           <FaExclamationTriangle className="text-yellow-400 text-xl" />
         </motion.div>
 
-        {/* Content */}
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,7 +102,6 @@ const NotAdmin = () => {
           administrator if you believe this is an error.
         </motion.p>
 
-        {/* Action Button */}
         <motion.button
           variants={buttonVariants}
           whileHover="hover"

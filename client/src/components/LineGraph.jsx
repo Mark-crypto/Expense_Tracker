@@ -38,7 +38,6 @@ const LineGraph = ({ data }) => {
     "Dec",
   ];
 
-  // Prepare chart data
   const chartData = {
     labels: months,
     datasets: [
