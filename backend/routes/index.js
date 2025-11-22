@@ -7,6 +7,7 @@ import dashboardRouter from "./dashboard.js";
 import predictionsRouter from "./predictions.js";
 import searchRouter from "./search.js";
 import notificationRouter from "./notification.js";
+import uploadsRouter from "./uploads.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use(predictionsRouter);
 router.use(expenseRouter);
 router.use(searchRouter);
 router.use(notificationRouter);
+router.use(uploadsRouter);
 
 export default router;
