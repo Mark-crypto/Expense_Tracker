@@ -26,26 +26,39 @@ const Dashboard = () => {
     console.log(error);
     toast.error("Something went wrong");
   }
+
   return (
     <>
-      <div className="flex min-h-screen bg-gray-100 text-gray-800 font-sans">
-        <div className="w-1/5 ">
+      <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100 text-gray-800 font-sans">
+        {/* Navbar - Full width on mobile, sidebar on desktop */}
+        <div className="w-full lg:w-64 xl:w-1/5">
           <Navbar />
         </div>
 
-        <div className="w-4/5 p-6 space-y-6">
+        {/* Main content area */}
+        <div className="flex-1 p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden">
           <ToastContainer />
-          <LimitNotification />
+
+          {/* Limit Notification with spacing */}
+          <div className="mb-4 md:mb-6">
+            {" "}
+            {/* ADDED SPACING HERE */}
+            <LimitNotification />
+          </div>
+
+          {/* Page Title with margin-top removed since we have spacing above */}
           <motion.h2
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-3xl font-semibold text-purple-700"
-            style={{ fontWeight: "600", color: "#9D00FF", fontSize: "30px" }}
+            className="text-2xl md:text-3xl font-semibold text-purple-700"
+            style={{ fontWeight: "600", color: "#9D00FF" }}
           >
             Dashboard
           </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          {/* Stats Cards - Stack on mobile, grid on larger screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <DashboardCard
               title="Debt"
               data={data?.data?.debtAmount[0]?.debt}
@@ -64,61 +77,69 @@ const Dashboard = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Charts Section - INCREASED HEIGHT */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-2xl shadow p-4"
+              className="bg-white rounded-xl md:rounded-2xl shadow p-3 md:p-4"
             >
               <h3
-                className="text-lg font-medium mb-2 text-purple-600"
+                className="text-base md:text-lg font-medium mb-2 text-purple-600"
                 style={{
                   fontWeight: "500",
                   color: "#9D00FF",
-                  fontSize: "18px",
                   marginBottom: "8px",
                 }}
               >
                 Monthly Spend
               </h3>
-              <BarChart1 data={data?.data?.monthlySum} />
+              {/* INCREASED CHART HEIGHT */}
+              <div className="h-72 sm:h-80 md:h-96 lg:h-[420px] xl:h-[450px]">
+                <BarChart1 data={data?.data?.monthlySum} />
+              </div>
             </motion.div>
+
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white rounded-2xl shadow p-4"
+              className="bg-white rounded-xl md:rounded-2xl shadow p-3 md:p-4"
             >
               <h3
-                className="text-lg font-medium mb-2 text-purple-600"
+                className="text-base md:text-lg font-medium mb-2 text-purple-600"
                 style={{
                   fontWeight: "500",
                   color: "#9D00FF",
-                  fontSize: "18px",
                   marginBottom: "8px",
                 }}
               >
                 All Categories
               </h3>
-              <BarChart2 data={data?.data?.allCategories} />
+              {/* INCREASED CHART HEIGHT */}
+              <div className="h-72 sm:h-80 md:h-96 lg:h-[420px] xl:h-[450px]">
+                <BarChart2 data={data?.data?.allCategories} />
+              </div>
             </motion.div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top/Bottom Five Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="bg-white rounded-xl shadow p-4"
+              className="bg-white rounded-xl shadow p-3 md:p-4"
             >
               <TopFiveRolling data={data?.data?.topFive} />
             </motion.div>
+
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="bg-white rounded-xl shadow p-4"
+              className="bg-white rounded-xl shadow p-3 md:p-4"
             >
               <BottomFiveRolling data={data?.data?.bottomFive} />
             </motion.div>

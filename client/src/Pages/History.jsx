@@ -47,52 +47,71 @@ const History = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="w-1/5  ">
+    <div className="flex flex-col lg:flex-row min-h-screen">
+      {/* Sidebar Navbar */}
+      <div className="w-full lg:w-64 xl:w-1/5">
         <Navbar />
       </div>
 
-      <div className="flex-1  p-6">
-        <LimitNotification />
+      {/* Main Content */}
+      <div className="flex-1 p-4 md:p-6">
+        {/* Limit Notification */}
+        <div className="mb-4 md:mb-6">
+          <LimitNotification />
+        </div>
 
-        <div className="flex items-center gap-4 mb-6">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 mb-4 md:mb-6">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-5 py-2 text-white bg-purple-600 hover:bg-purple-700 font-semibold rounded shadow"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-purple-600 hover:bg-purple-700 font-semibold rounded-lg shadow text-sm md:text-base w-full sm:w-auto"
             onClick={handleDeleteClick}
           >
-            <MdDelete className="text-xl" />
+            <MdDelete className="text-lg md:text-xl" />
             Clear All History
           </motion.button>
 
-          <ExpenseDownloadBtn />
+          <div className="w-full sm:w-auto">
+            <ExpenseDownloadBtn />
+          </div>
         </div>
+
+        {/* Delete Confirmation Dialog */}
         <Dialog open={openModal} onOpenChange={setOpenModal}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-[95vw] sm:max-w-md p-4 md:p-6">
             <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">
-                Are you absolutely sure?
+              <DialogTitle className="text-base md:text-lg font-semibold">
+                Clear All Expense History?
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm md:text-base mt-2">
                 This action cannot be undone. This will permanently clear all
-                your past expenses.
+                your past expenses from the system.
               </DialogDescription>
             </DialogHeader>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 px-4 py-2 mt-6 text-white bg-red-600 hover:bg-red-700 rounded font-semibold"
-              onClick={handleDelete}
-              disabled={isPending}
-            >
-              <MdDelete className="text-xl" />
-              {isPending ? "Deleting..." : "Clear All History"}
-            </motion.button>
+            <div className="mt-4 md:mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                className="px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-sm md:text-base transition-colors w-full sm:w-auto"
+                onClick={() => setOpenModal(false)}
+              >
+                Cancel
+              </button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-sm md:text-base w-full sm:w-auto"
+                onClick={handleDelete}
+                disabled={isPending}
+              >
+                <MdDelete className="text-lg md:text-xl" />
+                {isPending ? "Clearing..." : "Clear All History"}
+              </motion.button>
+            </div>
           </DialogContent>
         </Dialog>
 
-        <div className="mt-8">
+        {/* History Table */}
+        <div className="mt-6 md:mt-8">
           <HistoryTable />
         </div>
       </div>

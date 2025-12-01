@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { FaMinusCircle } from "react-icons/fa";
-import { Row, Col } from "react-bootstrap";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import axiosInstance from "../axiosInstance";
@@ -113,9 +112,10 @@ const SubcategoryRow = ({
   }, []);
 
   return (
-    <Row className="mb-3 align-items-center position-relative" key={index}>
-      <Col md={6}>
-        <div className="position-relative">
+    <div className="mb-3 relative">
+      <div className="flex flex-col sm:flex-row gap-2 md:gap-3 items-start">
+        {/* Name Input with Suggestions */}
+        <div className="flex-1 w-full relative">
           <Form.Control
             type="text"
             placeholder={
@@ -126,36 +126,42 @@ const SubcategoryRow = ({
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             ref={inputRef}
+            size="sm"
+            className="text-sm md:text-base w-full"
           />
 
           {showSuggestions && (suggestions.length > 0 || isLoading) && (
-            <div className="position-absolute top-100 start-0 end-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 mt-1 max-h-32 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-20 mt-1 max-h-40 sm:max-h-48 overflow-y-auto">
               {isLoading ? (
-                <div className="p-2 text-center text-gray-500">
+                <div className="p-2 sm:p-3 text-center text-gray-500">
                   <div
                     className="spinner-border spinner-border-sm me-2"
                     role="status"
                   >
                     <span className="visually-hidden">Loading...</span>
                   </div>
-                  Searching...
+                  <span className="text-xs sm:text-sm">Searching...</span>
                 </div>
               ) : (
                 <>
-                  <div className="p-2 bg-purple-50 border-bottom border-gray-200">
-                    <small className="text-purple-600 fw-semibold">
-                      Suggestions for {selectedCategory}
+                  <div className="p-2 sm:p-3 bg-purple-50 border-b border-gray-200">
+                    <small className="text-purple-600 fw-semibold text-xs sm:text-sm">
+                      Suggestions for{" "}
+                      <span className="capitalize">{selectedCategory}</span>
                     </small>
                   </div>
                   {suggestions.map((suggestion, idx) => (
-                    <div
+                    <button
                       key={idx}
-                      className="p-2 hover:bg-purple-50 cursor-pointer border-bottom border-gray-100 last:border-bottom-0"
+                      type="button"
+                      className="w-full p-2 sm:p-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0 text-left transition-colors duration-150"
                       onClick={() => handleSuggestionClick(suggestion)}
                       onMouseDown={(e) => e.preventDefault()}
                     >
-                      <div className="text-sm text-gray-700">{suggestion}</div>
-                    </div>
+                      <div className="text-sm text-gray-700 truncate">
+                        {suggestion}
+                      </div>
+                    </button>
                   ))}
                 </>
               )}
@@ -163,53 +169,64 @@ const SubcategoryRow = ({
           )}
 
           {showSuggestions && !isLoading && suggestions.length === 0 && (
-            <div className="position-absolute top-100 start-0 end-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 mt-1 p-2">
-              <small className="text-muted">No suggestions found</small>
+            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-20 mt-1 p-2 sm:p-3">
+              <small className="text-muted text-xs sm:text-sm">
+                No suggestions found
+              </small>
             </div>
+          )}
+
+          {errors.subcategories?.[index]?.name && (
+            <p className="text-danger text-xs md:text-sm mt-1">
+              {errors.subcategories[index].name.message}
+            </p>
           )}
         </div>
 
-        {errors.subcategories?.[index]?.name && (
-          <p className="text-danger small mt-1">
-            {errors.subcategories[index].name.message}
-          </p>
-        )}
-      </Col>
+        {/* Amount Input and Remove Button Container */}
+        <div className="flex gap-2 md:gap-3 w-full sm:w-auto items-start">
+          {/* Amount Input */}
+          <div className="flex-1 sm:flex-initial sm:w-32">
+            <Form.Control
+              type="number"
+              placeholder="Amount (KES)"
+              {...register(`subcategories.${index}.amount`, {
+                required: "Amount is required",
+                min: { value: 1, message: "Must be greater than 0" },
+                valueAsNumber: true,
+              })}
+              size="sm"
+              className="text-sm md:text-base w-full"
+            />
 
-      <Col md={4}>
-        <Form.Control
-          type="number"
-          placeholder="Amount (KES)"
-          {...register(`subcategories.${index}.amount`, {
-            required: "Amount is required",
-            min: { value: 1, message: "Must be greater than 0" },
-            valueAsNumber: true,
-          })}
-        />
+            {errors.subcategories?.[index]?.amount && (
+              <p className="text-danger text-xs md:text-sm mt-1">
+                {errors.subcategories[index].amount.message}
+              </p>
+            )}
+          </div>
 
-        {errors.subcategories?.[index]?.amount && (
-          <p className="text-danger small mt-1">
-            {errors.subcategories[index].amount.message}
-          </p>
-        )}
-      </Col>
-
-      <Col md="auto">
-        <Button
-          variant="link"
-          type="button"
-          onClick={() => {
-            clearErrors(`subcategories.${index}`);
-            unregister(`subcategories.${index}`);
-            remove(index);
-          }}
-          className="p-0 text-danger"
-          title="Remove this subcategory"
-        >
-          <FaMinusCircle size={22} />
-        </Button>
-      </Col>
-    </Row>
+          {/* Remove Button - Just Icon */}
+          <div className="flex items-center h-full pt-0.5">
+            <Button
+              variant="link"
+              type="button"
+              onClick={() => {
+                clearErrors(`subcategories.${index}`);
+                unregister(`subcategories.${index}`);
+                remove(index);
+              }}
+              className="p-0 text-danger hover:text-red-700 transition-colors"
+              title="Remove this subcategory"
+              size="sm"
+            >
+              <FaMinusCircle size={20} className="sm:size-[22px]" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
+
 export default SubcategoryRow;

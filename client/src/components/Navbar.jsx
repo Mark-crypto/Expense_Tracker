@@ -72,17 +72,27 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Mobile Header - Only hamburger icon */}
+      {/* Mobile Header - Hamburger icon with text */}
       {isMobile && (
-        <div className="fixed top-0 left-0 right-0 h-12 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-md z-30 flex items-center px-4">
-          {/* Only hamburger icon on the left */}
-          <button
-            onClick={toggleMobileMenu}
-            className="p-2 text-purple-700 rounded-lg hover:bg-purple-100 transition"
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
-          </button>
+        <div className="fixed top-0 left-0 right-0 h-12 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-md z-30 flex items-center justify-between px-4">
+          {/* Left side: Hamburger icon and app name */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleMobileMenu}
+              className="p-1.5 text-purple-700 rounded-lg hover:bg-purple-100 transition flex items-center justify-center"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
+            </button>
+            <span className="text-sm font-bold text-purple-700 italic tracking-wide">
+              Expense Tracker
+            </span>
+          </div>
+
+          {/* Right side: User indicator (optional) */}
+          <div className="text-xs text-gray-600 font-medium">
+            {user?.name?.split(" ")[0] || "User"}
+          </div>
         </div>
       )}
 

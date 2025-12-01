@@ -9,37 +9,42 @@ const Budget = () => {
   const [show, setShow] = useState(false);
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <aside className="w-1/5 ">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100">
+      {/* Sidebar Navbar - Hidden on mobile, shown on desktop */}
+      <div className="w-full lg:w-64 xl:w-1/5">
         <Navbar />
-      </aside>
+      </div>
 
-      <main className="w-4/5 flex items-center justify-center p-6 overflow-y-auto">
-        <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-2xl text-center">
-          <LimitNotification />
-          <h3
-            style={{
-              fontWeight: "500",
-              color: "#9D00FF",
-              marginBottom: "8px",
-            }}
-          >
+      {/* Main Content */}
+      <main className="flex-1 p-4 md:p-6 flex items-center justify-center overflow-y-auto">
+        <div className="bg-white shadow-lg rounded-lg md:rounded-xl p-4 md:p-6 lg:p-8 w-full max-w-4xl text-center">
+          {/* Limit Notification */}
+          <div className="mb-4 md:mb-6">
+            <LimitNotification />
+          </div>
+
+          {/* Title */}
+          <h3 className="text-lg md:text-xl lg:text-2xl font-semibold text-purple-700 mb-3 md:mb-4">
             Budget Management
           </h3>
-          <div className="mb-6 flex items-center justify-center">
+
+          {/* Budget Form */}
+          <div className="mb-4 md:mb-6">
             <BudgetForm />
           </div>
 
+          {/* Toggle Button */}
           <button
             onClick={() => setShow((prev) => !prev)}
-            className="flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded transition duration-200 w-full"
+            className="flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-800 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg transition duration-200 w-full text-sm md:text-base font-medium"
           >
-            <FaChartBar className="text-xl" />
+            <FaChartBar className="text-lg md:text-xl" />
             {show ? "Hide Budget Table" : "Show Budget Table"}
           </button>
 
+          {/* Budget Table (Conditional) */}
           {show && (
-            <div className="mt-8">
+            <div className="mt-6 md:mt-8 overflow-x-auto">
               <BudgetTable />
             </div>
           )}

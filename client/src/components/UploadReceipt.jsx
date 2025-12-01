@@ -56,31 +56,29 @@ const UploadReceipt = () => {
     merchant: "",
   });
 
-  // OCR Upload mutation - extracts data from receipt image
+  // Update the upload mutation with better error handling
   const { mutate: uploadMutate, isPending: isUploadPending } = useMutation({
     mutationFn: async (formData) => {
       const response = await axiosInstance.post("/upload/receipt", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        timeout: 30000,
+        timeout: 45000, // 45 second timeout
       });
       return response.data;
     },
     onSuccess: (data) => {
       toast.success("Receipt processed successfully! Review the details.");
 
-      // Process extracted data from OCR
       const extracted = data.extractedData || data;
       setExtractedData(extracted);
 
-      // Populate form with extracted data
       setFormData({
         amount: extracted.amount || "",
         date: extracted.date || new Date().toISOString().split("T")[0],
         description: extracted.description || "Receipt Purchase",
-        category: extracted.category || "Uncategorized",
-        subcategory: extracted.subcategory || "Unknown",
+        category: extracted.category || "Expenses",
+        subcategory: extracted.subcategory || "Healthcare",
         merchant: extracted.merchant || "",
       });
 
@@ -88,10 +86,19 @@ const UploadReceipt = () => {
       setIsEditing(true);
     },
     onError: (error) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to process receipt. Please try again.";
+      let errorMessage = "Failed to process receipt. Please try again.";
+
+      if (error.code === "ECONNABORTED") {
+        errorMessage =
+          "Processing took too long. Please try with a clearer image.";
+      } else if (error.response?.status === 408) {
+        errorMessage = "OCR timeout. Please try a smaller or clearer image.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
       toast.error(errorMessage);
+      console.error("OCR Error:", error);
     },
     onSettled: () => {
       setIsUploading(false);

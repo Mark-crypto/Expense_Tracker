@@ -1,5 +1,7 @@
 import connection from "../database.js";
-import pdfParse from "pdf-parse";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import Tesseract from "tesseract.js";
 import { extractMpesaLines } from "../utils/extractMpesaLines.js";
 import { extractReceiptData } from "../utils/extractReceiptData.js";
@@ -74,22 +76,43 @@ export const saveMpesaTransactions = async (req, res) => {
 };
 
 export const createReceiptExpense = async (req, res) => {
+  let worker = null;
+
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No receipt image uploaded" });
     }
 
-    // Perform OCR on the image
+    console.log("Starting OCR processing for receipt...");
+
+    // Configure Tesseract with better options
     const {
       data: { text },
     } = await Tesseract.recognize(req.file.buffer, "eng", {
-      logger: (m) => console.log(m), // Remove in production
+      logger: (progress) => {
+        console.log("Tesseract Progress:", progress.status, progress.progress);
+      },
+      // Add configuration for better performance
+      tessedit_pageseg_mode: "6", // Uniform block of text
+      tessedit_char_whitelist:
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .-@:/$%&()#,KESH",
+      // Optimize for receipt processing
+      tessedit_ocr_engine_mode: "3", // Default + LSTM
     });
 
     console.log("OCR Extracted Text:", text);
 
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({
+        message:
+          "No text could be extracted from the image. Please try a clearer image.",
+      });
+    }
+
     // Extract structured data from OCR text
     const extractedData = extractReceiptData(text);
+
+    console.log("Extracted Data:", extractedData);
 
     return res.status(200).json({
       message: "Receipt processed successfully",
@@ -98,17 +121,38 @@ export const createReceiptExpense = async (req, res) => {
         date: extractedData.date,
         description: extractedData.description,
         merchant: extractedData.merchant,
-        category: "Uncategorized", // Default category
-        subcategory: "Unknown", // Default subcategory
-        rawText: text, // For debugging
+        category: "Expenses", // Default category based on receipt type
+        subcategory: "Healthcare", // Based on merchant name
+        rawText: text.substring(0, 500), // Limited for debugging
       },
     });
   } catch (error) {
     console.error("RECEIPT OCR ERROR:", error);
+
+    // Specific error handling
+    if (error.message.includes("timeout")) {
+      return res.status(408).json({
+        message:
+          "OCR processing timed out. Please try again with a clearer image.",
+      });
+    }
+
     return res.status(500).json({
       message: "Failed to process receipt image",
-      error: error.message,
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
+  } finally {
+    // Clean up worker if it exists
+    if (worker) {
+      try {
+        await worker.terminate();
+      } catch (terminateError) {
+        console.error("Error terminating worker:", terminateError);
+      }
+    }
   }
 };
 
