@@ -98,7 +98,7 @@ const UploadMpesaPdf = () => {
   // Save mutation - stores confirmed transactions in database
   const { mutate: saveMutate, isPending: isSavePending } = useMutation({
     mutationFn: async (confirmedTransactions) => {
-      const response = await axiosInstance.post("/transactions/save", {
+      const response = await axiosInstance.post("mpesa/save", {
         transactions: confirmedTransactions.map((transaction) => ({
           amount: transaction.amount,
           category: transaction.category,

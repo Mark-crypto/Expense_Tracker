@@ -1,27 +1,63 @@
 import connection from "../database.js";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 import Tesseract from "tesseract.js";
 import { extractMpesaLines } from "../utils/extractMpesaLines.js";
 import { extractReceiptData } from "../utils/extractReceiptData.js";
+
+import PDFParser from "pdf2json";
 
 export const createMpesaExpense = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No PDF uploaded" });
     }
-    const parsed = await pdfParse(req.file.buffer);
-    const text = parsed.text;
-    const expenses = extractMpesaLines(text);
 
-    return res.status(200).json({
-      message: "PDF parsed successfully",
-      expenses,
+    return new Promise((resolve, reject) => {
+      const pdfParser = new PDFParser(this, 1);
+
+      pdfParser.on("pdfParser_dataError", (errData) => {
+        console.error("PDF Parse Error:", errData.parserError);
+        reject(new Error("Failed to parse PDF"));
+      });
+
+      pdfParser.on("pdfParser_dataReady", (pdfData) => {
+        try {
+          // Extract text from PDF data
+          const pages = pdfData.Pages || [];
+          let fullText = "";
+
+          pages.forEach((page) => {
+            if (page.Texts) {
+              page.Texts.forEach((text) => {
+                if (text.R) {
+                  text.R.forEach((r) => {
+                    fullText += decodeURIComponent(r.T) + " ";
+                  });
+                }
+              });
+            }
+            fullText += "\n";
+          });
+
+          const expenses = extractMpesaLines(fullText);
+          console.log("Extracted M-Pesa Expenses:", expenses);
+          res.status(200).json({
+            message: "PDF parsed successfully",
+            expenses,
+          });
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      pdfParser.parseBuffer(req.file.buffer);
     });
   } catch (error) {
     console.error("MPESA PDF ERROR:", error);
-    return res.status(500).json({ message: "Failed to process PDF" });
+    return res.status(500).json({
+      message: "Failed to process PDF",
+      error: error.message,
+    });
   }
 };
 
@@ -46,17 +82,17 @@ export const saveMpesaTransactions = async (req, res) => {
         transaction.date,
         month,
         userId,
-        transaction.subcategory,
+        null,
+        // transaction.subcategory,
         transaction.budgeted ? 1 : 0,
         null, // budget_id for now
-        transaction.description || "",
       ];
     });
 
     // Updated SQL to include description
     const sql = `
       INSERT INTO expense 
-      (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description)
+      (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id)
       VALUES ?
     `;
 

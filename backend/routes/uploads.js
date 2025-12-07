@@ -19,7 +19,7 @@ router.post(
   upload.single("mpesaStatement"),
   createMpesaExpense
 );
-router.post("mpesa/save", saveMpesaTransactions);
+router.post("/mpesa/save", saveMpesaTransactions);
 router.post(
   "/upload/receipt",
   upload.single("receiptImage"),

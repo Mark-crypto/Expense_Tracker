@@ -1,46 +1,109 @@
-const mpesaCategoryMap = {
-  PayBill: "Bills",
-  Till: "Shopping",
-  Fuliza: "Debt",
-  Pochi: "Income",
-  ATM: "Withdrawals",
-};
-
 export const extractMpesaLines = (text) => {
-  const lines = text.split("\n").map((l) => l.trim());
+  console.log("=== STARTING M-PESA EXTRACTION ===");
+  // Try to find receipt numbers (they start with Q and have 10 chars)
+  const receiptMatches = text.match(/Q[A-Z0-9]{9,}/g);
 
+  if (receiptMatches) {
+    console.log("Sample receipts:", receiptMatches.slice(0, 5));
+  }
+
+  // Try to find dates in format 2022-01-31
+  const dateMatches = text.match(/\d{4}-\d{2}-\d{2}/g);
+
+  // Try to find amounts
+  const amountMatches = text.match(/-?\s?[\d,]+\.\d{2}/g);
+
+  if (amountMatches) {
+    console.log("Sample amounts:", amountMatches.slice(0, 10));
+  }
+
+  // Now let's try to extract transactions manually
+  console.log("\n=== MANUAL EXTRACTION ATTEMPT ===");
   const extracted = [];
 
-  for (let line of lines) {
-    // Skip non-transaction lines
-    if (!line.match(/\d{4}-\d{2}-\d{2}/)) continue;
+  // Split the text into lines based on receipt numbers
+  const lines = text.split(/(Q[A-Z0-9]{9,})/).filter((l) => l.trim());
 
-    /**
-     * Example matched line:
-     * 2024-12-01 14:20 PayBill PAYBILL 123456 Ksh350.00
-     */
+  // Process each segment that starts with a receipt number
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].match(/^Q[A-Z0-9]{9,}$/)) {
+      const receiptNo = lines[i];
+      const content = lines[i + 1] || "";
 
-    const match = line.match(
-      /^(\d{4}-\d{2}-\d{2})\s+\d{2}:\d{2}.*?(PayBill|Till|Fuliza|Pochi|ATM).*?(Ksh\s?[\d,]+\.\d{2})/
-    );
+      console.log(`\nProcessing receipt: ${receiptNo}`);
 
-    if (!match) continue;
+      // Try to extract date, time, description, amounts
+      const dateMatch = content.match(
+        /(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/
+      );
+      if (dateMatch) {
+        const [_, date, time] = dateMatch;
 
-    const [_, date, type, rawAmount] = match;
+        // Find "Completed" and the amounts after it
+        const completedIndex = content.indexOf("Completed");
+        if (completedIndex !== -1) {
+          const afterCompleted = content.substring(completedIndex + 9);
+          const amounts = afterCompleted.match(/(-?\s?[\d,]+\.\d{2})/g);
 
-    const amount = Number(rawAmount.replace(/Ksh|,/g, "").trim());
+          if (amounts && amounts.length >= 2) {
+            const paidIn = amounts[0];
+            const withdrawn = amounts[1];
+            const balance = amounts[2] || "0.00";
 
-    const category = mpesaCategoryMap[type] || "M-Pesa";
+            // Get description (between time and "Completed")
+            const timeEndIndex = content.indexOf(time) + time.length;
+            const description = content
+              .substring(timeEndIndex, completedIndex)
+              .trim();
 
-    extracted.push({
-      amount,
-      category,
-      date,
-      subcategory: type,
-      budgeted: false,
-      budgetNames: null,
-    });
+            // Skip charge transactions
+            if (!description.includes("Charge")) {
+              const withdrawnAmount = parseFloat(
+                withdrawn.replace(/[^\d.]/g, "")
+              );
+
+              if (withdrawnAmount > 0) {
+                // Determine category
+                let category = "M-Pesa";
+                let subcategory = "Transaction";
+
+                if (description.includes("Pay Bill")) {
+                  category = "Bills";
+                  subcategory = "Pay Bill";
+                } else if (
+                  description.includes("Airtime") ||
+                  description.includes("Buy Bundles")
+                ) {
+                  category = "Utilities";
+                  subcategory = description.includes("Airtime")
+                    ? "Airtime"
+                    : "Bundles";
+                } else if (description.includes("Customer Transfer")) {
+                  category = "Transfers";
+                  subcategory = "Money Transfer";
+                } else if (description.includes("Withdrawal")) {
+                  category = "Withdrawals";
+                  subcategory = "Withdrawal";
+                }
+                extracted.push({
+                  amount: withdrawnAmount,
+                  category,
+                  date,
+                  subcategory,
+                  budgeted: false,
+                  budgetNames: null,
+                  description: description.substring(0, 100),
+                  receiptNo,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
   }
+
+  console.log("\n=== EXTRACTION COMPLETE ===");
 
   return extracted;
 };
