@@ -16,6 +16,9 @@ const Budget = lazy(() => import("./pages/Budget"));
 const History = lazy(() => import("./pages/History"));
 const ExpenseForm = lazy(() => import("./components/ExpenseForm"));
 const AdminDashboard = lazy(() => import("./Pages/AdminDashboard.jsx"));
+const ForgotPassword = lazy(() => import("./components/ForgotPassword.jsx"));
+const CheckEmail = lazy(() => import("./components/CheckEmail.jsx"));
+const ResetPassword = lazy(() => import("./components/PasswordChangeForm.jsx"));
 
 function App() {
   return (
@@ -32,7 +35,10 @@ function App() {
             <Route path="/budget" element={<Budget />} />
             <Route path="/history" element={<History />} />
             <Route path="/401" element={<Unauthorized />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/check-email" element={<CheckEmail />} />
             <Route path="/profile/:id/edit-form" element={<ProfileForm />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/*" element={<ErrorPage />} />
           </Routes>

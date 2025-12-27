@@ -5,8 +5,18 @@ dotenv.config();
 import apiRouter from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import { login, refresh, signUp } from "./controllers/authController.js";
-import { isTokenVerified } from "./middlewares/verifyToken.js";
+import {
+  forgotPassword,
+  login,
+  logout,
+  refresh,
+  resetPassword,
+  signUp,
+} from "./controllers/authController.js";
+import {
+  isTokenVerified,
+  validateResetToken,
+} from "./middlewares/verifyToken.js";
 import "./cron/budgetExpiration.js";
 import "./cron/deleteExpiredTokens.js";
 
@@ -36,6 +46,10 @@ app.use("/api", limiter);
 app.post("/api/auth/refresh", refresh);
 app.post("/api/auth/login", login);
 app.post("/api/auth/signup", signUp);
+app.post("/api/auth/forgot-password", forgotPassword);
+app.post("/api/auth/reset-password", resetPassword);
+app.post("/api/auth/validate-reset-token", validateResetToken);
+app.post("/api/auth/logout", logout);
 
 app.use("/api", isTokenVerified, apiRouter);
 
