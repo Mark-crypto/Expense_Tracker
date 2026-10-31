@@ -108,6 +108,14 @@ export const extractReceiptData = (text) => {
   // Format date
   if (date) {
     try {
+      // Kenyan receipts print day first, e.g. 28/10/2026
+      const dayFirst = date.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (dayFirst) {
+        const [, day, month, year] = dayFirst;
+        const fullYear = year.length === 2 ? `20${year}` : year;
+        date = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      }
+
       // Handle "6 Nov 25" format
       if (
         date.match(

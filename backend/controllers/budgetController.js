@@ -137,9 +137,9 @@ export async function addBudget(req, res) {
         send_email,
         userId,
         JSON.stringify(subcategories),
-        startDate,
-        endDate,
-        timeLimit,
+        startDate ?? null,
+        endDate ?? null,
+        timeLimit ? 1 : 0,
       ]
     );
     if (response.length == 0) {

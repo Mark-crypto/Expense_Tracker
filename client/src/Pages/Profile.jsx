@@ -1,90 +1,88 @@
-import { FaUserCircle } from "react-icons/fa";
-import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import { useQuery } from "@tanstack/react-query";
-import axiosInstance from "@/axiosInstance";
-import { toast } from "react-toastify";
-import { useParams } from "react-router-dom";
-import Button from "react-bootstrap/Button";
-import ProfileForm from "@/components/ProfileForm";
-import Modal from "react-bootstrap/Modal";
-import Loading from "@/components/Loading";
 import { useState } from "react";
-import LimitNotification from "@/components/LimitNotification";
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { LogOut, Pencil, ShieldCheck } from "lucide-react";
+import axiosInstance from "@/axiosInstance";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, ErrorState, PageHeader } from "@/components/ui/common";
+import Loading from "@/components/Loading";
+import ProfileForm from "@/components/ProfileForm";
+import { useAuth } from "@/hooks/useAuth";
+import { initials, titleCase } from "@/lib/format";
+
+const Detail = ({ label, value }) => (
+  <div>
+    <dt className="text-xs text-muted-foreground">{label}</dt>
+    <dd className="mt-0.5 text-sm break-words">{value || "Not set"}</dd>
+  </div>
+);
 
 const Profile = () => {
-  let { id } = useParams();
-  id = parseInt(id);
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      return await axiosInstance.get(`/profile/${id}`);
-    },
+  const { id } = useParams();
+  const { isAdmin, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["profile", id],
+    queryFn: async () => await axiosInstance.get(`/profile/${parseInt(id)}`),
   });
 
-  if (isLoading) {
-    return <Loading />;
-  }
-  if (error) {
-    toast.error("Something went wrong");
-  }
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="flex-grow flex items-center justify-center p-8">
-        <LimitNotification />
-        <motion.div
-          className="max-w-md mx-auto bg-white  shadow-2xl rounded-2xl p-6 text-center space-y-4 border border-gray-100"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="flex justify-center">
-            <FaUserCircle className="text-gray-400 text-7xl" />
-          </div>
-          <h4 className="text-xl font-semibold text-gray-800">
-            {data?.data?.data?.name.toUpperCase() || "N/A"}
-          </h4>
-          <p className="text-gray-500">
-            Email: {data?.data?.data?.email || "N/A"}
-          </p>
-          <p className="text-gray-500">
-            Occupation: {data?.data?.data?.occupation || "N/A"}
-          </p>
-          <p className="text-gray-500">
-            Age: {data?.data?.data?.age || "N/A"} years
-          </p>
-          <p className="text-gray-600 text-sm leading-relaxed break-words whitespace-pre-line max-w-full">
-            <span className="font-medium text-gray-700">Goal:</span>{" "}
-            {data?.data?.data?.goal || "N/A"}
-          </p>
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorState onRetry={refetch} />;
 
-          <div className="flex justify-center space-x-4">
-            <Button
-              onClick={handleShow}
-              className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-purple-700 transition"
-            >
-              Edit profile
-            </Button>
-            <Modal show={show} onHide={handleClose}>
-              <Modal.Header closeButton>
-                <Modal.Title>Edit profile</Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <ProfileForm profileData={data} setShow={setShow} />
-              </Modal.Body>
-            </Modal>
-            <a href="/history">
-              <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-xl text-sm hover:bg-gray-300 transition">
-                View Expenses
-              </button>
-            </a>
+  const profile = data?.data?.data;
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <PageHeader
+        title="Profile"
+        actions={
+          <Button variant="secondary" onClick={() => setOpen(true)}>
+            <Pencil /> Edit profile
+          </Button>
+        }
+      />
+
+      <Card>
+        <CardContent className="sm:p-6">
+          <div className="flex items-center gap-4">
+            <Avatar text={initials(profile?.name)} className="size-14 text-base" />
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold">{titleCase(profile?.name)}</p>
+              <p className="truncate text-sm text-muted-foreground">{profile?.email}</p>
+            </div>
           </div>
-        </motion.div>
-      </main>
+          <dl className="mt-6 grid gap-5 border-t border-border pt-5 sm:grid-cols-2">
+            <Detail label="Occupation" value={profile?.occupation} />
+            <Detail label="Age" value={profile?.age} />
+            <Detail label="Money goal" value={profile?.goal} />
+          </dl>
+        </CardContent>
+      </Card>
+
+      <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
+        {isAdmin && (
+          <Link to="/admin-dashboard">
+            <Button variant="secondary" tabIndex={-1}>
+              <ShieldCheck /> Admin
+            </Button>
+          </Link>
+        )}
+        <Button variant="danger-ghost" onClick={logout}>
+          <LogOut /> Log out
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent aria-describedby={undefined} className="max-h-[90vh] max-w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+          </DialogHeader>
+          <ProfileForm profile={profile} onSaved={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

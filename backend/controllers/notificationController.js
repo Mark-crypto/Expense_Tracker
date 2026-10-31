@@ -68,13 +68,13 @@ export const implementNotificationAction = async (req, res) => {
         [userId, notificationId]
       );
       const [[budget]] = await connection.execute(
-        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = ? AND user_id = ?`,
-        [budgetIdValue, userId]
+        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) AND user_id = ?`,
+        [notificationId, userId]
       );
 
       const [[{ total_spent }]] = await connection.execute(
         `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
-        [budgetIdValue]
+        [budget.budget_id]
       );
       if (Number(total_spent) <= Number(budget.amount)) {
         await connection.execute(
@@ -88,13 +88,13 @@ export const implementNotificationAction = async (req, res) => {
         [newAmount, userId, notificationId]
       );
       const [[budget]] = await connection.execute(
-        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = ? AND user_id = ?`,
-        [budgetIdValue, userId]
+        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) AND user_id = ?`,
+        [notificationId, userId]
       );
 
       const [[{ total_spent }]] = await connection.execute(
         `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
-        [budgetIdValue]
+        [budget.budget_id]
       );
       if (Number(total_spent) <= Number(budget.amount)) {
         await connection.execute(

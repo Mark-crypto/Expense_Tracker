@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { FaMinusCircle } from "react-icons/fa";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import axiosInstance from "../axiosInstance";
+import { Loader2, X } from "lucide-react";
 import { useWatch } from "react-hook-form";
+import axiosInstance from "../axiosInstance";
+import { Button } from "@/components/ui/button";
+import { FieldError, Input } from "@/components/ui/field";
+import { categoryLabel } from "@/lib/categories";
 
 const SubcategoryRow = ({
   index,
@@ -21,7 +22,6 @@ const SubcategoryRow = ({
   const [isLoading, setIsLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const timeoutRef = useRef(null);
-  const inputRef = useRef(null);
 
   const currentSubcategory = useWatch({
     control,
@@ -35,13 +35,7 @@ const SubcategoryRow = ({
   }, [currentSubcategory]);
 
   const searchSuggestions = async (searchTerm) => {
-    if (!selectedCategory) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    if (searchTerm.length < 2) {
+    if (!selectedCategory || searchTerm.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -69,13 +63,8 @@ const SubcategoryRow = ({
     setInputValue(value);
     setValue(`subcategories.${index}.name`, value);
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      searchSuggestions(value);
-    }, 300);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => searchSuggestions(value), 300);
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -86,16 +75,13 @@ const SubcategoryRow = ({
   };
 
   const handleInputFocus = () => {
-    const currentValue = inputValue;
-    if (currentValue && currentValue.length >= 2 && selectedCategory) {
+    if (inputValue.length >= 2 && selectedCategory && suggestions.length > 0) {
       setShowSuggestions(true);
     }
   };
 
   const handleInputBlur = () => {
-    setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   useEffect(() => {
@@ -105,126 +91,84 @@ const SubcategoryRow = ({
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
+  const rowErrors = errors.subcategories?.[index];
+
   return (
-    <div className="mb-3 relative">
-      <div className="flex flex-col sm:flex-row gap-2 md:gap-3 items-start">
-        {/* Name Input with Suggestions */}
-        <div className="flex-1 w-full relative">
-          <Form.Control
-            type="text"
-            placeholder={
-              !selectedCategory ? "Select category first" : "e.g. Vegetables"
-            }
-            value={inputValue}
-            onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            ref={inputRef}
-            size="sm"
-            className="text-sm md:text-base w-full"
-          />
+    <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] sm:grid-cols-[minmax(0,1fr)_7.5rem_2.25rem] items-start gap-2">
+      <div className="relative">
+        <Input
+          aria-label="Item name"
+          placeholder={selectedCategory ? "e.g. Vegetables" : "Item name"}
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+          autoComplete="off"
+        />
 
-          {showSuggestions && (suggestions.length > 0 || isLoading) && (
-            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-20 mt-1 max-h-40 sm:max-h-48 overflow-y-auto">
-              {isLoading ? (
-                <div className="p-2 sm:p-3 text-center text-gray-500">
-                  <div
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                  >
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <span className="text-xs sm:text-sm">Searching...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="p-2 sm:p-3 bg-purple-50 border-b border-gray-200">
-                    <small className="text-purple-600 fw-semibold text-xs sm:text-sm">
-                      Suggestions for{" "}
-                      <span className="capitalize">{selectedCategory}</span>
-                    </small>
-                  </div>
-                  {suggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      className="w-full p-2 sm:p-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0 text-left transition-colors duration-150"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      onMouseDown={(e) => e.preventDefault()}
-                    >
-                      <div className="text-sm text-gray-700 truncate">
-                        {suggestion}
-                      </div>
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-
-          {showSuggestions && !isLoading && suggestions.length === 0 && (
-            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-20 mt-1 p-2 sm:p-3">
-              <small className="text-muted text-xs sm:text-sm">
-                No suggestions found
-              </small>
-            </div>
-          )}
-
-          {errors.subcategories?.[index]?.name && (
-            <p className="text-danger text-xs md:text-sm mt-1">
-              {errors.subcategories[index].name.message}
-            </p>
-          )}
-        </div>
-
-        {/* Amount Input and Remove Button Container */}
-        <div className="flex gap-2 md:gap-3 w-full sm:w-auto items-start">
-          {/* Amount Input */}
-          <div className="flex-1 sm:flex-initial sm:w-32">
-            <Form.Control
-              type="number"
-              placeholder="Amount (KES)"
-              {...register(`subcategories.${index}.amount`, {
-                required: "Amount is required",
-                min: { value: 1, message: "Must be greater than 0" },
-                valueAsNumber: true,
-              })}
-              size="sm"
-              className="text-sm md:text-base w-full"
-            />
-
-            {errors.subcategories?.[index]?.amount && (
-              <p className="text-danger text-xs md:text-sm mt-1">
-                {errors.subcategories[index].amount.message}
+        {showSuggestions && (
+          <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+            {isLoading ? (
+              <p className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" /> Searching...
               </p>
+            ) : suggestions.length === 0 ? (
+              <p className="p-3 text-xs text-muted-foreground">No suggestions found</p>
+            ) : (
+              <>
+                <p className="border-b border-border px-3 py-2 text-xs text-muted-foreground">
+                  Suggestions for {categoryLabel(selectedCategory)}
+                </p>
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-muted"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </>
             )}
           </div>
-
-          {/* Remove Button - Just Icon */}
-          <div className="flex items-center h-full pt-0.5">
-            <Button
-              variant="link"
-              type="button"
-              onClick={() => {
-                clearErrors(`subcategories.${index}`);
-                unregister(`subcategories.${index}`);
-                remove(index);
-              }}
-              className="p-0 text-danger hover:text-red-700 transition-colors"
-              title="Remove this subcategory"
-              size="sm"
-            >
-              <FaMinusCircle size={20} className="sm:size-[22px]" />
-            </Button>
-          </div>
-        </div>
+        )}
+        <FieldError className="mt-1">{rowErrors?.name?.message}</FieldError>
       </div>
+
+      <div>
+        <Input
+          type="number"
+          step="any"
+          aria-label="Amount in KES"
+          placeholder="KES"
+          {...register(`subcategories.${index}.amount`, {
+            required: "Amount is required",
+            min: { value: 1, message: "Must be greater than 0" },
+            valueAsNumber: true,
+          })}
+        />
+        <FieldError className="mt-1">{rowErrors?.amount?.message}</FieldError>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Remove item"
+        className="mt-0.5"
+        onClick={() => {
+          clearErrors(`subcategories.${index}`);
+          unregister(`subcategories.${index}`);
+          remove(index);
+        }}
+      >
+        <X />
+      </Button>
     </div>
   );
 };

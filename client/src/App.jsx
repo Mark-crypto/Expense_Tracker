@@ -1,49 +1,62 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import Login from "./pages/Login";
+import { ToastContainer } from "react-toastify";
+import Login from "./Pages/Login";
 import Loading from "./components/Loading";
 import SilentRefresh from "./SilentRefresh";
-import Unauthorized from "./Pages/Unauthorized";
-import ErrorPage from "./components/404Error";
-import ProfileForm from "./components/ProfileForm";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AppLayout from "./components/layout/AppLayout";
 
-const Register = lazy(() => import("./pages/Register"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Prediction = lazy(() => import("./pages/Prediction"));
-const Budget = lazy(() => import("./pages/Budget"));
-const History = lazy(() => import("./pages/History"));
-const ExpenseForm = lazy(() => import("./components/ExpenseForm"));
-const AdminDashboard = lazy(() => import("./Pages/AdminDashboard.jsx"));
-const ForgotPassword = lazy(() => import("./components/ForgotPassword.jsx"));
-const CheckEmail = lazy(() => import("./components/CheckEmail.jsx"));
-const ResetPassword = lazy(() => import("./components/PasswordChangeForm.jsx"));
+const Register = lazy(() => import("./Pages/Register"));
+const Profile = lazy(() => import("./Pages/Profile"));
+const Dashboard = lazy(() => import("./Pages/Dashboard"));
+const Prediction = lazy(() => import("./Pages/Prediction"));
+const Budget = lazy(() => import("./Pages/Budget"));
+const History = lazy(() => import("./Pages/History"));
+const AddExpense = lazy(() => import("./Pages/AddExpense"));
+const AdminDashboard = lazy(() => import("./Pages/AdminDashboard"));
+const Unauthorized = lazy(() => import("./Pages/Unauthorized"));
+const NotAdmin = lazy(() => import("./Pages/NotAdmin"));
+const NotFound = lazy(() => import("./Pages/NotFound"));
+const ForgotPassword = lazy(() => import("./Pages/ForgotPassword"));
+const CheckEmail = lazy(() => import("./Pages/CheckEmail"));
+const ResetPassword = lazy(() => import("./Pages/ResetPassword"));
 
 function App() {
   return (
     <>
-      <Suspense fallback={<Loading />}>
-        <BrowserRouter>
+      <BrowserRouter>
+        <Suspense fallback={<Loading fullScreen />}>
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/new/profile/:id" element={<Profile />} />
-            <Route path="/expense-form" element={<ExpenseForm />} />
-            <Route path="/predictions" element={<Prediction />} />
-            <Route path="/budget" element={<Budget />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/401" element={<Unauthorized />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/check-email" element={<CheckEmail />} />
-            <Route path="/profile/:id/edit-form" element={<ProfileForm />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/*" element={<ErrorPage />} />
+            <Route path="/401" element={<Unauthorized />} />
+            <Route path="/403" element={<NotAdmin />} />
+
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/expense-form" element={<AddExpense />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/budget" element={<Budget />} />
+              <Route path="/predictions" element={<Prediction />} />
+              <Route path="/new/profile/:id" element={<Profile />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            </Route>
+
+            <Route path="/*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </Suspense>
+        </Suspense>
+      </BrowserRouter>
+      <ToastContainer position="top-right" autoClose={4000} theme="light" />
       <SilentRefresh />
     </>
   );

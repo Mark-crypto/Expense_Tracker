@@ -90,7 +90,7 @@ export const createExpense = async (req, res) => {
     }
     const [budgetID] = await connection.execute(
       `SELECT budget_id FROM budget WHERE name = ? AND user_id = ?`,
-      [budgetNames, userId]
+      [budgetNames ?? null, userId]
     );
     const budgetIdValue = budgetID.length > 0 ? budgetID[0].budget_id : null;
 

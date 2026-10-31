@@ -1,62 +1,37 @@
 import connection from "../database.js";
 import Tesseract from "tesseract.js";
 import { extractMpesaLines } from "../utils/extractMpesaLines.js";
+import { extractPdfText } from "../utils/extractPdfText.js";
 import { extractReceiptData } from "../utils/extractReceiptData.js";
-
-import PDFParser from "pdf2json";
+import { PasswordResponses } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export const createMpesaExpense = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No PDF uploaded" });
+  }
+
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No PDF uploaded" });
-    }
+    const text = await extractPdfText(req.file.buffer, req.body.password);
+    const expenses = extractMpesaLines(text);
 
-    return new Promise((resolve, reject) => {
-      const pdfParser = new PDFParser(this, 1);
-
-      pdfParser.on("pdfParser_dataError", (errData) => {
-        console.error("PDF Parse Error:", errData.parserError);
-        reject(new Error("Failed to parse PDF"));
-      });
-
-      pdfParser.on("pdfParser_dataReady", (pdfData) => {
-        try {
-          // Extract text from PDF data
-          const pages = pdfData.Pages || [];
-          let fullText = "";
-
-          pages.forEach((page) => {
-            if (page.Texts) {
-              page.Texts.forEach((text) => {
-                if (text.R) {
-                  text.R.forEach((r) => {
-                    fullText += decodeURIComponent(r.T) + " ";
-                  });
-                }
-              });
-            }
-            fullText += "\n";
-          });
-
-          const expenses = extractMpesaLines(fullText);
-          console.log("Extracted M-Pesa Expenses:", expenses);
-          res.status(200).json({
-            message: "PDF parsed successfully",
-            expenses,
-          });
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
-
-      pdfParser.parseBuffer(req.file.buffer);
+    return res.status(200).json({
+      message: "PDF parsed successfully",
+      expenses,
     });
   } catch (error) {
-    console.error("MPESA PDF ERROR:", error);
-    return res.status(500).json({
-      message: "Failed to process PDF",
-      error: error.message,
+    if (error.name === "PasswordException") {
+      const incorrect = error.code === PasswordResponses.INCORRECT_PASSWORD;
+      return res.status(422).json({
+        code: incorrect ? "PASSWORD_INCORRECT" : "PASSWORD_REQUIRED",
+        message: incorrect
+          ? "That password didn't work. Check the SMS from Safaricom."
+          : "This statement is password protected. Enter its password to continue.",
+      });
+    }
+
+    console.error("MPESA PDF ERROR:", error.message);
+    return res.status(422).json({
+      message: "We couldn't read this PDF. Check it's a full M-Pesa statement.",
     });
   }
 };
@@ -157,8 +132,8 @@ export const createReceiptExpense = async (req, res) => {
         date: extractedData.date,
         description: extractedData.description,
         merchant: extractedData.merchant,
-        category: "Expenses", // Default category based on receipt type
-        subcategory: "Healthcare", // Based on merchant name
+        category: "Uncategorized",
+        subcategory: "Unknown",
         rawText: text.substring(0, 500), // Limited for debugging
       },
     });
@@ -217,8 +192,8 @@ export const saveReceiptExpense = async (req, res) => {
 
     const sql = `
       INSERT INTO expense 
-      (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
@@ -227,11 +202,12 @@ export const saveReceiptExpense = async (req, res) => {
       date,
       month,
       userId,
-      subcategory,
+      // The expense table has no description or merchant columns yet.
+      JSON.stringify([
+        { name: merchant || description, amount: parseFloat(amount) },
+      ]),
       budgeted ? 1 : 0,
       null, // budget_id for now
-      description,
-      merchant || null,
     ];
 
     const [response] = await connection.query(sql, values);

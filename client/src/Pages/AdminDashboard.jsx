@@ -1,92 +1,97 @@
-import axiosInstance from "../axiosInstance.js";
 import { useQuery } from "@tanstack/react-query";
-import Loading from "../components/Loading.jsx";
-import UserCard from "@/components/UserCard.jsx";
-import UserTable from "@/components/UserTable.jsx";
-import RoleTable from "@/components/RoleTable.jsx";
-import LineGraph from "@/components/LineGraph.jsx";
-import { useAuth } from "../hooks/useAuth.jsx";
-import NotAdmin from "./NotAdmin.jsx";
-import { toast, ToastContainer } from "react-toastify";
+import { UserCheck, UserMinus, UserPlus, Users } from "lucide-react";
+import axiosInstance from "@/axiosInstance.js";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Avatar, Badge, EmptyState, ErrorState, PageHeader, StatCard } from "@/components/ui/common";
+import ActiveUsersChart from "@/components/charts/ActiveUsersChart";
+import Loading from "@/components/Loading";
+import { useAuth } from "@/hooks/useAuth";
+import { initials, titleCase } from "@/lib/format";
+import NotAdmin from "./NotAdmin";
 
 const AdminDashboard = () => {
-  const { isAdmin, isAuthenticated } = useAuth();
-  const { data, error, isLoading } = useQuery({
+  const { isAdmin } = useAuth();
+  const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["admin-dashboard"],
-    queryFn: async () => {
-      return await axiosInstance.get("/admin-dashboard");
-    },
+    queryFn: async () => await axiosInstance.get("/admin-dashboard"),
+    enabled: isAdmin,
   });
 
-  if (isLoading) {
-    return <Loading />;
-  }
-  if (!isAuthenticated) return <NotAdmin />;
-  if (!isAdmin) {
-    return <NotAdmin />;
-  }
-  if (error) {
-    toast.error("Something went wrong");
-  }
+  if (!isAdmin) return <NotAdmin />;
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorState onRetry={refetch} />;
+
+  const stats = data?.data?.data;
+  const users = stats?.allUsers ?? [];
 
   return (
-    <div className="admin-dashboard p-4 md:p-6">
-      <ToastContainer className="!w-[90vw] sm:!w-auto" />
+    <>
+      <PageHeader title="Admin" description="Users and activity across the system." />
 
-      {/* Header */}
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
-          Admin Dashboard
-        </h1>
-        <p className="text-gray-600 text-sm md:text-base mt-1">
-          Manage users, roles, and view system analytics
-        </p>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard label="Total users" icon={Users} value={(stats?.totalUsers?.[0]?.total_users ?? 0).toLocaleString()} />
+        <StatCard label="Active" icon={UserCheck} value={(stats?.activeUsers?.[0]?.active_users ?? 0).toLocaleString()} />
+        <StatCard label="Inactive" icon={UserMinus} value={(stats?.inactiveUsers?.[0]?.inactive_users ?? 0).toLocaleString()} />
+        <StatCard label="New this week" icon={UserPlus} value={(stats?.newUsers?.[0]?.users_last_week ?? 0).toLocaleString()} />
       </div>
 
-      {/* User Cards Section */}
-      <div className="mb-6 md:mb-8">
-        <UserCard
-          activeUsers={data?.data?.data?.activeUsers}
-          inactiveUsers={data?.data?.data?.inactiveUsers}
-          newUsers={data?.data?.data?.newUsers}
-          totalUsers={data?.data?.data?.totalUsers}
-        />
-      </div>
-
-      {/* User Table Section */}
-      <div className="mb-6 md:mb-8">
-        <div className="bg-white rounded-lg md:rounded-xl shadow-sm p-3 md:p-4">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">
-            User Management
-          </h2>
-          <div className="overflow-x-auto">
-            <UserTable users={data?.data?.data?.allUsers} />
+      <Card className="mt-4">
+        <CardHeader title="Active users by signup month" />
+        <CardContent>
+          <div className="h-64">
+            <ActiveUsersChart data={stats?.activeByMonth} />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Line Graph Section */}
-      <div className="mb-6 md:mb-8">
-        <div className="bg-white rounded-lg md:rounded-xl shadow-sm p-3 md:p-4">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">
-            User Activity Over Time
-          </h2>
-          <LineGraph data={data?.data?.data?.activeByMonth} />
-        </div>
-      </div>
-
-      {/* Role Table Section */}
-      <div className="mb-4 md:mb-6">
-        <div className="bg-white rounded-lg md:rounded-xl shadow-sm p-3 md:p-4">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">
-            User Roles Distribution
-          </h2>
-          <div className="overflow-x-auto">
-            <RoleTable roles={data?.data?.data?.allUsers} />
+      <Card className="mt-4">
+        <CardHeader title="Users" description={`${users.length} accounts`} />
+        {users.length === 0 ? (
+          <EmptyState icon={Users} title="No users found" />
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-y border-border text-left text-xs text-muted-foreground">
+                  <th className="px-5 py-2.5 font-medium">User</th>
+                  <th className="hidden px-3 py-2.5 font-medium md:table-cell">Goal</th>
+                  <th className="px-3 py-2.5 font-medium">Role</th>
+                  <th className="px-5 py-2.5 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.user_id} className="border-b border-border last:border-0">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar text={initials(user.name)} />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{titleCase(user.name)}</p>
+                          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden max-w-56 truncate px-3 py-3 text-muted-foreground md:table-cell">
+                      {user.goal || "Not set"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <Badge tone={user.role === "admin" ? "accent" : "neutral"}>
+                        {titleCase(user.role || "user")}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3">
+                      <Badge tone={user.status === "active" ? "success" : "neutral"}>
+                        {titleCase(user.status || "unknown")}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </Card>
+    </>
   );
 };
 

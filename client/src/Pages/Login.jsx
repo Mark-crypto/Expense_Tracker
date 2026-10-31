@@ -1,30 +1,86 @@
-import { motion } from "framer-motion";
-import LoginForm from "../components/LoginForm";
-import Banner from "../components/Banner";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { publicAxios } from "@/axiosInstance";
+import { loginSchema } from "@/zodSchemas/schemas.js";
+import { useAuth } from "@/hooks/useAuth";
+import AuthLayout from "@/components/layout/AuthLayout";
+import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/field";
 
 const Login = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-white px-4">
-      <div className="w-full max-w-6xl flex flex-col lg:flex-row shadow-2xl rounded-3xl overflow-hidden bg-white border border-gray-100">
-        <motion.div
-          className="w-full lg:w-1/2 p-10 flex flex-col justify-center"
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <LoginForm />
-        </motion.div>
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-        <motion.div
-          className="w-full lg:w-1/2 bg-purple-50  "
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(loginSchema), mode: "onBlur" });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data) => {
+      const res = await publicAxios.post("/auth/login", data);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      login(data.user);
+      toast.success("Login successful");
+      reset();
+      navigate("/dashboard");
+    },
+    onError: (error) =>
+      toast.error(error.response?.data?.message || "Can't reach the server. Try again shortly."),
+  });
+
+  return (
+    <AuthLayout title="Welcome back" description="Log in to see your money.">
+      <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-4">
+        <Field label="Email" htmlFor="email" error={errors.email?.message}>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            aria-invalid={!!errors.email}
+            disabled={isPending}
+            {...register("email")}
+          />
+        </Field>
+        <Field
+          label="Password"
+          htmlFor="password"
+          error={errors.password?.message}
+          action={
+            <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
+          }
         >
-          <Banner />
-        </motion.div>
-      </div>
-    </div>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Your password"
+            aria-invalid={!!errors.password}
+            disabled={isPending}
+            {...register("password")}
+          />
+        </Field>
+        <Button type="submit" loading={isPending} className="w-full">
+          {isPending ? "Logging in..." : "Log in"}
+        </Button>
+      </form>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        New here?{" "}
+        <Link to="/register" className="font-medium text-primary hover:underline">
+          Create an account
+        </Link>
+      </p>
+    </AuthLayout>
   );
 };
 

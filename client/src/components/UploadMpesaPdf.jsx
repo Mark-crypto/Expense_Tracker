@@ -1,20 +1,13 @@
 import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Upload,
-  FileText,
-  X,
-  BarChart3,
-  Shield,
-  AlertCircle,
-  Edit3,
-  Trash2,
-  Check,
-  ArrowLeft,
-} from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import axiosInstance from "@/axiosInstance";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { AlertCircle, ArrowLeft, Check, FileText, Info, Pencil, Trash2, X } from "lucide-react";
+import axiosInstance from "@/axiosInstance";
+import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/common";
+import { Dropzone } from "@/components/ui/dropzone";
+import { Field, Input, Select } from "@/components/ui/field";
+import { formatDate, formatFileSize, formatKES } from "@/lib/format";
 
 // Mock categories and subcategories
 const CATEGORIES = {
@@ -33,33 +26,33 @@ const CATEGORIES = {
   Uncategorized: ["Unknown"],
 };
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
 const UploadMpesaPdf = () => {
+  const queryClient = useQueryClient();
   const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [editingRow, setEditingRow] = useState(null);
   const fileInputRef = useRef(null);
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+  const clearFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   // Process extracted transactions from API response
   const processExtractedTransactions = (data) => {
-    const extractedTransactions =
-      data.expenses || data.transactions || data.data || [];
-
-    return extractedTransactions.map((transaction, index) => ({
+    const extracted = data.expenses || data.transactions || data.data || [];
+    return extracted.map((transaction, index) => ({
       id: index + 1,
       amount: transaction.amount || 0,
       date: transaction.date || new Date().toISOString().split("T")[0],
       description: transaction.description || "Unknown transaction",
       category: transaction.category || "Uncategorized",
       subcategory: transaction.subcategory || "Unknown",
-      isSelected: true,
     }));
   };
 
@@ -67,39 +60,32 @@ const UploadMpesaPdf = () => {
   const { mutate: uploadMutate, isPending: isUploadPending } = useMutation({
     mutationFn: async (formData) => {
       const response = await axiosInstance.post("/upload/mpesa", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
         timeout: 30000,
       });
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success("PDF processed successfully! Review your transactions.");
-      const processedTransactions = processExtractedTransactions(data);
-      setTransactions(processedTransactions);
+      const processed = processExtractedTransactions(data);
+      setTransactions(processed);
       setIsUploaded(true);
-
-      // Auto-select all transactions
-      setSelectedRows(new Set(processedTransactions.map((t) => t.id)));
+      setSelectedRows(new Set(processed.map((t) => t.id)));
+      if (processed.length > 0) {
+        toast.success("Statement read. Review your transactions.");
+      }
     },
-    onError: (error) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to process PDF. Please try again.";
-      toast.error(errorMessage);
-      setError(errorMessage);
-    },
-    onSettled: () => {
-      setIsUploading(false);
+    onError: (err) => {
+      const message = err.response?.data?.message || "Failed to process the PDF. Please try again.";
+      toast.error(message);
+      setError(message);
     },
   });
 
   // Save mutation - stores confirmed transactions in database
   const { mutate: saveMutate, isPending: isSavePending } = useMutation({
-    mutationFn: async (confirmedTransactions) => {
+    mutationFn: async (confirmed) => {
       const response = await axiosInstance.post("mpesa/save", {
-        transactions: confirmedTransactions.map((transaction) => ({
+        transactions: confirmed.map((transaction) => ({
           amount: transaction.amount,
           category: transaction.category,
           subcategory: transaction.subcategory,
@@ -111,656 +97,317 @@ const UploadMpesaPdf = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success(`Successfully saved ${data.savedCount} transactions!`);
-      // Reset everything
-      setFile(null);
-      setFileName("");
-      setTransactions([]);
-      setSelectedRows(new Set());
-      setIsUploaded(false);
-      setError("");
-
-      // Clear file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      toast.success(`Saved ${data.savedCount} transactions`);
+      queryClient.invalidateQueries({ queryKey: ["expense"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      removeFile();
     },
-    onError: (error) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to save transactions. Please try again.";
-      toast.error(errorMessage);
-    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to save transactions. Please try again."),
   });
 
   const validateFile = (selectedFile) => {
-    setError("");
-
-    if (!selectedFile) {
-      setError("Please select a file");
-      return false;
-    }
-
-    if (selectedFile.type !== "application/pdf") {
-      setError("Please upload a PDF file only");
-      return false;
-    }
-
+    if (selectedFile.type !== "application/pdf") return "Please upload a PDF file";
+    if (selectedFile.size === 0) return "This file appears to be empty";
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setError(`File size must be less than ${formatFileSize(MAX_FILE_SIZE)}`);
-      return false;
+      return `File size must be under ${formatFileSize(MAX_FILE_SIZE)}`;
     }
-
-    if (selectedFile.size === 0) {
-      setError("File appears to be empty");
-      return false;
-    }
-
-    return true;
+    return "";
   };
 
   const handleFile = (selectedFile) => {
     if (!selectedFile) return;
-
-    if (validateFile(selectedFile)) {
-      setFile(selectedFile);
-      setFileName(selectedFile.name);
-      setIsUploaded(false);
-      setTransactions([]);
-      setSelectedRows(new Set());
-      setError("");
-    } else {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
-  const handleFileInput = (e) => {
-    const selectedFile = e.target.files?.[0];
-    handleFile(selectedFile);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    handleFile(droppedFile);
-  };
-
-  const removeFile = () => {
-    setFile(null);
-    setFileName("");
-    setTransactions([]);
-    setSelectedRows(new Set());
-    setError("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      setError("Please select a file first");
+    const problem = validateFile(selectedFile);
+    setError(problem);
+    if (problem) {
+      clearFileInput();
       return;
     }
-
-    if (!validateFile(file)) {
-      return;
-    }
-
-    setIsUploading(true);
-    setError("");
-
-    try {
-      const formData = new FormData();
-      formData.append("mpesaStatement", file);
-      formData.append("fileName", fileName);
-
-      uploadMutate(formData);
-    } catch (err) {
-      setError("An unexpected error occurred");
-      setIsUploading(false);
-    }
-  };
-
-  const handleEdit = (transactionId) => {
-    setEditingRow(transactionId);
-  };
-
-  const handleSaveEdit = (transactionId, field, value) => {
-    setTransactions((prev) =>
-      prev.map((transaction) =>
-        transaction.id === transactionId
-          ? { ...transaction, [field]: value }
-          : transaction
-      )
-    );
-    setEditingRow(null);
-  };
-
-  const handleDelete = (transactionId) => {
-    setTransactions((prev) =>
-      prev.filter((transaction) => transaction.id !== transactionId)
-    );
-    setSelectedRows((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(transactionId);
-      return newSet;
-    });
-  };
-
-  const toggleRowSelection = (transactionId) => {
-    setSelectedRows((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(transactionId)) {
-        newSet.delete(transactionId);
-      } else {
-        newSet.add(transactionId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleAllSelection = () => {
-    if (selectedRows.size === transactions.length) {
-      setSelectedRows(new Set());
-    } else {
-      setSelectedRows(new Set(transactions.map((t) => t.id)));
-    }
-  };
-
-  const handleSaveTransactions = () => {
-    const transactionsToSave = transactions.filter((transaction) =>
-      selectedRows.has(transaction.id)
-    );
-
-    if (transactionsToSave.length === 0) {
-      toast.error("Please select at least one transaction to save");
-      return;
-    }
-
-    saveMutate(transactionsToSave);
-  };
-
-  const getSelectedCount = () => {
-    return selectedRows.size;
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleDateString("en-KE", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "Invalid Date";
-    }
-  };
-
-  const handleBackToUpload = () => {
+    setFile(selectedFile);
     setIsUploaded(false);
     setTransactions([]);
     setSelectedRows(new Set());
   };
 
-  return (
-    <div className="w-full">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full"
-      >
-        <div className="space-y-6">
-          {/* Upload Section - Only show when no transactions to review */}
-          {!isUploaded && (
-            <div className="space-y-4">
-              {/* Error Message */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3"
-                  >
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                    <p className="text-red-700 text-sm">{error}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+  const removeFile = () => {
+    setFile(null);
+    setTransactions([]);
+    setSelectedRows(new Set());
+    setIsUploaded(false);
+    setEditingRow(null);
+    setError("");
+    setPassword("");
+    clearFileInput();
+  };
 
-              <AnimatePresence mode="wait">
-                {!file ? (
-                  <motion.div
-                    key="upload-area"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={`border-3 border-dashed rounded-2xl p-6 transition-all duration-300 ${
-                      isDragging
-                        ? "border-purple-400 bg-purple-50"
-                        : error
-                        ? "border-red-200 bg-red-50"
-                        : "border-purple-200 hover:border-purple-300 hover:bg-purple-50/50"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <div className="text-center">
-                      <motion.div
-                        animate={{ y: isDragging ? -5 : 0 }}
-                        className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-3 ${
-                          error
-                            ? "bg-red-100"
-                            : "bg-gradient-to-r from-purple-100 to-indigo-100"
-                        }`}
-                      >
-                        {isDragging ? (
-                          <Upload className="w-6 h-6 text-purple-500" />
-                        ) : error ? (
-                          <AlertCircle className="w-6 h-6 text-red-500" />
-                        ) : (
-                          <FileText className="w-6 h-6 text-purple-500" />
-                        )}
-                      </motion.div>
+  const handleUpload = () => {
+    setError("");
+    const formData = new FormData();
+    formData.append("mpesaStatement", file);
+    formData.append("fileName", file.name);
+    if (password) formData.append("password", password);
+    uploadMutate(formData);
+  };
 
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        {isDragging ? "Drop PDF here" : "Upload M-Pesa PDF"}
-                      </h3>
+  const updateTransaction = (transactionId, field, value) => {
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === transactionId ? { ...t, [field]: value } : t))
+    );
+  };
 
-                      <p className="text-gray-500 text-sm mb-4">
-                        Drag & drop your statement or click to browse
-                      </p>
+  const handleDelete = (transactionId) => {
+    setTransactions((prev) => prev.filter((t) => t.id !== transactionId));
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      next.delete(transactionId);
+      return next;
+    });
+  };
 
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={triggerFileInput}
-                        className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-xl transition-all text-sm"
-                      >
-                        Choose PDF File
-                      </motion.button>
+  const toggleRowSelection = (transactionId) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      next.has(transactionId) ? next.delete(transactionId) : next.add(transactionId);
+      return next;
+    });
+  };
 
-                      <p className="text-xs text-gray-400 mt-3">
-                        PDF format only • Max {formatFileSize(MAX_FILE_SIZE)}
-                      </p>
-                    </div>
+  const toggleAllSelection = () => {
+    setSelectedRows(
+      selectedRows.size === transactions.length ? new Set() : new Set(transactions.map((t) => t.id))
+    );
+  };
 
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="application/pdf"
-                      className="hidden"
-                      onChange={handleFileInput}
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="file-preview"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="border-2 border-purple-200 rounded-xl p-4 bg-gradient-to-r from-purple-50 to-indigo-50"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <FileText className="w-5 h-5 text-purple-500" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm truncate max-w-[200px]">
-                            {fileName}
-                          </h4>
-                          <p className="text-xs text-gray-500">
-                            {file && formatFileSize(file.size)}
-                          </p>
-                        </div>
-                      </div>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={removeFile}
-                        className="p-1 hover:bg-white rounded-lg transition-colors"
-                        disabled={isUploading}
-                      >
-                        <X className="w-4 h-4 text-gray-500" />
-                      </motion.button>
-                    </div>
+  const handleSaveTransactions = () => saveMutate(transactions.filter((t) => selectedRows.has(t.id)));
 
-                    {isUploading && (
-                      <div className="w-full bg-purple-200 rounded-full h-1.5 mb-2">
-                        <motion.div
-                          className="bg-gradient-to-r from-purple-500 to-indigo-500 h-1.5 rounded-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: "100%" }}
-                          transition={{ duration: 2 }}
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+  const backToUpload = () => {
+    setIsUploaded(false);
+    setTransactions([]);
+    setSelectedRows(new Set());
+    setEditingRow(null);
+  };
 
-              {/* Upload Button */}
-              <AnimatePresence>
-                {file && !isUploaded && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <motion.button
-                      whileHover={{ scale: isUploading ? 1 : 1.02 }}
-                      whileTap={{ scale: isUploading ? 1 : 0.98 }}
-                      onClick={handleUpload}
-                      disabled={isUploading || isUploadPending}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold shadow-lg transition-all text-sm ${
-                        isUploading || isUploadPending
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 shadow-purple-500/25 hover:shadow-xl"
-                      }`}
-                    >
-                      {isUploading || isUploadPending ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span className="text-white">
-                            {isUploadPending ? "Uploading..." : "Processing..."}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-white">Analyze Statement</span>
-                      )}
-                    </motion.button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+  if (isUploaded && transactions.length === 0) {
+    return (
+      <div className="space-y-4">
+        <Notice tone="warning" icon={AlertCircle}>
+          We couldn't find any spending in this statement. Check it's a full M-Pesa statement, or
+          try another file.
+        </Notice>
+        <Button variant="secondary" onClick={removeFile}>
+          <ArrowLeft /> Try another file
+        </Button>
+      </div>
+    );
+  }
 
-          {/* Transactions Review Table */}
-          {isUploaded && transactions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={handleBackToUpload}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors text-sm"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Upload
-                </button>
-                <div className="text-sm text-gray-600">
-                  {getSelectedCount()} of {transactions.length} selected
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="w-12 px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={
-                              selectedRows.size === transactions.length &&
-                              transactions.length > 0
-                            }
-                            onChange={toggleAllSelection}
-                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                          />
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Description
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Category
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Subcategory
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {transactions.map((transaction) => (
-                        <tr
-                          key={transaction.id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 py-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedRows.has(transaction.id)}
-                              onChange={() =>
-                                toggleRowSelection(transaction.id)
-                              }
-                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {formatDate(transaction.date)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate">
-                            {transaction.description}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium">
-                            <span
-                              className={
-                                transaction.amount < 0
-                                  ? "text-red-600"
-                                  : "text-green-600"
-                              }
-                            >
-                              {formatCurrency(Math.abs(transaction.amount))}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {editingRow === transaction.id ? (
-                              <select
-                                value={transaction.category}
-                                onChange={(e) =>
-                                  handleSaveEdit(
-                                    transaction.id,
-                                    "category",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                                autoFocus
-                              >
-                                {Object.keys(CATEGORIES).map((category) => (
-                                  <option key={category} value={category}>
-                                    {category}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span>{transaction.category}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {editingRow === transaction.id ? (
-                              <select
-                                value={transaction.subcategory}
-                                onChange={(e) =>
-                                  handleSaveEdit(
-                                    transaction.id,
-                                    "subcategory",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                              >
-                                {CATEGORIES[transaction.category]?.map(
-                                  (subcategory) => (
-                                    <option
-                                      key={subcategory}
-                                      value={subcategory}
-                                    >
-                                      {subcategory}
-                                    </option>
-                                  )
-                                )}
-                              </select>
-                            ) : (
-                              <span>{transaction.subcategory}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="flex items-center gap-2">
-                              {editingRow === transaction.id ? (
-                                <button
-                                  onClick={() => setEditingRow(null)}
-                                  className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleEdit(transaction.id)}
-                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDelete(transaction.id)}
-                                className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Save Transactions Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleSaveTransactions}
-                disabled={isSavePending || getSelectedCount() === 0}
-                className={`w-full py-3 px-4 rounded-xl font-semibold shadow-lg transition-all text-sm ${
-                  isSavePending || getSelectedCount() === 0
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-green-500/25 hover:shadow-xl"
-                }`}
-              >
-                {isSavePending ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span className="text-white">Saving...</span>
-                  </div>
-                ) : (
-                  <span className="text-white">
-                    Save {getSelectedCount()} Transaction
-                    {getSelectedCount() !== 1 ? "s" : ""}
-                  </span>
-                )}
-              </motion.button>
-            </motion.div>
-          )}
-
-          {/* Features & Benefits - Show when no transactions to review */}
-          {!isUploaded && (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-100">
-                <h3 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-purple-500" />
-                  What We Analyze
-                </h3>
-                <ul className="space-y-2 text-xs text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                    Transaction amounts and dates
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                    Payment recipients
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                    Transaction fees
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                    Balance history
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                <h3 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-purple-500" />
-                  Security & Privacy
-                </h3>
-                <ul className="space-y-1 text-xs text-gray-600">
-                  <li>• Bank-level encryption</li>
-                  <li>• Automatic file deletion</li>
-                  <li>• No personal data stored</li>
-                  <li>• SSL secured</li>
-                </ul>
-              </div>
-
-              {/* Quick Tips */}
-              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
-                <p className="text-xs text-amber-800">
-                  💡 <strong>Tip:</strong> Download statement from M-Pesa app or
-                  Safaricom website
-                </p>
-              </div>
-            </div>
-          )}
+  if (isUploaded) {
+    const count = selectedRows.size;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" size="sm" onClick={backToUpload}>
+            <ArrowLeft /> Back
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            {count} of {transactions.length} selected
+          </p>
         </div>
-      </motion.div>
+
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[42rem] text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
+                <th className="w-10 px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all"
+                    className="size-4"
+                    checked={count === transactions.length}
+                    onChange={toggleAllSelection}
+                  />
+                </th>
+                <th className="px-3 py-2.5 font-medium">Date</th>
+                <th className="px-3 py-2.5 font-medium">Description</th>
+                <th className="px-3 py-2.5 text-right font-medium">Amount</th>
+                <th className="px-3 py-2.5 font-medium">Category</th>
+                <th className="px-3 py-2.5 font-medium">Type</th>
+                <th className="w-20 px-3 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((transaction) => {
+                const editing = editingRow === transaction.id;
+                return (
+                  <tr key={transaction.id} className="border-b border-border last:border-0">
+                    <td className="px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${transaction.description}`}
+                        className="size-4"
+                        checked={selectedRows.has(transaction.id)}
+                        onChange={() => toggleRowSelection(transaction.id)}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                      {formatDate(transaction.date)}
+                    </td>
+                    <td className="max-w-52 truncate px-3 py-2.5" title={transaction.description}>
+                      {transaction.description}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium whitespace-nowrap tabular-nums">
+                      {formatKES(Math.abs(transaction.amount), 2)}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {editing ? (
+                        <Select
+                          aria-label="Category"
+                          className="h-8 text-xs"
+                          value={transaction.category}
+                          onChange={(e) => updateTransaction(transaction.id, "category", e.target.value)}
+                        >
+                          {!CATEGORIES[transaction.category] && (
+                            <option value={transaction.category}>{transaction.category}</option>
+                          )}
+                          {Object.keys(CATEGORIES).map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : (
+                        transaction.category
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {editing ? (
+                        <Select
+                          aria-label="Type"
+                          className="h-8 text-xs"
+                          value={transaction.subcategory}
+                          onChange={(e) =>
+                            updateTransaction(transaction.id, "subcategory", e.target.value)
+                          }
+                        >
+                          <option value={transaction.subcategory}>{transaction.subcategory}</option>
+                          {CATEGORIES[transaction.category]
+                            ?.filter((subcategory) => subcategory !== transaction.subcategory)
+                            .map((subcategory) => (
+                              <option key={subcategory} value={subcategory}>
+                                {subcategory}
+                              </option>
+                            ))}
+                        </Select>
+                      ) : (
+                        transaction.subcategory
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7"
+                          aria-label={editing ? "Finish editing" : "Edit"}
+                          onClick={() => setEditingRow(editing ? null : transaction.id)}
+                        >
+                          {editing ? <Check /> : <Pencil />}
+                        </Button>
+                        <Button
+                          variant="danger-ghost"
+                          size="icon"
+                          className="size-7"
+                          aria-label="Remove"
+                          onClick={() => handleDelete(transaction.id)}
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <Button
+          className="w-full"
+          loading={isSavePending}
+          disabled={count === 0}
+          onClick={handleSaveTransactions}
+        >
+          {isSavePending ? "Saving..." : `Save ${count} ${count === 1 ? "transaction" : "transactions"}`}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <Notice tone="danger" icon={AlertCircle}>
+          {error}
+        </Notice>
+      )}
+
+      {file ? (
+        <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-accent">
+            <FileText className="size-4 text-accent-foreground" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{file.name}</p>
+            <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Remove file"
+            disabled={isUploadPending}
+            onClick={removeFile}
+          >
+            <X />
+          </Button>
+        </div>
+      ) : (
+        <Dropzone
+          inputRef={fileInputRef}
+          accept="application/pdf"
+          onFile={handleFile}
+          icon={FileText}
+          title="Drop your M-Pesa statement here"
+          hint={`PDF only, up to ${formatFileSize(MAX_FILE_SIZE)}`}
+          buttonLabel="Choose PDF"
+        />
+      )}
+
+      {file && (
+        <Field
+          label="Statement password"
+          htmlFor="statementPassword"
+          hint="Safaricom sends this by SMS. Leave it blank if the PDF isn't protected."
+        >
+          <Input
+            id="statementPassword"
+            type="password"
+            autoComplete="off"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Field>
+      )}
+
+      {file && (
+        <Button className="w-full" loading={isUploadPending} onClick={handleUpload}>
+          {isUploadPending ? "Reading statement..." : "Read statement"}
+        </Button>
+      )}
+
+      <Notice icon={Info}>
+        You review every transaction before anything is saved. Your password is only used to open
+        the PDF and is never stored.
+      </Notice>
     </div>
   );
 };

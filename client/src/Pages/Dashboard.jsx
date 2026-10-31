@@ -1,150 +1,109 @@
-import { motion } from "framer-motion";
-import Navbar from "../components/Navbar";
-import BarChart1 from "../components/BarChart1";
-import BarChart2 from "../components/BarChart2";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowDownToLine, CreditCard, Landmark, Plus, Tag, Upload } from "lucide-react";
 import axiosInstance from "@/axiosInstance";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { EmptyState, ErrorState, PageHeader, StatCard } from "@/components/ui/common";
 import Loading from "@/components/Loading";
-import { toast, ToastContainer } from "react-toastify";
-import TopFiveRolling from "@/components/TopFiveRolling";
-import BottomFiveRolling from "@/components/BottomFiveRolling";
-import DashboardCard from "@/components/DashboardCard";
-import LimitNotification from "@/components/LimitNotification";
+import CategoryBars from "@/components/charts/CategoryBars";
+import MonthlyChart from "@/components/charts/MonthlyChart";
+import ExpenseMiniTable from "@/components/ExpenseMiniTable";
+import { useAuth } from "@/hooks/useAuth";
+import { categoryLabel } from "@/lib/categories";
+import { formatKES, titleCase } from "@/lib/format";
 
 const Dashboard = () => {
-  const { data, error, isLoading } = useQuery({
+  const { user } = useAuth();
+  const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
-    queryFn: async () => {
-      return await axiosInstance.get(`/dashboard`);
-    },
+    queryFn: async () => await axiosInstance.get("/dashboard"),
   });
 
-  if (isLoading) {
-    return <Loading />;
-  }
-  if (error) {
-    console.log(error);
-    toast.error("Something went wrong");
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorState onRetry={refetch} />;
+
+  const report = data?.data;
+  const firstName = titleCase(user?.name?.split(" ")[0]);
+  const hasExpenses = report?.allCategories?.length > 0;
+
+  const header = (
+    <PageHeader
+      title={firstName ? `Hello, ${firstName}` : "Dashboard"}
+      description="Here's where your money has gone."
+      actions={
+        <Link to="/expense-form?method=mpesa">
+          <Button variant="secondary" tabIndex={-1}>
+            <Upload /> Import M-Pesa
+          </Button>
+        </Link>
+      }
+    />
+  );
+
+  if (!hasExpenses) {
+    return (
+      <>
+        {header}
+        <Card>
+          <EmptyState
+            icon={ArrowDownToLine}
+            title="Your dashboard is waiting for its first expense"
+            description="Add an expense by hand or import an M-Pesa statement to see your spending here."
+            action={
+              <Link to="/expense-form">
+                <Button tabIndex={-1}>
+                  <Plus /> Add expense
+                </Button>
+              </Link>
+            }
+          />
+        </Card>
+      </>
+    );
   }
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100 text-gray-800 font-sans">
-        {/* Navbar - Full width on mobile, sidebar on desktop */}
-        <div className="w-full lg:w-64 xl:w-1/5">
-          <Navbar />
-        </div>
+      {header}
 
-        {/* Main content area */}
-        <div className="flex-1 p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden">
-          <ToastContainer />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard label="Total spent" icon={CreditCard} value={formatKES(report?.totalExpense?.[0]?.total)} />
+        <StatCard label="Debt repayments" icon={Landmark} value={formatKES(report?.debtAmount?.[0]?.debt)} />
+        <StatCard
+          label="Most frequent"
+          icon={Tag}
+          value={categoryLabel(report?.topCategory?.[0]?.category)}
+          valueClassName="whitespace-normal text-base leading-6 sm:text-lg sm:leading-8"
+        />
+        <StatCard
+          label="Least frequent"
+          icon={Tag}
+          value={categoryLabel(report?.lastCategory?.[0]?.category)}
+          valueClassName="whitespace-normal text-base leading-6 sm:text-lg sm:leading-8"
+        />
+      </div>
 
-          {/* Limit Notification with spacing */}
-          <div className="mb-4 md:mb-6">
-            {" "}
-            {/* ADDED SPACING HERE */}
-            <LimitNotification />
-          </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader title="Monthly spending" description="Total spent each month, in KES" />
+          <CardContent>
+            <div className="h-72">
+              <MonthlyChart data={report?.monthlySum} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader title="Spending by category" description="Largest first" />
+          <CardContent>
+            <CategoryBars items={report?.allCategories} />
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Page Title with margin-top removed since we have spacing above */}
-          <motion.h2
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="text-2xl md:text-3xl font-semibold text-purple-700"
-            style={{ fontWeight: "600", color: "#9D00FF" }}
-          >
-            Dashboard
-          </motion.h2>
-
-          {/* Stats Cards - Stack on mobile, grid on larger screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <DashboardCard
-              title="Debt"
-              data={data?.data?.debtAmount[0]?.debt}
-            />
-            <DashboardCard
-              title="Top Category"
-              data={data?.data?.topCategory[0]?.category}
-            />
-            <DashboardCard
-              title="Bottom Category"
-              data={data?.data?.lastCategory[0]?.category}
-            />
-            <DashboardCard
-              title="Total Spent"
-              data={data?.data?.totalExpense[0]?.total}
-            />
-          </div>
-
-          {/* Charts Section - INCREASED HEIGHT */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white rounded-xl md:rounded-2xl shadow p-3 md:p-4"
-            >
-              <h3
-                className="text-base md:text-lg font-medium mb-2 text-purple-600"
-                style={{
-                  fontWeight: "500",
-                  color: "#9D00FF",
-                  marginBottom: "8px",
-                }}
-              >
-                Monthly Spend
-              </h3>
-              {/* INCREASED CHART HEIGHT */}
-              <div className="h-72 sm:h-80 md:h-96 lg:h-[420px] xl:h-[450px]">
-                <BarChart1 data={data?.data?.monthlySum} />
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white rounded-xl md:rounded-2xl shadow p-3 md:p-4"
-            >
-              <h3
-                className="text-base md:text-lg font-medium mb-2 text-purple-600"
-                style={{
-                  fontWeight: "500",
-                  color: "#9D00FF",
-                  marginBottom: "8px",
-                }}
-              >
-                All Categories
-              </h3>
-              {/* INCREASED CHART HEIGHT */}
-              <div className="h-72 sm:h-80 md:h-96 lg:h-[420px] xl:h-[450px]">
-                <BarChart2 data={data?.data?.allCategories} />
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Top/Bottom Five Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="bg-white rounded-xl shadow p-3 md:p-4"
-            >
-              <TopFiveRolling data={data?.data?.topFive} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="bg-white rounded-xl shadow p-3 md:p-4"
-            >
-              <BottomFiveRolling data={data?.data?.bottomFive} />
-            </motion.div>
-          </div>
-        </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <ExpenseMiniTable title="First five expenses" description="Your earliest records" rows={report?.topFive} />
+        <ExpenseMiniTable title="Latest five expenses" description="Your newest records" rows={report?.bottomFive} />
       </div>
     </>
   );
