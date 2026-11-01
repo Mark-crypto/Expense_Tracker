@@ -4,6 +4,9 @@ export const formatKES = (amount, decimals = 0) =>
     maximumFractionDigits: decimals,
   })}`;
 
+// The user's own date as YYYY-MM-DD, not the UTC date.
+export const localToday = () => new Date().toLocaleDateString("en-CA");
+
 export const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";

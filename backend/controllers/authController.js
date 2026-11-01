@@ -7,49 +7,6 @@ import { sendPasswordChangedEmail } from "../utils/emailAlert.js";
 
 dotenv.config();
 
-export const me = (req, res) => {
-  try {
-    const accessToken = req.cookies.accessToken;
-
-    if (!accessToken) {
-      return res.status(401).json({
-        error: true,
-        message: "Not authenticated",
-      });
-    }
-
-    try {
-      const user = jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN);
-      res.json({
-        error: false,
-        user: {
-          userId: user.userId,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      });
-    } catch (err) {
-      if (err.name === "TokenExpiredError") {
-        return res.status(401).json({
-          error: true,
-          message: "Access token expired. Please refresh.",
-        });
-      }
-      return res.status(401).json({
-        error: true,
-        message: "Invalid token",
-      });
-    }
-  } catch (err) {
-    console.error("Auth error:", err);
-    res.status(500).json({
-      error: true,
-      message: "An error occurred",
-    });
-  }
-};
-
 export const signUp = async (req, res) => {
   const { name, email, password, goal, age, occupation } = req.body;
 

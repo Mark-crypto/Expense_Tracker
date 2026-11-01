@@ -1,5 +1,4 @@
 import { Router } from "express";
-import authRouter from "./auth.js";
 import profileRouter from "./profile.js";
 import budgetRouter from "./budget.js";
 import expenseRouter from "./expense.js";
@@ -11,7 +10,6 @@ import uploadsRouter from "./uploads.js";
 
 const router = Router();
 
-router.use(authRouter);
 router.use(profileRouter);
 router.use(budgetRouter);
 router.use(dashboardRouter);

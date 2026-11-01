@@ -8,12 +8,10 @@ import { Plus } from "lucide-react";
 import axiosInstance from "@/axiosInstance";
 import { expenseSchema } from "@/zodSchemas/schemas.js";
 import { EXPENSE_CATEGORIES } from "@/lib/categories";
-import { formatKES, titleCase } from "@/lib/format";
+import { formatKES, localToday, titleCase } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { CheckboxCard, Field, FieldError, Select, Input, Label } from "@/components/ui/field";
 import SubcategoryRow from "./SubcategoryRow.jsx";
-
-const today = () => new Date().toISOString().split("T")[0];
 
 const ExpenseForm = () => {
   const queryClient = useQueryClient();
@@ -61,7 +59,8 @@ const ExpenseForm = () => {
       reset();
       navigate("/history");
     },
-    onError: () => toast.error("Error creating expense"),
+    onError: (error) =>
+      toast.error(error.response?.data?.message || "Error creating expense"),
   });
 
   const { data: budgetData } = useQuery({
@@ -86,7 +85,7 @@ const ExpenseForm = () => {
           </Select>
         </Field>
         <Field label="Date" htmlFor="date" error={errors.date?.message}>
-          <Input id="date" type="date" max={today()} {...register("date", { valueAsDate: true })} />
+          <Input id="date" type="date" max={localToday()} {...register("date", { valueAsDate: true })} />
         </Field>
       </div>
 

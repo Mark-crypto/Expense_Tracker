@@ -36,9 +36,6 @@ const MonthlyChart = ({ data = [] }) => {
           ticks: {
             color: t.tick,
             font: { size: 11 },
-            callback(value) {
-              return String(this.getLabelForValue(value)).slice(0, 3);
-            },
           },
         },
         y: {

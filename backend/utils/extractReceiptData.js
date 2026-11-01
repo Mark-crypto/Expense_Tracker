@@ -8,8 +8,6 @@ export const extractReceiptData = (text) => {
   let category = "Expenses";
   let subcategory = "Healthcare";
 
-  console.log("Processing text lines:", lines.length);
-
   // Extract merchant (usually first few lines)
   if (lines.length > 0) {
     // Look for company name in first 3 lines
@@ -39,7 +37,6 @@ export const extractReceiptData = (text) => {
     const match = text.match(pattern);
     if (match) {
       amount = parseFloat(match[1].replace(/,/g, ""));
-      console.log("Found amount with pattern:", pattern, amount);
       break;
     }
   }
@@ -50,7 +47,6 @@ export const extractReceiptData = (text) => {
     const numbers = allNumbers.map((num) => parseFloat(num.replace(/,/g, "")));
     if (numbers.length > 0) {
       amount = Math.max(...numbers); // Assume largest number is total
-      console.log("Using largest number as amount:", amount);
     }
   }
 
@@ -67,7 +63,6 @@ export const extractReceiptData = (text) => {
     const match = text.match(pattern);
     if (match) {
       date = match[1];
-      console.log("Found date with pattern:", pattern, date);
       break;
     }
   }
@@ -137,18 +132,8 @@ export const extractReceiptData = (text) => {
 
   // Final validation
   if (!amount || amount <= 0) {
-    console.log("Invalid amount extracted, setting to 0");
     amount = 0;
   }
-
-  console.log("Final extracted data:", {
-    amount,
-    date,
-    description,
-    merchant,
-    category,
-    subcategory,
-  });
 
   return {
     amount: amount || 0,

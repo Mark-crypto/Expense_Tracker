@@ -94,15 +94,10 @@ export const createReceiptExpense = async (req, res) => {
       return res.status(400).json({ message: "No receipt image uploaded" });
     }
 
-    console.log("Starting OCR processing for receipt...");
-
     // Configure Tesseract with better options
     const {
       data: { text },
     } = await Tesseract.recognize(req.file.buffer, "eng", {
-      logger: (progress) => {
-        console.log("Tesseract Progress:", progress.status, progress.progress);
-      },
       // Add configuration for better performance
       tessedit_pageseg_mode: "6", // Uniform block of text
       tessedit_char_whitelist:
@@ -110,8 +105,6 @@ export const createReceiptExpense = async (req, res) => {
       // Optimize for receipt processing
       tessedit_ocr_engine_mode: "3", // Default + LSTM
     });
-
-    console.log("OCR Extracted Text:", text);
 
     if (!text || text.trim().length === 0) {
       return res.status(400).json({
@@ -122,8 +115,6 @@ export const createReceiptExpense = async (req, res) => {
 
     // Extract structured data from OCR text
     const extractedData = extractReceiptData(text);
-
-    console.log("Extracted Data:", extractedData);
 
     return res.status(200).json({
       message: "Receipt processed successfully",

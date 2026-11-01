@@ -7,12 +7,10 @@ import { Plus } from "lucide-react";
 import axiosInstance from "../axiosInstance";
 import { budgetSchema } from "../zodSchemas/schemas";
 import { EXPENSE_CATEGORIES } from "@/lib/categories";
-import { formatKES } from "@/lib/format";
+import { formatKES, localToday } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { CheckboxCard, Field, FieldError, Input, Label, Select } from "@/components/ui/field";
 import SubcategoryRow from "./SubcategoryRow";
-
-const today = () => new Date().toISOString().split("T")[0];
 
 const BudgetForm = ({ onCreated }) => {
   const queryClient = useQueryClient();
@@ -60,7 +58,8 @@ const BudgetForm = ({ onCreated }) => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
       onCreated?.();
     },
-    onError: () => toast.error("Error creating budget"),
+    onError: (error) =>
+      toast.error(error.response?.data?.message || "Error creating budget"),
   });
 
   const addBudget = (data) =>
@@ -123,10 +122,10 @@ const BudgetForm = ({ onCreated }) => {
       {watch("timeLimit") && (
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Start date" htmlFor="startDate" error={errors.startDate?.message}>
-            <Input id="startDate" type="date" min={today()} {...register("startDate", { valueAsDate: true })} />
+            <Input id="startDate" type="date" min={localToday()} {...register("startDate", { valueAsDate: true })} />
           </Field>
           <Field label="End date" htmlFor="endDate" error={errors.endDate?.message}>
-            <Input id="endDate" type="date" min={today()} {...register("endDate", { valueAsDate: true })} />
+            <Input id="endDate" type="date" min={localToday()} {...register("endDate", { valueAsDate: true })} />
           </Field>
         </div>
       )}

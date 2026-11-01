@@ -1,8 +1,16 @@
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ChevronRight, Plus, ReceiptText } from "lucide-react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+import { ChevronRight, Plus, ReceiptText, Trash2 } from "lucide-react";
 import axiosInstance from "@/axiosInstance";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge, EmptyState, ErrorState, Pagination } from "@/components/ui/common";
@@ -14,6 +22,18 @@ import Loading from "./Loading";
 const HistoryTable = () => {
   const [page, setPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+  const queryClient = useQueryClient();
+
+  const { mutate: removeExpense, isPending: isDeleting } = useMutation({
+    mutationFn: async (id) => await axiosInstance.delete(`/expenses/${id}`),
+    onSuccess: (data) => {
+      toast.success(data.data.message);
+      queryClient.invalidateQueries({ queryKey: ["expense"] });
+      setExpenseToDelete(null);
+    },
+    onError: () => toast.error("Something went wrong."),
+  });
 
   const { isLoading, error, refetch, data: expenseData } = useQuery({
     queryKey: ["expense", page],
@@ -66,6 +86,7 @@ const HistoryTable = () => {
               <th className="hidden px-3 py-2.5 font-medium sm:table-cell">Items</th>
               <th className="hidden px-3 py-2.5 font-medium sm:table-cell">Date</th>
               <th className="px-4 py-2.5 text-right font-medium">Amount</th>
+              <th className="w-12 py-2.5 pr-3" />
             </tr>
           </thead>
           <tbody>
@@ -111,11 +132,24 @@ const HistoryTable = () => {
                     <td className="px-4 py-3 text-right font-medium whitespace-nowrap tabular-nums">
                       {formatKES(item.amount)}
                     </td>
+                    <td className="py-3 pr-3 text-right">
+                      <Button
+                        variant="danger-ghost"
+                        size="icon"
+                        aria-label={`Delete ${categoryLabel(item.category)} expense`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpenseToDelete(item);
+                        }}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </td>
                   </tr>
                   {expanded && (
                     <tr className="border-b border-border bg-muted/40">
                       <td />
-                      <td colSpan={4} className="px-3 py-2">
+                      <td colSpan={5} className="px-3 py-2">
                         {items.length === 0 ? (
                           <p className="py-1 text-xs text-muted-foreground">No item breakdown</p>
                         ) : (
@@ -140,6 +174,30 @@ const HistoryTable = () => {
         </table>
       </div>
       <Pagination page={page} totalPages={meta?.totalPages} onChange={setPage} />
+
+      <Dialog open={!!expenseToDelete} onOpenChange={(open) => !open && setExpenseToDelete(null)}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete this expense?</DialogTitle>
+            <DialogDescription>
+              {categoryLabel(expenseToDelete?.category)} for {formatKES(expenseToDelete?.amount)} on{" "}
+              {formatDate(expenseToDelete?.date_created)} will be removed. This can't be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setExpenseToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={isDeleting}
+              onClick={() => removeExpense(expenseToDelete.expense_id)}
+            >
+              Delete expense
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

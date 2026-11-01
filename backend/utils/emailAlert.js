@@ -26,7 +26,7 @@ export const sendEmail = async (to, subject, text, html, budgetId) => {
       "UPDATE budget SET notify_email = 1 WHERE budget_id = ?",
       [budgetId]
     );
-    console.log(`Email sent to ${to}: ${info.messageId}`);
+    console.log(`Budget alert email sent: ${info.messageId}`);
   } catch (error) {
     console.error("Error sending email:", error);
   }
@@ -49,7 +49,7 @@ export const sendPasswordChangedEmail = async (to, subject, text, html) => {
   };
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Password reset email sent to ${to}: ${info.messageId}`);
+    console.log(`Account email sent: ${info.messageId}`);
   } catch (error) {
     console.error("Error sending password reset email:", error);
   }

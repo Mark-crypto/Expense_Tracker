@@ -86,7 +86,7 @@ const Dashboard = () => {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
-          <CardHeader title="Monthly spending" description="Total spent each month, in KES" />
+          <CardHeader title="Monthly spending" description="Last 12 months, in KES" />
           <CardContent>
             <div className="h-72">
               <MonthlyChart data={report?.monthlySum} />
