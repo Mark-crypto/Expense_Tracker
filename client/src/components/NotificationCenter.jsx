@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { AlertTriangle, ArrowLeft, Bell } from "lucide-react";
+import { ArrowLeft, Bell, Warning } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
 import {
   Dialog,
@@ -119,7 +119,7 @@ const NotificationCenter = () => {
                 >
                   <ArrowLeft className="size-3.5" /> All notifications
                 </button>
-                <DialogTitle>Budget limit exceeded</DialogTitle>
+                <DialogTitle>{selected.type === "info" ? "Budget almost used" : selected.type === "system" ? "Budget on pace to go over" : "Budget limit exceeded"}</DialogTitle>
                 <DialogDescription>{selected.message}</DialogDescription>
               </DialogHeader>
 
@@ -207,7 +207,7 @@ const NotificationCenter = () => {
                         onClick={() => setSelected(notification)}
                         className="flex w-full items-start gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/60"
                       >
-                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+                        <Warning className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
                         <span className="min-w-0">
                           <span className="line-clamp-3 block text-sm">{notification.message}</span>
                           <span className="mt-1 block text-xs text-muted-foreground">

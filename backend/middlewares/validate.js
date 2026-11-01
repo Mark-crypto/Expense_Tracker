@@ -60,7 +60,60 @@ export const validateExpense = [
   positiveAmount("amount"),
   category(),
   pastOrToday("date"),
+  body("merchant")
+    .optional({ values: "null" })
+    .isString()
+    .isLength({ max: 150 })
+    .withMessage("Use 150 characters or fewer"),
   ...subcategories,
+  handleErrors,
+];
+
+export const validateExpenseEdit = [
+  positiveAmount("amount"),
+  category(),
+  pastOrToday("date"),
+  body("merchant")
+    .optional({ values: "null" })
+    .isString()
+    .isLength({ max: 150 })
+    .withMessage("Use 150 characters or fewer"),
+  body("note")
+    .optional({ values: "null" })
+    .isString()
+    .isLength({ max: 500 })
+    .withMessage("Keep the note under 500 characters"),
+  body("budgetId")
+    .optional({ values: "null" })
+    .isInt({ min: 1 })
+    .withMessage("Choose a valid budget"),
+  handleErrors,
+];
+
+export const validateBulk = [
+  body("ids").isArray({ min: 1, max: 500 }).withMessage("Select at least one expense"),
+  body("ids.*").isInt({ min: 1 }).withMessage("Invalid selection"),
+  body("action")
+    .isIn(["category", "budget", "confirm", "delete", "restore"])
+    .withMessage("Unknown action"),
+  body("category")
+    .if(body("action").equals("category"))
+    .isString()
+    .isLength({ min: 1, max: 20 })
+    .withMessage("Choose a valid category"),
+  body("budgetId")
+    .optional({ values: "null" })
+    .isInt({ min: 1 })
+    .withMessage("Choose a valid budget"),
+  handleErrors,
+];
+
+export const validateApplyMerchant = [
+  body("merchant")
+    .isString()
+    .isLength({ min: 1, max: 150 })
+    .withMessage("Choose a valid merchant"),
+  category(),
   handleErrors,
 ];
 
@@ -84,13 +137,44 @@ export const validateBudget = [
   handleErrors,
 ];
 
+export const validateBillKey = [
+  body("key")
+    .isString()
+    .isLength({ min: 1, max: 150 })
+    .withMessage("Choose a valid bill"),
+  handleErrors,
+];
+
+export const validateLimit = [positiveAmount("amount"), handleErrors];
+
 export const validateTransactions = [
   body("transactions")
     .isArray({ min: 1, max: 10000 })
     .withMessage("No transactions provided"),
-  positiveAmount("transactions.*.amount"),
+  body("transactions.*.receiptNo")
+    .matches(/^[A-Z0-9]{10}$/)
+    .withMessage("Invalid receipt number"),
+  pastOrToday("transactions.*.occurredAt"),
+  body("transactions.*.details")
+    .isString()
+    .isLength({ min: 1, max: 255 })
+    .withMessage("Invalid transaction details"),
+  body("transactions.*.kind")
+    .isString()
+    .isLength({ min: 1, max: 20 })
+    .withMessage("Invalid transaction type"),
+  body("transactions.*.counterparty")
+    .optional({ values: "null" })
+    .isString()
+    .isLength({ max: 150 })
+    .withMessage("Invalid recipient"),
+  body("transactions.*.paidIn")
+    .isFloat({ min: 0, max: MAX_AMOUNT })
+    .withMessage("Invalid amount"),
+  body("transactions.*.withdrawn")
+    .isFloat({ min: 0, max: MAX_AMOUNT })
+    .withMessage("Invalid amount"),
   category("transactions.*.category"),
-  pastOrToday("transactions.*.date"),
   handleErrors,
 ];
 

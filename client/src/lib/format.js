@@ -17,6 +17,9 @@ export const formatDate = (value) => {
   });
 };
 
+export const compactNumber = (value) =>
+  Intl.NumberFormat("en-KE", { notation: "compact" }).format(value);
+
 export const formatFileSize = (bytes) => {
   if (!bytes) return "0 Bytes";
   const sizes = ["Bytes", "KB", "MB", "GB"];

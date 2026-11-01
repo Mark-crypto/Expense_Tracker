@@ -11,9 +11,11 @@ const Register = lazy(() => import("./Pages/Register"));
 const Profile = lazy(() => import("./Pages/Profile"));
 const Dashboard = lazy(() => import("./Pages/Dashboard"));
 const Prediction = lazy(() => import("./Pages/Prediction"));
+const Insights = lazy(() => import("./Pages/Insights"));
 const Budget = lazy(() => import("./Pages/Budget"));
 const History = lazy(() => import("./Pages/History"));
-const AddExpense = lazy(() => import("./Pages/AddExpense"));
+const Import = lazy(() => import("./Pages/Import"));
+const AddRedirect = lazy(() => import("./Pages/AddRedirect"));
 const AdminDashboard = lazy(() => import("./Pages/AdminDashboard"));
 const Unauthorized = lazy(() => import("./Pages/Unauthorized"));
 const NotAdmin = lazy(() => import("./Pages/NotAdmin"));
@@ -44,10 +46,12 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/expense-form" element={<AddExpense />} />
+              <Route path="/expense-form" element={<AddRedirect />} />
+              <Route path="/import" element={<Import />} />
               <Route path="/history" element={<History />} />
               <Route path="/budget" element={<Budget />} />
               <Route path="/predictions" element={<Prediction />} />
+              <Route path="/insights" element={<Insights />} />
               <Route path="/new/profile/:id" element={<Profile />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
             </Route>

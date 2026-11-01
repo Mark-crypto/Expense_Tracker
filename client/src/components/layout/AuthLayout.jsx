@@ -1,10 +1,10 @@
-import { CalendarClock, ReceiptText, ShieldAlert } from "lucide-react";
+import { CalendarCheck, Receipt, ShieldWarning } from "@phosphor-icons/react";
 import { Logo } from "./AppLayout";
 
 const highlights = [
-  { icon: ReceiptText, text: "Bring in spending from M-Pesa statements and receipts" },
-  { icon: ShieldAlert, text: "Get alerted the moment a budget is exceeded" },
-  { icon: CalendarClock, text: "See where your month is heading before it ends" },
+  { icon: Receipt, text: "Bring in spending from M-Pesa statements and receipts" },
+  { icon: ShieldWarning, text: "Get alerted the moment a budget is exceeded" },
+  { icon: CalendarCheck, text: "See where your month is heading before it ends" },
 ];
 
 const AuthLayout = ({ title, description, children, wide = false }) => (

@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Upload } from "lucide-react";
+import { UploadSimple } from "@phosphor-icons/react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 
 export const Dropzone = ({ inputRef, accept, onFile, icon: Icon, title, buttonLabel, hint }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const ShownIcon = isDragging ? Upload : Icon;
+  const ShownIcon = isDragging ? UploadSimple : Icon;
 
   return (
     <div

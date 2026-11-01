@@ -1,31 +1,29 @@
 import { Suspense } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import {
-  Clock3,
-  LayoutDashboard,
-  LogOut,
-  Moon,
-  Plus,
-  ShieldCheck,
-  Sun,
-  TrendingUp,
-  User,
-  Wallet,
-} from "lucide-react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Camera, CaretDown, ChartLineUp, Moon, PencilLine, Plus, Receipt, Scan, ShieldCheck, SignOut, SquaresFour, Sun, UploadSimple, User, Wallet } from "@phosphor-icons/react";
+import { AddExpenseProvider, useAddExpense } from "@/hooks/useAddExpense";
 import { useAuth } from "@/hooks/useAuth";
 import { toggleTheme, useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/common";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Loading from "@/components/Loading";
+import CommandBar from "@/components/CommandBar";
 import NotificationCenter from "@/components/NotificationCenter";
 import { initials, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const mainLinks = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/history", label: "Expenses", icon: Clock3 },
+  { to: "/dashboard", label: "Dashboard", icon: SquaresFour },
+  { to: "/history", label: "Expenses", icon: Receipt },
   { to: "/budget", label: "Budgets", icon: Wallet },
-  { to: "/predictions", label: "Forecast", icon: TrendingUp },
+  { to: "/predictions", label: "Forecast", icon: ChartLineUp },
+  { to: "/insights", label: "Money X-ray", icon: Scan },
 ];
 
 export const Logo = ({ className }) => (
@@ -79,10 +77,36 @@ const Sidebar = () => {
           <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <Button variant="ghost" size="icon" aria-label="Log out" onClick={logout}>
-          <LogOut />
+          <SignOut />
         </Button>
       </div>
     </aside>
+  );
+};
+
+const AddMenu = () => {
+  const { openAdd } = useAddExpense();
+  const navigate = useNavigate();
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button className="ml-1.5 hidden lg:inline-flex">
+          <Plus /> Add expense <CaretDown className="size-3" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => openAdd()}>
+          <PencilLine /> Add by hand
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => openAdd({ scan: true })}>
+          <Camera /> Scan receipt
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate("/import")}>
+          <UploadSimple /> Import M-Pesa
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -96,6 +120,7 @@ const Topbar = () => {
         <Logo className="text-sm" />
       </Link>
       <div className="flex items-center gap-1.5">
+        <CommandBar />
         <Button
           variant="ghost"
           size="icon"
@@ -105,11 +130,7 @@ const Topbar = () => {
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
         <NotificationCenter />
-        <Link to="/expense-form" className="ml-1.5 hidden lg:block">
-          <Button tabIndex={-1}>
-            <Plus /> Add expense
-          </Button>
-        </Link>
+        <AddMenu />
         <Link to={`/new/profile/${user?.id}`} aria-label="Profile" className="ml-1 lg:hidden">
           <Avatar text={initials(user?.name)} className="size-8" />
         </Link>
@@ -118,46 +139,53 @@ const Topbar = () => {
   );
 };
 
+const tabStyles = "flex flex-col items-center gap-1 py-2 text-[11px] font-medium";
+
+const MobileTab = ({ to, label, icon: Icon }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) => cn(tabStyles, isActive ? "text-primary" : "text-muted-foreground")}
+  >
+    <Icon className="size-5" aria-hidden />
+    {label}
+  </NavLink>
+);
+
 const MobileTabs = () => {
-  const tabs = [mainLinks[0], mainLinks[1], { to: "/expense-form", label: "Add", icon: Plus }, mainLinks[2], mainLinks[3]];
+  const { openAdd } = useAddExpense();
 
   return (
     <nav
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      {tabs.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            cn(
-              "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
-              isActive ? "text-primary" : "text-muted-foreground"
-            )
-          }
-        >
-          <Icon className="size-5" aria-hidden />
-          {label}
-        </NavLink>
-      ))}
+      <MobileTab {...mainLinks[0]} />
+      <MobileTab {...mainLinks[1]} />
+      <button type="button" className={cn(tabStyles, "text-muted-foreground")} onClick={() => openAdd()}>
+        <Plus className="size-5" aria-hidden />
+        Add
+      </button>
+      <MobileTab {...mainLinks[2]} />
+      <MobileTab {...mainLinks[3]} />
     </nav>
   );
 };
 
 const AppLayout = () => (
-  <div className="min-h-screen">
-    <Sidebar />
-    <div className="lg:pl-60">
-      <Topbar />
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-6 lg:pb-10">
-        <Suspense fallback={<Loading />}>
-          <Outlet />
-        </Suspense>
-      </main>
+  <AddExpenseProvider>
+    <div className="min-h-screen">
+      <Sidebar />
+      <div className="lg:pl-60">
+        <Topbar />
+        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-6 lg:pb-10">
+          <Suspense fallback={<Loading />}>
+            <Outlet />
+          </Suspense>
+        </main>
+      </div>
+      <MobileTabs />
     </div>
-    <MobileTabs />
-  </div>
+  </AddExpenseProvider>
 );
 
 export default AppLayout;

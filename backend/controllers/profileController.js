@@ -52,6 +52,9 @@ export const deleteProfile = async (req, res) => {
       "expense",
       "budget",
       "subcategory_suggestions",
+      "mpesa_transactions",
+      "merchant_categories",
+      "dismissed_bills",
       "refresh_tokens",
       "users",
     ]) {

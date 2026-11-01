@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { LogOut, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import { PencilSimple, ShieldCheck, SignOut, Trash } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
 import {
   Dialog,
@@ -54,7 +54,7 @@ const Profile = () => {
         title="Profile"
         actions={
           <Button variant="secondary" onClick={() => setOpen(true)}>
-            <Pencil /> Edit profile
+            <PencilSimple /> Edit profile
           </Button>
         }
       />
@@ -85,7 +85,7 @@ const Profile = () => {
           </Link>
         )}
         <Button variant="danger-ghost" onClick={logout}>
-          <LogOut /> Log out
+          <SignOut /> Log out
         </Button>
       </div>
 
@@ -98,7 +98,7 @@ const Profile = () => {
             </p>
           </div>
           <Button variant="danger-ghost" onClick={() => setConfirmDelete(true)}>
-            <Trash2 /> Delete account
+            <Trash /> Delete account
           </Button>
         </CardContent>
       </Card>

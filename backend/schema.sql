@@ -22,6 +22,13 @@ CREATE TABLE `budget` (
   CONSTRAINT `budget_chk_1` CHECK (json_valid(`subcategories`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `dismissed_bills` (
+  `user_id` int NOT NULL,
+  `bill_key` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`bill_key`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `expense` (
   `expense_id` int NOT NULL AUTO_INCREMENT,
   `amount` decimal(20,2) NOT NULL,
@@ -34,12 +41,44 @@ CREATE TABLE `expense` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `user_id` int DEFAULT NULL,
   `budget_id` int DEFAULT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `merchant` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `receipt_no` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `source` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'manual',
+  `note` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `needs_review` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`expense_id`),
+  UNIQUE KEY `uniq_expense_receipt` (`user_id`,`receipt_no`),
   KEY `fk_expense` (`user_id`),
   KEY `fk_expense_budget` (`budget_id`),
   FULLTEXT KEY `expense_fulltext` (`category`),
   CONSTRAINT `expense_chk_1` CHECK (json_valid(`subcategories`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `merchant_categories` (
+  `user_id` int NOT NULL,
+  `merchant` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`merchant`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `mpesa_transactions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `receipt_no` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `occurred_at` datetime NOT NULL,
+  `details` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `kind` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `counterparty` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `paid_in` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `withdrawn` decimal(20,2) NOT NULL DEFAULT '0.00',
+  `balance` decimal(20,2) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_mpesa_row` (`user_id`,`receipt_no`,`kind`),
+  KEY `idx_mpesa_user_time` (`user_id`,`occurred_at`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `notifications` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -71,7 +110,7 @@ CREATE TABLE `subcategory_suggestions` (
   `subcategory` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_category_subcategory` (`category`,`subcategory`),
+  UNIQUE KEY `unique_user_category_subcategory` (`user_id`,`category`,`subcategory`),
   KEY `idx_subcategory_suggestions_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

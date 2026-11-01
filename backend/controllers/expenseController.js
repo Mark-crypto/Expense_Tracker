@@ -1,29 +1,84 @@
 import connection from "../database.js";
-import { sendEmail } from "../utils/emailAlert.js";
 import ExcelJS from "exceljs";
-import { refreshBudgetStatus } from "../utils/budgetStatus.js";
+import { loadBudgets, refreshUserBudgets } from "../utils/budgetStatus.js";
+
+const LARGE_EXPENSE = 5000;
+const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value ?? "");
+
+// The same filters drive the list, its summary and the Excel export.
+const buildFilter = (userId, query) => {
+  const where = ["user_id = ?", "status = 'active'"];
+  const params = [userId];
+  const { q, from, to, category, source, view, merchant, min } = query;
+
+  if (q) {
+    where.push(
+      "(LOWER(merchant) LIKE ? OR LOWER(description) LIKE ? OR LOWER(note) LIKE ? OR LOWER(subcategories) LIKE ? OR LOWER(category) LIKE ?)"
+    );
+    params.push(...Array(5).fill(`%${q.toLowerCase()}%`));
+  }
+  if (isDate(from)) {
+    where.push("date_created >= ?");
+    params.push(from);
+  }
+  if (isDate(to)) {
+    where.push("date_created <= ?");
+    params.push(to);
+  }
+  if (category) {
+    where.push("category = ?");
+    params.push(category);
+  }
+  if (source) {
+    where.push("source = ?");
+    params.push(source);
+  }
+  if (merchant) {
+    where.push("merchant = ?");
+    params.push(merchant);
+  }
+  if (Number(min) > 0) {
+    where.push("amount >= ?");
+    params.push(Number(min));
+  }
+  if (view === "review") where.push("needs_review = 1");
+  if (view === "budgeted") where.push("budget_id IS NOT NULL");
+  if (view === "large") {
+    where.push("amount >= ?");
+    params.push(LARGE_EXPENSE);
+  }
+
+  return { clause: where.join(" AND "), params };
+};
 
 export const getExpenseReport = async (req, res) => {
   const id = parseInt(req.user.userId);
+  const { clause, params } = buildFilter(id, req.query);
   try {
     const [expenses] = await connection.execute(
-      `SELECT * FROM expense WHERE user_id = ? AND status = 'active'`,
-      [id]
+      `SELECT * FROM expense WHERE ${clause} ORDER BY date_created DESC`,
+      params
     );
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Expenses Report");
 
     sheet.columns = [
+      { header: "Date", key: "date", width: 15 },
+      { header: "Paid to", key: "merchant", width: 28 },
       { header: "Amount", key: "amount", width: 15 },
       { header: "Category", key: "category", width: 20 },
-      { header: "Date", key: "date", width: 15 },
+      { header: "Source", key: "source", width: 12 },
+      { header: "Note", key: "note", width: 30 },
       { header: "Subcategories", key: "subcategories", width: 30 },
     ];
     expenses.forEach((exp) => {
       sheet.addRow({
         date: exp.date_created,
-        category: exp.category,
+        merchant: exp.merchant,
         amount: exp.amount,
+        category: exp.category,
+        source: exp.source,
+        note: exp.note,
         subcategories: exp.subcategories,
       });
     });
@@ -46,28 +101,59 @@ export const getExpenseReport = async (req, res) => {
 
 export const getExpenses = async (req, res) => {
   const pageNumber = parseInt(req.query._page) || 1;
-  const limit = parseInt(req.query._limit) || 10;
+  const limit = Math.min(parseInt(req.query._limit) || 10, 5000);
   const offset = (pageNumber - 1) * limit;
   const userId = parseInt(req.user.userId);
-
-  const limitString = limit.toString();
-  const offsetString = offset.toString();
+  const { clause, params } = buildFilter(userId, req.query);
+  const sortColumn = req.query.sort === "amount" ? "amount" : "date_created";
 
   try {
     const [rows] = await connection.execute(
-      `SELECT * FROM expense WHERE user_id = ? AND status = 'active' ORDER BY date_created DESC LIMIT ? OFFSET ?`,
-      [userId, limitString, offsetString]
+      `SELECT *, DATE_FORMAT(date_created, '%Y-%m-%d') AS date
+      FROM expense WHERE ${clause}
+      ORDER BY ${sortColumn} DESC, expense_id DESC LIMIT ? OFFSET ?`,
+      [...params, limit.toString(), offset.toString()]
     );
 
-    const [countResult] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM expense WHERE user_id = ? AND status = 'active'",
+    const [[totals]] = await connection.execute(
+      `SELECT COUNT(*) AS total, COALESCE(SUM(amount), 0) AS spent FROM expense WHERE ${clause}`,
+      params
+    );
+    const [[biggest]] = await connection.execute(
+      `SELECT merchant, description, subcategories, amount FROM expense WHERE ${clause} ORDER BY amount DESC LIMIT 1`,
+      params
+    );
+    const [byCategory] = await connection.execute(
+      `SELECT category, SUM(amount) AS total FROM expense WHERE ${clause} GROUP BY category`,
+      params
+    );
+    const [daily] = await connection.execute(
+      `SELECT DATE_FORMAT(date_created, '%Y-%m-%d') AS date, SUM(amount) AS total
+      FROM expense WHERE ${clause} AND date_created >= CURDATE() - INTERVAL 29 DAY
+      GROUP BY date ORDER BY date`,
+      params
+    );
+    const [[{ toReview }]] = await connection.execute(
+      "SELECT COUNT(*) AS toReview FROM expense WHERE user_id = ? AND status = 'active' AND needs_review = 1",
       [userId]
     );
 
-    const total = countResult[0]?.total || 0;
     res.status(200).json({
       data: rows,
-      meta: { pageNumber, limit, totalPages: Math.ceil(total / limit), total },
+      meta: {
+        pageNumber,
+        limit,
+        totalPages: Math.ceil(totals.total / limit),
+        total: totals.total,
+      },
+      summary: {
+        count: totals.total,
+        total: Number(totals.spent),
+        toReview,
+        biggest: biggest ? { ...biggest, amount: Number(biggest.amount) } : null,
+        byCategory: byCategory.map((row) => ({ ...row, total: Number(row.total) })),
+        daily: daily.map((row) => ({ ...row, total: Number(row.total) })),
+      },
     });
   } catch (error) {
     console.log("Error:", error);
@@ -78,16 +164,191 @@ export const getExpenses = async (req, res) => {
   }
 };
 
+export const updateExpense = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  const expenseId = parseInt(req.params.id);
+  const { amount, category, date, merchant, note, budgetId } = req.body;
+
+  try {
+    const [[expense]] = await connection.execute(
+      "SELECT subcategories FROM expense WHERE expense_id = ? AND user_id = ? AND status = 'active'",
+      [expenseId, userId]
+    );
+    if (!expense) {
+      return res.status(404).json({ error: true, message: "Expense not found." });
+    }
+
+    if (budgetId) {
+      const [[owned]] = await connection.execute(
+        "SELECT budget_id FROM budget WHERE budget_id = ? AND user_id = ?",
+        [budgetId, userId]
+      );
+      if (!owned) {
+        return res.status(404).json({ error: true, message: "Budget not found." });
+      }
+    }
+
+    // A single item always equals the expense, so keep the two in step.
+    let items = [];
+    try {
+      items = JSON.parse(expense.subcategories) ?? [];
+    } catch {
+      items = [];
+    }
+    if (items.length === 1) items[0].amount = Number(amount);
+
+    await connection.execute(
+      `UPDATE expense SET amount = ?, category = ?, date_created = ?, month = ?, merchant = ?,
+        note = ?, budget_id = ?, budgeted = ?, subcategories = ?, needs_review = 0
+      WHERE expense_id = ?`,
+      [
+        amount,
+        category,
+        date,
+        new Date(date).toLocaleString("default", { month: "long" }),
+        merchant?.trim() || null,
+        note?.trim() || null,
+        budgetId ?? null,
+        budgetId ? 1 : 0,
+        JSON.stringify(items),
+        expenseId,
+      ]
+    );
+
+    await refreshUserBudgets(userId, req.user.email);
+
+    res.status(200).json({ message: "Expense updated." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. Expense was not updated.",
+    });
+  }
+};
+
+export const bulkUpdateExpenses = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  const { ids, action, category, budgetId } = req.body;
+
+  try {
+    if (action === "budget" && budgetId) {
+      const [[owned]] = await connection.execute(
+        "SELECT budget_id FROM budget WHERE budget_id = ? AND user_id = ?",
+        [budgetId, userId]
+      );
+      if (!owned) {
+        return res.status(404).json({ error: true, message: "Budget not found." });
+      }
+    }
+
+    const changes = {
+      category: ["category = ?, needs_review = 0", [category]],
+      budget: ["budget_id = ?, budgeted = ?", [budgetId ?? null, budgetId ? 1 : 0]],
+      confirm: ["needs_review = 0", []],
+      delete: ["status = 'inactive'", []],
+      restore: ["status = 'active'", []],
+    };
+    const [set, values] = changes[action];
+    const [result] = await connection.query(
+      `UPDATE expense SET ${set} WHERE user_id = ? AND expense_id IN (?)`,
+      [...values, userId, ids]
+    );
+
+    await refreshUserBudgets(userId, req.user.email);
+
+    res.status(200).json({ updated: result.affectedRows });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. Nothing was changed.",
+    });
+  }
+};
+
+export const getMerchantHistory = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  try {
+    const [[history]] = await connection.execute(
+      "SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total FROM expense WHERE user_id = ? AND merchant = ? AND status = 'active'",
+      [userId, req.query.name ?? ""]
+    );
+    res.status(200).json({ count: history.count, total: Number(history.total) });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+};
+
+// What the add panel needs to fill itself in: known merchants, most recent
+// first, and the budget each category counts toward this month.
+export const getQuickAdd = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  try {
+    const [merchants] = await connection.execute(
+      `SELECT e.merchant, COALESCE(m.category, MAX(e.category)) AS category
+      FROM expense e
+      LEFT JOIN merchant_categories m ON m.user_id = e.user_id AND m.merchant = e.merchant
+      WHERE e.user_id = ? AND e.status = 'active' AND e.merchant IS NOT NULL AND e.merchant <> 'M-Pesa'
+      GROUP BY e.merchant, m.category
+      ORDER BY MAX(e.date_created) DESC, MAX(e.expense_id) DESC
+      LIMIT 100`,
+      [userId]
+    );
+    const { budgets } = await loadBudgets(userId);
+    const today = new Date().toLocaleDateString("en-CA");
+    const live = budgets.filter(
+      (budget) =>
+        budget.status !== "inactive" &&
+        (!budget.has_time_limit ||
+          ((!budget.startDate || today >= budget.startDate) && (!budget.endDate || today <= budget.endDate)))
+    );
+    const byCategory = {};
+    for (const { category, name, limit, spent } of live) {
+      byCategory[category] ??= { name, left: limit - spent };
+    }
+    res.status(200).json({ merchants, budgets: byCategory });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+};
+
+export const applyMerchantCategory = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  const { merchant, category } = req.body;
+  try {
+    const [result] = await connection.execute(
+      "UPDATE expense SET category = ?, needs_review = 0 WHERE user_id = ? AND merchant = ? AND status = 'active'",
+      [category, userId, merchant]
+    );
+    await connection.execute(
+      `INSERT INTO merchant_categories (user_id, merchant, category) VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE category = VALUES(category)`,
+      [userId, merchant, category]
+    );
+    await refreshUserBudgets(userId, req.user.email);
+    res.status(200).json({ updated: result.affectedRows });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+};
+
 export const createExpense = async (req, res) => {
-  const { amount, category, date, subcategories, budgeted, budgetNames } =
+  const { amount, category, date, subcategories, budgeted, budgetNames, merchant } =
     req.body;
+  const merchantName = merchant?.trim() || null;
   const isBudgeted = budgeted ? 1 : 0;
   const month = new Date(date).toLocaleString("default", { month: "long" });
   const userId = parseInt(req.user.userId);
 
   try {
     if (subcategories && Array.isArray(subcategories)) {
-      await processSubcategories(subcategories, category, userId);
+      // A single item is named after the merchant, which isn't a useful suggestion.
+      const items = subcategories.filter(({ name }) => name !== merchantName);
+      await processSubcategories(items, category, userId);
     }
     const [budgetID] = await connection.execute(
       `SELECT budget_id FROM budget WHERE name = ? AND user_id = ?`,
@@ -96,7 +357,7 @@ export const createExpense = async (req, res) => {
     const budgetIdValue = budgetID.length > 0 ? budgetID[0].budget_id : null;
 
     const [response] = await connection.execute(
-      "INSERT INTO expense (amount , category , date_created, month, user_id, subcategories, budgeted, budget_id) VALUES(?,?,?,?,?,?,?,?)",
+      "INSERT INTO expense (amount , category , date_created, month, user_id, subcategories, budgeted, budget_id, merchant) VALUES(?,?,?,?,?,?,?,?,?)",
       [
         amount,
         category,
@@ -106,6 +367,7 @@ export const createExpense = async (req, res) => {
         JSON.stringify(subcategories),
         isBudgeted,
         budgetIdValue,
+        merchantName,
       ]
     );
 
@@ -116,84 +378,15 @@ export const createExpense = async (req, res) => {
       });
     }
 
-    if (budgetIdValue) {
-      const [[budget]] = await connection.execute(
-        `SELECT budget_id, name, amount, email_checked, notify_email, status FROM budget WHERE budget_id = ? AND user_id = ?`,
-        [budgetIdValue, userId]
+    if (merchantName) {
+      await connection.execute(
+        `INSERT INTO merchant_categories (user_id, merchant, category) VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE category = VALUES(category)`,
+        [userId, merchantName, category]
       );
-
-      const [[{ total_spent }]] = await connection.execute(
-        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ? AND status = 'active'`,
-        [budgetIdValue]
-      );
-
-      if (
-        Number(budget.amount) < Number(total_spent) &&
-        budget.status !== "exceeded"
-      ) {
-        await connection.execute(
-          `UPDATE budget SET status = 'exceeded' WHERE budget_id = ?`,
-          [budgetIdValue]
-        );
-        const message = `Your budget "${
-          budget.name
-        }" has been exceeded by KES ${
-          total_spent - budget.amount
-        }. You have spent a total of KES ${total_spent}, which is over your budget amount of KES ${
-          budget.amount
-        }. Please review your expenses.`;
-        const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
-        <h2 style="color: #d32f2f;">Budget Limit Exceeded</h2>
-        <p>Hi ${req.user?.name.toUpperCase() || "there"},</p>
-        <p>
-          Your budget for <strong style="color: #1565c0;">${
-            budget.name
-          }</strong> 
-          has been <strong style="color: #d32f2f;">exceeded</strong> by 
-          <strong>KES ${(
-            total_spent - budget.amount
-          ).toLocaleString()}</strong>.
-        </p>
-
-        <p>
-          You have spent a total of 
-          <strong style="color: #2e7d32;">KES ${total_spent.toLocaleString()}</strong>, 
-          which is over your budget limit of 
-          <strong style="color: #d32f2f;">KES ${budget.amount.toLocaleString()}</strong>.
-        </p>
-
-        <p style="margin-top: 20px;">
-          Please review your expenses to stay on track.
-        </p>
-
-        <hr style="margin: 25px 0; border: none; border-top: 1px solid #ddd;">
-        <p style="font-size: 12px; color: #777;">
-          This is an automated message from Budget Tracker. Please do not reply to this email.
-        </p>
-      </div>
-`;
-
-        if (budget.email_checked === "checked") {
-          const email = req.user.email;
-          const title = "BUDGET LIMIT EXCEEDED ALERT";
-
-          await sendEmail(email, title, message, html, budgetIdValue);
-        }
-
-        const [[existingNotification]] = await connection.execute(
-          `SELECT id FROM notifications WHERE user_id = ? AND budget_id = ? AND type = 'budget_exceeded' AND status = 'unread'`,
-          [userId, budgetIdValue]
-        );
-
-        if (!existingNotification) {
-          await connection.execute(
-            `INSERT INTO notifications (user_id, budget_id, type, message) VALUES (?, ?, 'budget_exceeded', ?)`,
-            [userId, budgetIdValue, message]
-          );
-        }
-      }
     }
+
+    await refreshUserBudgets(userId, req.user.email);
     res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
     console.log("Error:", error);
@@ -207,17 +400,15 @@ export const createExpense = async (req, res) => {
 export const clearExpenses = async (req, res) => {
   const userId = parseInt(req.user.userId);
   try {
-    const [budgets] = await connection.execute(
-      "SELECT DISTINCT budget_id FROM expense WHERE user_id = ? AND status = 'active' AND budget_id IS NOT NULL",
-      [userId]
-    );
     await connection.execute(
       "UPDATE expense SET status = 'inactive' WHERE user_id = ?",
       [userId]
     );
-    for (const { budget_id } of budgets) {
-      await refreshBudgetStatus(budget_id);
-    }
+    await connection.execute(
+      "DELETE FROM mpesa_transactions WHERE user_id = ?",
+      [userId]
+    );
+    await refreshUserBudgets(userId, req.user.email);
     res.status(200).json({ message: "Expense history cleared." });
   } catch (error) {
     console.log("Error: ", error);
@@ -233,7 +424,7 @@ export const deleteExpense = async (req, res) => {
   const expenseId = parseInt(req.params.id);
   try {
     const [[expense]] = await connection.execute(
-      "SELECT budget_id FROM expense WHERE expense_id = ? AND user_id = ? AND status = 'active'",
+      "SELECT expense_id FROM expense WHERE expense_id = ? AND user_id = ? AND status = 'active'",
       [expenseId, userId]
     );
     if (!expense) {
@@ -247,9 +438,7 @@ export const deleteExpense = async (req, res) => {
       "UPDATE expense SET status = 'inactive' WHERE expense_id = ?",
       [expenseId]
     );
-    if (expense.budget_id) {
-      await refreshBudgetStatus(expense.budget_id);
-    }
+    await refreshUserBudgets(userId, req.user.email);
     res.status(200).json({ message: "Expense deleted." });
   } catch (error) {
     console.log("Error: ", error);

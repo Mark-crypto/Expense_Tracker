@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Compass } from "lucide-react";
+import { Compass } from "@phosphor-icons/react";
 import StatusPage from "@/components/layout/StatusPage";
 
 const NotFound = () => {

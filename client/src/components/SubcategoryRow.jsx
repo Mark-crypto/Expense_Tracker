@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Loader2, X } from "lucide-react";
+import { CircleNotch, X } from "@phosphor-icons/react";
 import { useWatch } from "react-hook-form";
 import axiosInstance from "../axiosInstance";
 import { Button } from "@/components/ui/button";
@@ -114,7 +114,7 @@ const SubcategoryRow = ({
           <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
             {isLoading ? (
               <p className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" /> Searching...
+                <CircleNotch className="size-3.5 animate-spin" /> Searching...
               </p>
             ) : suggestions.length === 0 ? (
               <p className="p-3 text-xs text-muted-foreground">No suggestions found</p>

@@ -1,71 +1,46 @@
-import { useMemo } from "react";
-import { Line } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  LineElement,
-  PointElement,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
   Tooltip,
-} from "chart.js";
-import { useTheme } from "@/hooks/useTheme";
-import { chartTokens } from "./chartTokens";
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip);
+  XAxis,
+  YAxis,
+} from "recharts";
+import { ChartTooltip } from "./ChartTooltip";
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const tick = { fill: "var(--chart-tick)", fontSize: 11 };
+
+const UsersTooltip = ({ active, payload }) => {
+  const point = payload?.[0]?.payload;
+  if (!active || !point) return null;
+  return <ChartTooltip title={point.month} rows={[[point.users, "active users"]]} />;
+};
 
 const ActiveUsersChart = ({ data = [] }) => {
-  const theme = useTheme();
+  const chartData = months.map((month, index) => ({
+    month,
+    users: data.find((item) => item.month === index + 1)?.active_users ?? 0,
+  }));
 
-  const { chartData, options } = useMemo(() => {
-    const t = chartTokens();
-    return {
-      chartData: {
-        labels: months,
-        datasets: [
-          {
-            label: "Active users",
-            data: months.map(
-              (_, index) => data.find((item) => item.month === index + 1)?.active_users ?? 0
-            ),
-            borderColor: t.mark,
-            backgroundColor: t.mark,
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            pointHitRadius: 20,
-            tension: 0.3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { intersect: false, mode: "index" },
-        plugins: {
-          legend: { display: false },
-          tooltip: { ...t.tooltip, displayColors: false },
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            border: { color: t.grid },
-            ticks: { color: t.tick, font: { size: 11 } },
-          },
-          y: {
-            beginAtZero: true,
-            grid: { color: t.grid },
-            border: { display: false },
-            ticks: { color: t.tick, font: { size: 11 }, precision: 0, maxTicksLimit: 5 },
-          },
-        },
-      },
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- theme changes the CSS variables read inside
-  }, [data, theme]);
-
-  return <Line data={chartData} options={options} />;
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
+        <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
+        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={tick} />
+        <YAxis allowDecimals={false} tickCount={4} axisLine={false} tickLine={false} tick={tick} />
+        <Tooltip content={<UsersTooltip />} cursor={{ stroke: "var(--chart-tick)" }} />
+        <Line
+          dataKey="users"
+          stroke="var(--chart-mark)"
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 5 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
 };
 
 export default ActiveUsersChart;

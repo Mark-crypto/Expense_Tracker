@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock } from "@phosphor-icons/react";
 import StatusPage from "@/components/layout/StatusPage";
 
 const NotAdmin = () => {

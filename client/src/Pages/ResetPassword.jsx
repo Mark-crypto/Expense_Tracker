@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Eye, EyeOff, Link2Off } from "lucide-react";
+import { Eye, EyeSlash, LinkBreak } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
 import AuthLayout from "@/components/layout/AuthLayout";
 import StatusPage from "@/components/layout/StatusPage";
@@ -57,7 +57,7 @@ const ResetPassword = () => {
   if (!token) {
     return (
       <StatusPage
-        icon={Link2Off}
+        icon={LinkBreak}
         code="Invalid link"
         title="This reset link doesn't work"
         message="It's missing its security token. Request a new link to continue."
@@ -83,7 +83,7 @@ const ResetPassword = () => {
               aria-label={visible ? "Hide passwords" : "Show passwords"}
               className="text-muted-foreground hover:text-foreground"
             >
-              {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              {visible ? <EyeSlash className="size-4" /> : <Eye className="size-4" />}
             </button>
           }
         >

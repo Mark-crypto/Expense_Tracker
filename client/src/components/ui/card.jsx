@@ -18,7 +18,7 @@ export const CardHeader = ({ title, description, action, className }) => (
     )}
   >
     <div className="min-w-0">
-      <h2 className="text-sm font-semibold">{title}</h2>
+      <h2 className="text-sm">{title}</h2>
       {description && (
         <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       )}

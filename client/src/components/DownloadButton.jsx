@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { DownloadSimple } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import axiosInstance from "@/axiosInstance";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const DownloadButton = ({ endpoint, filename, label = "Export to Excel" }) => {
 
   return (
     <Button variant="secondary" loading={loading} onClick={downloadReport}>
-      {!loading && <Download />}
+      {!loading && <DownloadSimple />}
       {loading ? "Downloading..." : label}
     </Button>
   );

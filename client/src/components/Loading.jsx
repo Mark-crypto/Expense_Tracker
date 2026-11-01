@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const Loading = ({ fullScreen = false, className }) => (
@@ -11,7 +11,7 @@ const Loading = ({ fullScreen = false, className }) => (
       className
     )}
   >
-    <Loader2 className="size-6 animate-spin text-primary" />
+    <CircleNotch className="size-6 animate-spin text-primary" />
   </div>
 );
 

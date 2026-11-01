@@ -1,18 +1,20 @@
 import { useMemo } from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react";
 import axiosInstance from "../axiosInstance";
 import { budgetSchema } from "../zodSchemas/schemas";
-import { EXPENSE_CATEGORIES } from "@/lib/categories";
+import { CategoryIcon } from "@/components/ui/category";
+import { CategoryPicker } from "@/components/ui/menu";
+import { categoryLabel } from "@/lib/categories";
 import { formatKES, localToday } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { CheckboxCard, Field, FieldError, Input, Label, Select } from "@/components/ui/field";
+import { CheckboxCard, Field, FieldError, Input, Label } from "@/components/ui/field";
 import SubcategoryRow from "./SubcategoryRow";
 
-const BudgetForm = ({ onCreated }) => {
+const BudgetForm = ({ onCreated, category: initialCategory = "" }) => {
   const queryClient = useQueryClient();
 
   const {
@@ -30,7 +32,7 @@ const BudgetForm = ({ onCreated }) => {
     mode: "onSubmit",
     defaultValues: {
       name: "",
-      category: "",
+      category: initialCategory,
       subcategories: [{ name: "", amount: "" }],
       email: false,
       timeLimit: false,
@@ -49,6 +51,13 @@ const BudgetForm = ({ onCreated }) => {
     () => subcategories?.reduce((sum, curr) => sum + (Number(curr.amount) || 0), 0),
     [subcategories]
   );
+
+  const { data: suggestion } = useQuery({
+    queryKey: ["budget-suggestion", selectedCategory],
+    queryFn: async () =>
+      (await axiosInstance.get(`/budgets/suggest?category=${encodeURIComponent(selectedCategory)}`)).data,
+    enabled: !!selectedCategory,
+  });
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data) => await axiosInstance.post("/budget", data),
@@ -71,15 +80,24 @@ const BudgetForm = ({ onCreated }) => {
         <Field label="Budget name" htmlFor="name" error={errors.name?.message}>
           <Input id="name" placeholder="e.g. November food" aria-invalid={!!errors.name} {...register("name")} />
         </Field>
-        <Field label="Category" htmlFor="category" error={errors.category?.message}>
-          <Select id="category" required {...register("category")}>
-            <option value="">Choose a category</option>
-            {EXPENSE_CATEGORIES.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
+        <Field label="Category" error={errors.category?.message}>
+          <input type="hidden" {...register("category")} />
+          <CategoryPicker
+            modal
+            label="Choose a category"
+            value={selectedCategory}
+            onChange={(value) => setValue("category", value, { shouldValidate: true })}
+            triggerClassName="flex h-10 w-full items-center gap-2 rounded-lg border border-input bg-card px-3 text-left text-sm hover:bg-muted"
+          >
+            {selectedCategory ? (
+              <>
+                <CategoryIcon category={selectedCategory} />
+                <span className="truncate">{categoryLabel(selectedCategory)}</span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">Choose a category</span>
+            )}
+          </CategoryPicker>
         </Field>
       </div>
 
@@ -107,6 +125,12 @@ const BudgetForm = ({ onCreated }) => {
         </Button>
       </div>
 
+      {suggestion?.average > 0 && (
+        <p className="rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">
+          You usually spend {formatKES(suggestion.average)} a month on {categoryLabel(selectedCategory)}.
+        </p>
+      )}
+
       <div className="flex items-center justify-between rounded-lg bg-muted/60 px-4 py-3">
         <span className="text-sm text-muted-foreground">Budget total</span>
         <span className="text-lg font-semibold tabular-nums">{formatKES(totalAmount, 2)}</span>
@@ -114,8 +138,8 @@ const BudgetForm = ({ onCreated }) => {
 
       <CheckboxCard
         id="timeLimit"
-        title="Set start and end dates"
-        description="Leave off for an ongoing budget."
+        title="One-off budget with dates"
+        description="Leave off for a budget that resets every month."
         {...register("timeLimit")}
       />
 

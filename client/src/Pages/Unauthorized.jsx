@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn } from "lucide-react";
+import { SignIn } from "@phosphor-icons/react";
 import StatusPage from "@/components/layout/StatusPage";
 
 const Unauthorized = () => {
@@ -13,7 +13,7 @@ const Unauthorized = () => {
 
   return (
     <StatusPage
-      icon={LogIn}
+      icon={SignIn}
       code="401"
       title="Your session has ended"
       message="Log in again to continue. Taking you to the login page in 5 seconds."

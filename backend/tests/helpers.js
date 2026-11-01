@@ -64,6 +64,9 @@ export const removeUsers = async (users) => {
       "expense",
       "budget",
       "subcategory_suggestions",
+      "mpesa_transactions",
+      "merchant_categories",
+      "dismissed_bills",
       "users",
     ]) {
       await connection.execute(`DELETE FROM ${table} WHERE user_id = ?`, [id]);

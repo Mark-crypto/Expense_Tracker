@@ -1,5 +1,6 @@
 import connection from "../database.js";
 import ExcelJS from "exceljs";
+import { loadBudgets, refreshUserBudgets } from "../utils/budgetStatus.js";
 
 export const getBudgetReport = async (req, res) => {
   const id = parseInt(req.user.userId);
@@ -142,6 +143,7 @@ export async function addBudget(req, res) {
         timeLimit ? 1 : 0,
       ]
     );
+    await refreshUserBudgets(userId, req.user.email);
     if (response.length == 0) {
       return res.status(400).json({
         error: true,
@@ -159,15 +161,97 @@ export async function addBudget(req, res) {
   }
 }
 
+// Change a budget's limit
+export async function updateBudgetLimit(req, res) {
+  const userId = parseInt(req.user.userId);
+  const budgetId = parseInt(req.params.id);
+  try {
+    const [response] = await connection.execute(
+      "UPDATE budget SET amount = ? WHERE budget_id = ? AND user_id = ?",
+      [req.body.amount, budgetId, userId]
+    );
+    if (response.affectedRows === 0) {
+      return res.status(404).json({ error: true, message: "Budget not found." });
+    }
+    await refreshUserBudgets(userId, req.user.email);
+    res.status(200).json({ message: "Budget limit updated." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. The limit was not changed.",
+    });
+  }
+}
+
+export async function getBudgetOverview(req, res) {
+  const userId = parseInt(req.user.userId);
+  const month = /^\d{4}-\d{2}$/.test(req.query.month ?? "") ? req.query.month : undefined;
+  try {
+    await refreshUserBudgets(userId, req.user.email);
+    const { emailChecked, ...overview } = await loadBudgets(userId, month);
+    res.status(200).json(overview);
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Your budgets could not be loaded." });
+  }
+}
+
+// Average monthly spending in a category over the last three full months.
+export async function suggestBudget(req, res) {
+  const userId = parseInt(req.user.userId);
+  try {
+    const [[{ total }]] = await connection.execute(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM expense
+      WHERE user_id = ? AND category = ? AND status = 'active'
+        AND date_created >= DATE_FORMAT(CURDATE() - INTERVAL 3 MONTH, '%Y-%m-01')`,
+      [userId, req.query.category ?? ""]
+    );
+    res.status(200).json({ average: Math.round(Number(total) / 3) });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+}
+
+export async function updateBudgetStatus(req, res) {
+  const userId = parseInt(req.user.userId);
+  const budgetId = parseInt(req.params.id);
+  try {
+    const [response] = await connection.execute(
+      "UPDATE budget SET status = ? WHERE budget_id = ? AND user_id = ?",
+      [req.body.paused ? "inactive" : "active", budgetId, userId]
+    );
+    if (response.affectedRows === 0) {
+      return res.status(404).json({ error: true, message: "Budget not found." });
+    }
+    await refreshUserBudgets(userId, req.user.email);
+    res.status(200).json({ message: req.body.paused ? "Budget paused." : "Budget resumed." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "The budget was not changed." });
+  }
+}
+
 // Delete a budget
 export async function deleteBudget(req, res) {
   const userId = parseInt(req.user.userId);
   const { id } = req.params;
   try {
-    const response = await connection.execute(
+    const [response] = await connection.execute(
       "DELETE FROM budget WHERE budget_id = ? AND user_id = ?",
       [id, userId]
     );
+    if (response.affectedRows > 0) {
+      await connection.execute(
+        "UPDATE expense SET budget_id = NULL, budgeted = 0 WHERE budget_id = ? AND user_id = ?",
+        [id, userId]
+      );
+      await connection.execute("DELETE FROM notifications WHERE budget_id = ? AND user_id = ?", [
+        id,
+        userId,
+      ]);
+    }
     if (response.length == 0) {
       return res.status(400).json({
         error: true,

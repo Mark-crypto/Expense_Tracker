@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { UserCheck, UserMinus, UserPlus, Users } from "lucide-react";
+import { UserCheck, UserMinus, UserPlus, Users } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance.js";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, Badge, EmptyState, ErrorState, PageHeader, StatCard } from "@/components/ui/common";

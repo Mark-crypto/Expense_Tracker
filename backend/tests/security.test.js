@@ -144,11 +144,11 @@ describe("access between users", () => {
 
     const list = await listExpenses(bob);
     const dashboard = await request(api, "GET", "/dashboard", { cookie: bob.cookie });
-    const forecast = await request(api, "GET", "/predictions", { cookie: bob.cookie });
+    const forecast = await request(api, "GET", "/forecast", { cookie: bob.cookie });
 
     assert.equal(list.meta.total, 0);
     assert.equal(dashboard.body.allCategories.length, 0);
-    assert.equal(forecast.body.projectedExpense, 0);
+    assert.equal(forecast.body.spent, 0);
   });
 
   it("keeps typed item names private to that user", async () => {

@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CaretLeft, CaretRight, Minus, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "./button";
 import { Card } from "./card";
 import { cn } from "@/lib/utils";
@@ -80,7 +80,7 @@ export const EmptyState = ({ icon: Icon, title, description, action, className }
 export const ErrorState = ({ message = "Something went wrong.", onRetry }) => (
   <Card>
     <EmptyState
-      icon={AlertCircle}
+      icon={WarningCircle}
       title="We couldn't load this"
       description={message}
       action={
@@ -115,7 +115,7 @@ export const Pagination = ({ page, totalPages = 1, onChange }) => (
     </p>
     <div className="flex gap-2">
       <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onChange(page - 1)}>
-        <ChevronLeft /> Previous
+        <CaretLeft /> Previous
       </Button>
       <Button
         variant="secondary"
@@ -123,7 +123,7 @@ export const Pagination = ({ page, totalPages = 1, onChange }) => (
         disabled={page >= (totalPages || 1)}
         onClick={() => onChange(page + 1)}
       >
-        Next <ChevronRight />
+        Next <CaretRight />
       </Button>
     </div>
   </div>

@@ -76,7 +76,17 @@ describe("account and budget flows", () => {
     const res = await request(api, "POST", "/mpesa/save", {
       cookie: user.cookie,
       body: {
-        transactions: [{ amount: 10, category: "Bills", date: daysFromNow(5) }],
+        transactions: [
+          {
+            receiptNo: "UAB12CD34X",
+            occurredAt: `${daysFromNow(5)} 10:00:00`,
+            details: "Pay Bill Online",
+            kind: "paybill",
+            paidIn: 0,
+            withdrawn: 10,
+            category: "utilities",
+          },
+        ],
       },
     });
     assert.equal(res.status, 400);
@@ -117,7 +127,7 @@ describe("account and budget flows", () => {
       (await request(api, "GET", "/notifications", { cookie: user.cookie })).body.data;
 
     assert.equal(await budgetStatus(), "exceeded");
-    assert.equal((await alerts()).length, 1);
+    assert.equal((await alerts()).filter((row) => row.type === "budget_exceeded").length, 1);
 
     const [[expense]] = await connection.execute(
       "SELECT expense_id FROM expense WHERE user_id = ? AND budget_id IS NOT NULL",
@@ -126,7 +136,7 @@ describe("account and budget flows", () => {
     await request(api, "DELETE", `/expenses/${expense.expense_id}`, { cookie: user.cookie });
 
     assert.equal(await budgetStatus(), "active");
-    assert.equal((await alerts()).length, 0);
+    assert.equal((await alerts()).filter((row) => row.type === "budget_exceeded").length, 0);
   });
 
   it("resets a password through the emailed link, once only", async () => {
@@ -176,6 +186,8 @@ describe("account and budget flows", () => {
       "notifications",
       "refresh_tokens",
       "subcategory_suggestions",
+      "mpesa_transactions",
+      "merchant_categories",
     ]) {
       const [[{ total }]] = await connection.execute(
         `SELECT COUNT(*) AS total FROM ${table} WHERE user_id = ?`,

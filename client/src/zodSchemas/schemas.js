@@ -20,23 +20,18 @@ export const budgetSchema = z.object({
   category: z.string().min(1, "Choose a valid category"),
 });
 
-export const expenseSchema = z.object({
-  category: z.string().min(1, "Choose a valid category"),
-  subcategories: z
-    .array(
-      z.object({
-        name: z.string().optional().or(z.literal("")),
-        amount: z.number().optional(),
-      })
-    )
-    .refine(
-      (subs) => subs.length > 0 && subs.every((s) => s.name && s.amount),
-      "Each subcategory must have a name and amount"
-    ),
-  budgeted: z.boolean().optional(),
-  budgetNames: z.string().optional().or(z.literal("")),
-  date: z.date({ message: "Enter a valid date" }),
-});
+export const quickExpenseSchema = z
+  .object({
+    amount: z.number({ message: "Enter the amount" }).positive("Enter the amount"),
+    merchant: z.string().trim().min(1, "Who did you pay?").max(150, "Use 150 characters or fewer"),
+    category: z.string().min(1, "Choose a category"),
+    date: z.string().min(1, "Choose a date"),
+    items: z.array(z.object({ name: z.string().trim(), amount: z.unknown() })),
+  })
+  .refine((data) => data.items.every((item) => item.name && item.amount > 0), {
+    message: "Each item needs a name and an amount",
+    path: ["items"],
+  });
 
 export const loginSchema = z.object({
   email: z.string().email("Provide a valid email"),

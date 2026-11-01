@@ -1,4 +1,6 @@
 import connection from "../database.js";
+import { loadBudgets, refreshUserBudgets } from "../utils/budgetStatus.js";
+import { buildForecast, syncForecastAlerts } from "../utils/forecast.js";
 
 export const reports = async (req, res) => {
   const id = parseInt(req.user.userId);
@@ -143,5 +145,58 @@ export const getReportData = async (req, res) => {
       error: true,
       message: "Something went wrong.",
     });
+  }
+};
+
+export const getOverview = async (req, res) => {
+  const id = parseInt(req.user.userId);
+  try {
+    const [expenses] = await connection.execute(
+      `SELECT expense_id, amount, category, subcategories, merchant, description,
+        DATE_FORMAT(date_created, '%Y-%m-%d') AS date
+      FROM expense
+      WHERE user_id = ? AND status = 'active'
+        AND date_created >= DATE_FORMAT(CURDATE() - INTERVAL 12 MONTH, '%Y-%m-01')
+      ORDER BY date_created DESC`,
+      [id]
+    );
+
+    await refreshUserBudgets(id, req.user.email);
+    const { budgets: allBudgets } = await loadBudgets(id);
+    const budgets = allBudgets.filter((row) => row.status === "active" || row.status === "exceeded");
+
+    const [monthly] = await connection.execute(
+      `SELECT DATE_FORMAT(occurred_at, '%Y-%m') AS month,
+        SUM(paid_in) AS moneyIn,
+        SUM(CASE WHEN kind = 'fee' THEN withdrawn ELSE 0 END) AS fees
+      FROM mpesa_transactions
+      WHERE user_id = ?
+        AND occurred_at >= DATE_FORMAT(CURDATE() - INTERVAL 12 MONTH, '%Y-%m-01')
+      GROUP BY month`,
+      [id]
+    );
+
+    const forecastWarnings = await syncForecastAlerts(id, await buildForecast(id));
+
+    res.status(200).json({
+      forecastWarnings,
+      expenses: expenses.map((row) => ({ ...row, amount: Number(row.amount) })),
+      budgets: budgets.map(({ budget_id, name, category, status, limit, spent }) => ({
+        budget_id,
+        name,
+        category,
+        status,
+        limit,
+        spent,
+      })),
+      monthly: monthly.map((row) => ({
+        month: row.month,
+        moneyIn: Number(row.moneyIn),
+        fees: Number(row.fees),
+      })),
+    });
+  } catch (error) {
+    console.log("Error:", error);
+    res.status(500).json({ error: true, message: "Something went wrong." });
   }
 };
