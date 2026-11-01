@@ -45,18 +45,16 @@ export const getPredictions = async (req, res) => {
       `
       SELECT MONTH(date_created) AS month, SUM(amount) AS monthly_total
       FROM expense
-      WHERE user_id = ?
-        AND MONTH(date_created) IN (?, ?)
-        AND YEAR(date_created) IN (?, ?)
+      WHERE user_id = ? AND status = 'active'
+        AND date_created >= ?
+        AND date_created < ?
       GROUP BY MONTH(date_created)
       ORDER BY MONTH(date_created)
       `,
       [
         id,
-        lastMonthNum,
-        currentMonthNum,
-        year - (currentMonthNum === 1 ? 1 : 0),
-        year,
+        toMysqlDatetime(new Date(year, currentMonthNum - 2, 1)),
+        toMysqlDatetime(new Date(year, currentMonthNum, 1)),
       ]
     );
 
@@ -67,7 +65,7 @@ export const getPredictions = async (req, res) => {
       `
       SELECT category, SUM(amount) AS total
       FROM expense
-      WHERE user_id = ? AND MONTH(date_created) = ? AND YEAR(date_created) = ?
+      WHERE user_id = ? AND status = 'active' AND MONTH(date_created) = ? AND YEAR(date_created) = ?
       GROUP BY category
       ORDER BY total DESC
       `,
@@ -99,7 +97,7 @@ export const getPredictions = async (req, res) => {
         SUM(CASE WHEN date_created BETWEEN ? AND ? THEN amount ELSE 0 END) AS current_week_total,
         SUM(CASE WHEN date_created BETWEEN ? AND ? THEN amount ELSE 0 END) AS last_week_total
       FROM expense
-      WHERE user_id = ?
+      WHERE user_id = ? AND status = 'active'
       `,
       [
         toMysqlDatetime(currentWeekStart),

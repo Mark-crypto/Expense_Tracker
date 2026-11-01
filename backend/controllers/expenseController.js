@@ -1,12 +1,13 @@
 import connection from "../database.js";
 import { sendEmail } from "../utils/emailAlert.js";
 import ExcelJS from "exceljs";
+import { refreshBudgetStatus } from "../utils/budgetStatus.js";
 
 export const getExpenseReport = async (req, res) => {
   const id = parseInt(req.user.userId);
   try {
     const [expenses] = await connection.execute(
-      `SELECT * FROM expense WHERE user_id = ?`,
+      `SELECT * FROM expense WHERE user_id = ? AND status = 'active'`,
       [id]
     );
     const workbook = new ExcelJS.Workbook();
@@ -54,12 +55,12 @@ export const getExpenses = async (req, res) => {
 
   try {
     const [rows] = await connection.execute(
-      `SELECT * FROM expense WHERE user_id = ? ORDER BY date_created DESC LIMIT ? OFFSET ?`,
+      `SELECT * FROM expense WHERE user_id = ? AND status = 'active' ORDER BY date_created DESC LIMIT ? OFFSET ?`,
       [userId, limitString, offsetString]
     );
 
     const [countResult] = await connection.execute(
-      "SELECT COUNT(*) AS total FROM expense WHERE user_id = ?",
+      "SELECT COUNT(*) AS total FROM expense WHERE user_id = ? AND status = 'active'",
       [userId]
     );
 
@@ -86,11 +87,11 @@ export const createExpense = async (req, res) => {
 
   try {
     if (subcategories && Array.isArray(subcategories)) {
-      await processSubcategories(subcategories, category);
+      await processSubcategories(subcategories, category, userId);
     }
     const [budgetID] = await connection.execute(
       `SELECT budget_id FROM budget WHERE name = ? AND user_id = ?`,
-      [budgetNames, userId]
+      [budgetNames ?? null, userId]
     );
     const budgetIdValue = budgetID.length > 0 ? budgetID[0].budget_id : null;
 
@@ -122,7 +123,7 @@ export const createExpense = async (req, res) => {
       );
 
       const [[{ total_spent }]] = await connection.execute(
-        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
+        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ? AND status = 'active'`,
         [budgetIdValue]
       );
 
@@ -181,7 +182,7 @@ export const createExpense = async (req, res) => {
         }
 
         const [[existingNotification]] = await connection.execute(
-          `SELECT id FROM notifications WHERE user_id = ? AND budget_id = ? AND type = 'budget_exceeded'`,
+          `SELECT id FROM notifications WHERE user_id = ? AND budget_id = ? AND type = 'budget_exceeded' AND status = 'unread'`,
           [userId, budgetIdValue]
         );
 
@@ -203,31 +204,65 @@ export const createExpense = async (req, res) => {
   }
 };
 
-export const deleteExpense = async (req, res) => {
+export const clearExpenses = async (req, res) => {
   const userId = parseInt(req.user.userId);
   try {
-    const [response] = await connection.execute(
+    const [budgets] = await connection.execute(
+      "SELECT DISTINCT budget_id FROM expense WHERE user_id = ? AND status = 'active' AND budget_id IS NOT NULL",
+      [userId]
+    );
+    await connection.execute(
       "UPDATE expense SET status = 'inactive' WHERE user_id = ?",
       [userId]
     );
-    if (response.length == 0) {
-      return res.status(400).json({
-        error: true,
-        message: "An error occurred. Expenses were not deleted.",
-      });
+    for (const { budget_id } of budgets) {
+      await refreshBudgetStatus(budget_id);
     }
-    res.status(200).json({ message: "Expense deleted successfully." });
+    res.status(200).json({ message: "Expense history cleared." });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({
       error: true,
-      message: "An error occurred. Expenses were not deleted.",
+      message: "An error occurred. Expenses were not cleared.",
+    });
+  }
+};
+
+export const deleteExpense = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  const expenseId = parseInt(req.params.id);
+  try {
+    const [[expense]] = await connection.execute(
+      "SELECT budget_id FROM expense WHERE expense_id = ? AND user_id = ? AND status = 'active'",
+      [expenseId, userId]
+    );
+    if (!expense) {
+      return res.status(404).json({
+        error: true,
+        message: "Expense not found.",
+      });
+    }
+
+    await connection.execute(
+      "UPDATE expense SET status = 'inactive' WHERE expense_id = ?",
+      [expenseId]
+    );
+    if (expense.budget_id) {
+      await refreshBudgetStatus(expense.budget_id);
+    }
+    res.status(200).json({ message: "Expense deleted." });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({
+      error: true,
+      message: "An error occurred. Expense was not deleted.",
     });
   }
 };
 
 export const getSubcategorySuggestions = async (req, res) => {
   const { search, category, limit = 4 } = req.query;
+  const userId = parseInt(req.user.userId);
 
   try {
     if (!category) {
@@ -246,7 +281,8 @@ export const getSubcategorySuggestions = async (req, res) => {
 
     const [suggestions] = await connection.execute(
       `SELECT subcategory FROM subcategory_suggestions 
-       WHERE category = ? AND subcategory LIKE ? 
+       WHERE category = ? AND subcategory LIKE ?
+         AND (user_id IS NULL OR user_id = ?)
        ORDER BY 
          CASE WHEN subcategory = ? THEN 1 
               WHEN subcategory LIKE ? THEN 2 
@@ -254,7 +290,7 @@ export const getSubcategorySuggestions = async (req, res) => {
          END,
          subcategory
        LIMIT ?`,
-      [category, searchTerm, search, `${search}%`, limitString]
+      [category, searchTerm, userId, search, `${search}%`, limitString]
     );
 
     const suggestionList = suggestions.map((row) => row.subcategory);
@@ -269,7 +305,7 @@ export const getSubcategorySuggestions = async (req, res) => {
   }
 };
 
-const processSubcategories = async (subcategories, category) => {
+const processSubcategories = async (subcategories, category, userId) => {
   try {
     for (const subcategory of subcategories) {
       const { name } = subcategory;
@@ -278,14 +314,14 @@ const processSubcategories = async (subcategories, category) => {
         const cleanName = name.trim();
 
         const [existing] = await connection.execute(
-          "SELECT id FROM subcategory_suggestions WHERE category = ? AND subcategory = ?",
-          [category, cleanName]
+          "SELECT id FROM subcategory_suggestions WHERE category = ? AND subcategory = ? AND (user_id IS NULL OR user_id = ?)",
+          [category, cleanName, userId]
         );
 
         if (existing.length === 0) {
           await connection.execute(
-            "INSERT INTO subcategory_suggestions (subcategory, category) VALUES (?, ?)",
-            [cleanName, category]
+            "INSERT INTO subcategory_suggestions (subcategory, category, user_id) VALUES (?, ?, ?)",
+            [cleanName, category, userId]
           );
         }
       }
@@ -297,11 +333,12 @@ const processSubcategories = async (subcategories, category) => {
 
 export const getAllSubcategoriesForCategory = async (req, res) => {
   const { category } = req.params;
+  const userId = parseInt(req.user.userId);
 
   try {
     const [subcategories] = await connection.execute(
-      "SELECT subcategory, created_at FROM subcategory_suggestions WHERE category = ? ORDER BY subcategory",
-      [category]
+      "SELECT subcategory FROM subcategory_suggestions WHERE category = ? AND (user_id IS NULL OR user_id = ?) ORDER BY subcategory",
+      [category, userId]
     );
 
     res.status(200).json({
@@ -319,6 +356,7 @@ export const getAllSubcategoriesForCategory = async (req, res) => {
 
 export const addSubcategorySuggestion = async (req, res) => {
   const { subcategory, category } = req.body;
+  const userId = parseInt(req.user.userId);
 
   try {
     if (!subcategory || !category) {
@@ -329,8 +367,8 @@ export const addSubcategorySuggestion = async (req, res) => {
     }
 
     const [existing] = await connection.execute(
-      "SELECT id FROM subcategory_suggestions WHERE category = ? AND subcategory = ?",
-      [category, subcategory.trim()]
+      "SELECT id FROM subcategory_suggestions WHERE category = ? AND subcategory = ? AND (user_id IS NULL OR user_id = ?)",
+      [category, subcategory.trim(), userId]
     );
 
     if (existing.length > 0) {
@@ -341,8 +379,8 @@ export const addSubcategorySuggestion = async (req, res) => {
     }
 
     const [response] = await connection.execute(
-      "INSERT INTO subcategory_suggestions (subcategory, category) VALUES (?, ?)",
-      [subcategory.trim(), category]
+      "INSERT INTO subcategory_suggestions (subcategory, category, user_id) VALUES (?, ?, ?)",
+      [subcategory.trim(), category, userId]
     );
 
     res.status(201).json({

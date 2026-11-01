@@ -1,51 +1,41 @@
-import Navbar from "../components/Navbar";
-import BudgetTable from "../components/BudgetTable";
 import { useState } from "react";
-import BudgetForm from "../components/BudgetForm";
-import { FaChartBar } from "react-icons/fa";
-import LimitNotification from "../components/LimitNotification";
+import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/common";
+import BudgetForm from "@/components/BudgetForm";
+import BudgetTable from "@/components/BudgetTable";
+import DownloadButton from "@/components/DownloadButton";
 
 const Budget = () => {
-  const [show, setShow] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-100">
-      <aside className="w-1/5 ">
-        <Navbar />
-      </aside>
+    <>
+      <PageHeader
+        title="Budgets"
+        description="Set limits and get alerted when spending goes over."
+        actions={
+          <>
+            <DownloadButton endpoint="/budget/report" filename="budget_report.xlsx" />
+            <Button onClick={() => setOpen(true)}>
+              <Plus /> New budget
+            </Button>
+          </>
+        }
+      />
 
-      <main className="w-4/5 flex items-center justify-center p-6 overflow-y-auto">
-        <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-2xl text-center">
-          <LimitNotification />
-          <h3
-            style={{
-              fontWeight: "500",
-              color: "#9D00FF",
-              marginBottom: "8px",
-            }}
-          >
-            Budget Management
-          </h3>
-          <div className="mb-6 flex items-center justify-center">
-            <BudgetForm />
-          </div>
+      <BudgetTable />
 
-          <button
-            onClick={() => setShow((prev) => !prev)}
-            className="flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded transition duration-200 w-full"
-          >
-            <FaChartBar className="text-xl" />
-            {show ? "Hide Budget Table" : "Show Budget Table"}
-          </button>
-
-          {show && (
-            <div className="mt-8">
-              <BudgetTable />
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent aria-describedby={undefined} className="max-h-[90vh] max-w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>New budget</DialogTitle>
+          </DialogHeader>
+          <BudgetForm onCreated={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

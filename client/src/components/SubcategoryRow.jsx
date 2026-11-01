@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { FaMinusCircle } from "react-icons/fa";
-import { Row, Col } from "react-bootstrap";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import axiosInstance from "../axiosInstance";
+import { Loader2, X } from "lucide-react";
 import { useWatch } from "react-hook-form";
+import axiosInstance from "../axiosInstance";
+import { Button } from "@/components/ui/button";
+import { FieldError, Input } from "@/components/ui/field";
+import { categoryLabel } from "@/lib/categories";
 
 const SubcategoryRow = ({
   index,
@@ -22,7 +22,6 @@ const SubcategoryRow = ({
   const [isLoading, setIsLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const timeoutRef = useRef(null);
-  const inputRef = useRef(null);
 
   const currentSubcategory = useWatch({
     control,
@@ -36,13 +35,7 @@ const SubcategoryRow = ({
   }, [currentSubcategory]);
 
   const searchSuggestions = async (searchTerm) => {
-    if (!selectedCategory) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    if (searchTerm.length < 2) {
+    if (!selectedCategory || searchTerm.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -70,13 +63,8 @@ const SubcategoryRow = ({
     setInputValue(value);
     setValue(`subcategories.${index}.name`, value);
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      searchSuggestions(value);
-    }, 300);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => searchSuggestions(value), 300);
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -87,16 +75,13 @@ const SubcategoryRow = ({
   };
 
   const handleInputFocus = () => {
-    const currentValue = inputValue;
-    if (currentValue && currentValue.length >= 2 && selectedCategory) {
+    if (inputValue.length >= 2 && selectedCategory && suggestions.length > 0) {
       setShowSuggestions(true);
     }
   };
 
   const handleInputBlur = () => {
-    setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   useEffect(() => {
@@ -106,110 +91,86 @@ const SubcategoryRow = ({
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
+  const rowErrors = errors.subcategories?.[index];
+
   return (
-    <Row className="mb-3 align-items-center position-relative" key={index}>
-      <Col md={6}>
-        <div className="position-relative">
-          <Form.Control
-            type="text"
-            placeholder={
-              !selectedCategory ? "Select category first" : "e.g. Vegetables"
-            }
-            value={inputValue}
-            onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            ref={inputRef}
-          />
+    <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] sm:grid-cols-[minmax(0,1fr)_7.5rem_2.25rem] items-start gap-2">
+      <div className="relative">
+        <Input
+          aria-label="Item name"
+          placeholder={selectedCategory ? "e.g. Vegetables" : "Item name"}
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+          autoComplete="off"
+        />
 
-          {showSuggestions && (suggestions.length > 0 || isLoading) && (
-            <div className="position-absolute top-100 start-0 end-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 mt-1 max-h-32 overflow-y-auto">
-              {isLoading ? (
-                <div className="p-2 text-center text-gray-500">
-                  <div
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
+        {showSuggestions && (
+          <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+            {isLoading ? (
+              <p className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" /> Searching...
+              </p>
+            ) : suggestions.length === 0 ? (
+              <p className="p-3 text-xs text-muted-foreground">No suggestions found</p>
+            ) : (
+              <>
+                <p className="border-b border-border px-3 py-2 text-xs text-muted-foreground">
+                  Suggestions for {categoryLabel(selectedCategory)}
+                </p>
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-muted"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    onMouseDown={(e) => e.preventDefault()}
                   >
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  Searching...
-                </div>
-              ) : (
-                <>
-                  <div className="p-2 bg-purple-50 border-bottom border-gray-200">
-                    <small className="text-purple-600 fw-semibold">
-                      Suggestions for {selectedCategory}
-                    </small>
-                  </div>
-                  {suggestions.map((suggestion, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2 hover:bg-purple-50 cursor-pointer border-bottom border-gray-100 last:border-bottom-0"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      onMouseDown={(e) => e.preventDefault()}
-                    >
-                      <div className="text-sm text-gray-700">{suggestion}</div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-
-          {showSuggestions && !isLoading && suggestions.length === 0 && (
-            <div className="position-absolute top-100 start-0 end-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 mt-1 p-2">
-              <small className="text-muted">No suggestions found</small>
-            </div>
-          )}
-        </div>
-
-        {errors.subcategories?.[index]?.name && (
-          <p className="text-danger small mt-1">
-            {errors.subcategories[index].name.message}
-          </p>
+                    {suggestion}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         )}
-      </Col>
+        <FieldError className="mt-1">{rowErrors?.name?.message}</FieldError>
+      </div>
 
-      <Col md={4}>
-        <Form.Control
+      <div>
+        <Input
           type="number"
-          placeholder="Amount (KES)"
+          step="any"
+          aria-label="Amount in KES"
+          placeholder="KES"
           {...register(`subcategories.${index}.amount`, {
             required: "Amount is required",
             min: { value: 1, message: "Must be greater than 0" },
             valueAsNumber: true,
           })}
         />
+        <FieldError className="mt-1">{rowErrors?.amount?.message}</FieldError>
+      </div>
 
-        {errors.subcategories?.[index]?.amount && (
-          <p className="text-danger small mt-1">
-            {errors.subcategories[index].amount.message}
-          </p>
-        )}
-      </Col>
-
-      <Col md="auto">
-        <Button
-          variant="link"
-          type="button"
-          onClick={() => {
-            clearErrors(`subcategories.${index}`);
-            unregister(`subcategories.${index}`);
-            remove(index);
-          }}
-          className="p-0 text-danger"
-          title="Remove this subcategory"
-        >
-          <FaMinusCircle size={22} />
-        </Button>
-      </Col>
-    </Row>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Remove item"
+        className="mt-0.5"
+        onClick={() => {
+          clearErrors(`subcategories.${index}`);
+          unregister(`subcategories.${index}`);
+          remove(index);
+        }}
+      >
+        <X />
+      </Button>
+    </div>
   );
 };
+
 export default SubcategoryRow;

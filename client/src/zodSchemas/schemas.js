@@ -43,17 +43,22 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Password is at least 8 characters long"),
 });
 
-export const registerSchema = z.object({
-  name: z.string().min(1, "Provide a valid name"),
-  goal: z.string().min(1, "Provide a valid goal"),
-  age: z.number("Enter a valid age").min(1, "Enter a valid age"),
-  occupation: z.string().min(1, "Provide a valid occupation"),
-  email: z.string().email("Provide a valid email"),
-  password: z.string().min(8, "Password has to be at least 8 characters"),
-  confirmPassword: z
-    .string()
-    .min(8, "Password has to be at least 8 characters"),
-});
+export const registerSchema = z
+  .object({
+    name: z.string().min(1, "Provide a valid name"),
+    goal: z.string().min(1, "Provide a valid goal"),
+    age: z.number("Enter a valid age").min(1, "Enter a valid age"),
+    occupation: z.string().min(1, "Provide a valid occupation"),
+    email: z.string().email("Provide a valid email"),
+    password: z.string().min(8, "Password has to be at least 8 characters"),
+    confirmPassword: z
+      .string()
+      .min(8, "Password has to be at least 8 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export const profileSchema = z.object({
   goal: z.string().min(5, "Provide a valid goal"),

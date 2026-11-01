@@ -55,6 +55,27 @@ export const implementNotificationAction = async (req, res) => {
   const { action, newAmount } = req.body;
 
   try {
+    const [[notification]] = await connection.execute(
+      "SELECT id FROM notifications WHERE id = ? AND user_id = ?",
+      [notificationId, userId]
+    );
+    if (!notification) {
+      return res.status(404).json({
+        error: true,
+        message: "Notification not found.",
+      });
+    }
+
+    if (
+      action === "set-custom-limit" &&
+      !(Number(newAmount) > 0 && Number(newAmount) <= 1_000_000_000)
+    ) {
+      return res.status(400).json({
+        error: true,
+        message: "Enter a limit greater than 0.",
+      });
+    }
+
     if (action === "deactivate-budget") {
       await connection.execute(
         " UPDATE budget SET status = 'inactive' WHERE user_id = ? AND budget_id = (SELECT budget_id FROM notifications WHERE id = ? ) ",
@@ -73,7 +94,7 @@ export const implementNotificationAction = async (req, res) => {
       );
 
       const [[{ total_spent }]] = await connection.execute(
-        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
+        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ? AND status = 'active'`,
         [budget.budget_id]
       );
       if (Number(total_spent) <= Number(budget.amount)) {
@@ -93,7 +114,7 @@ export const implementNotificationAction = async (req, res) => {
       );
 
       const [[{ total_spent }]] = await connection.execute(
-        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ?`,
+        `SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expense WHERE budget_id = ? AND status = 'active'`,
         [budget.budget_id]
       );
       if (Number(total_spent) <= Number(budget.amount)) {

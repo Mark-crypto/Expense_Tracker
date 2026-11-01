@@ -1,26 +1,18 @@
-import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const spinnerVariants = {
-  animate: {
-    rotate: 360,
-    transition: {
-      repeat: Infinity,
-      duration: 1,
-      ease: "linear",
-    },
-  },
-};
-
-const Loading = () => {
-  return (
-    <div className="flex items-center justify-center h-screen bg-white dark:bg-gray-900">
-      <motion.div
-        variants={spinnerVariants}
-        animate="animate"
-        className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
-      />
-    </div>
-  );
-};
+const Loading = ({ fullScreen = false, className }) => (
+  <div
+    role="status"
+    aria-label="Loading"
+    className={cn(
+      "flex items-center justify-center",
+      fullScreen ? "min-h-screen" : "min-h-64",
+      className
+    )}
+  >
+    <Loader2 className="size-6 animate-spin text-primary" />
+  </div>
+);
 
 export default Loading;

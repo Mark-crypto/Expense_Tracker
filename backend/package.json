@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test --test-force-exit \"tests/*.test.js\"",
     "start": "nodemon index.js"
   },
   "keywords": [],
@@ -23,12 +23,15 @@
     "express-session": "^1.18.1",
     "express-validator": "^7.3.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.14.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.9",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
-    "redis": "^4.7.0"
+    "pdfjs-dist": "^5.4.449",
+    "redis": "^4.7.0",
+    "tesseract.js": "^4.0.6"
   }
 }

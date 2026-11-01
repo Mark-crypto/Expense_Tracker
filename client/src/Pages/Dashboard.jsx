@@ -1,129 +1,109 @@
-import { motion } from "framer-motion";
-import Navbar from "../components/Navbar";
-import BarChart1 from "../components/BarChart1";
-import BarChart2 from "../components/BarChart2";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowDownToLine, CreditCard, Landmark, Plus, Tag, Upload } from "lucide-react";
 import axiosInstance from "@/axiosInstance";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { EmptyState, ErrorState, PageHeader, StatCard } from "@/components/ui/common";
 import Loading from "@/components/Loading";
-import { toast, ToastContainer } from "react-toastify";
-import TopFiveRolling from "@/components/TopFiveRolling";
-import BottomFiveRolling from "@/components/BottomFiveRolling";
-import DashboardCard from "@/components/DashboardCard";
-import LimitNotification from "@/components/LimitNotification";
+import CategoryBars from "@/components/charts/CategoryBars";
+import MonthlyChart from "@/components/charts/MonthlyChart";
+import ExpenseMiniTable from "@/components/ExpenseMiniTable";
+import { useAuth } from "@/hooks/useAuth";
+import { categoryLabel } from "@/lib/categories";
+import { formatKES, titleCase } from "@/lib/format";
 
 const Dashboard = () => {
-  const { data, error, isLoading } = useQuery({
+  const { user } = useAuth();
+  const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["dashboard"],
-    queryFn: async () => {
-      return await axiosInstance.get(`/dashboard`);
-    },
+    queryFn: async () => await axiosInstance.get("/dashboard"),
   });
 
-  if (isLoading) {
-    return <Loading />;
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorState onRetry={refetch} />;
+
+  const report = data?.data;
+  const firstName = titleCase(user?.name?.split(" ")[0]);
+  const hasExpenses = report?.allCategories?.length > 0;
+
+  const header = (
+    <PageHeader
+      title={firstName ? `Hello, ${firstName}` : "Dashboard"}
+      description="Here's where your money has gone."
+      actions={
+        <Link to="/expense-form?method=mpesa">
+          <Button variant="secondary" tabIndex={-1}>
+            <Upload /> Import M-Pesa
+          </Button>
+        </Link>
+      }
+    />
+  );
+
+  if (!hasExpenses) {
+    return (
+      <>
+        {header}
+        <Card>
+          <EmptyState
+            icon={ArrowDownToLine}
+            title="Your dashboard is waiting for its first expense"
+            description="Add an expense by hand or import an M-Pesa statement to see your spending here."
+            action={
+              <Link to="/expense-form">
+                <Button tabIndex={-1}>
+                  <Plus /> Add expense
+                </Button>
+              </Link>
+            }
+          />
+        </Card>
+      </>
+    );
   }
-  if (error) {
-    console.log(error);
-    toast.error("Something went wrong");
-  }
+
   return (
     <>
-      <div className="flex min-h-screen bg-gray-100 text-gray-800 font-sans">
-        <div className="w-1/5 ">
-          <Navbar />
-        </div>
+      {header}
 
-        <div className="w-4/5 p-6 space-y-6">
-          <ToastContainer />
-          <LimitNotification />
-          <motion.h2
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="text-3xl font-semibold text-purple-700"
-            style={{ fontWeight: "600", color: "#9D00FF", fontSize: "30px" }}
-          >
-            Dashboard
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <DashboardCard
-              title="Debt"
-              data={data?.data?.debtAmount[0]?.debt}
-            />
-            <DashboardCard
-              title="Top Category"
-              data={data?.data?.topCategory[0]?.category}
-            />
-            <DashboardCard
-              title="Bottom Category"
-              data={data?.data?.lastCategory[0]?.category}
-            />
-            <DashboardCard
-              title="Total Spent"
-              data={data?.data?.totalExpense[0]?.total}
-            />
-          </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard label="Total spent" icon={CreditCard} value={formatKES(report?.totalExpense?.[0]?.total)} />
+        <StatCard label="Debt repayments" icon={Landmark} value={formatKES(report?.debtAmount?.[0]?.debt)} />
+        <StatCard
+          label="Most frequent"
+          icon={Tag}
+          value={categoryLabel(report?.topCategory?.[0]?.category)}
+          valueClassName="whitespace-normal text-base leading-6 sm:text-lg sm:leading-8"
+        />
+        <StatCard
+          label="Least frequent"
+          icon={Tag}
+          value={categoryLabel(report?.lastCategory?.[0]?.category)}
+          valueClassName="whitespace-normal text-base leading-6 sm:text-lg sm:leading-8"
+        />
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white rounded-2xl shadow p-4"
-            >
-              <h3
-                className="text-lg font-medium mb-2 text-purple-600"
-                style={{
-                  fontWeight: "500",
-                  color: "#9D00FF",
-                  fontSize: "18px",
-                  marginBottom: "8px",
-                }}
-              >
-                Monthly Spend
-              </h3>
-              <BarChart1 data={data?.data?.monthlySum} />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white rounded-2xl shadow p-4"
-            >
-              <h3
-                className="text-lg font-medium mb-2 text-purple-600"
-                style={{
-                  fontWeight: "500",
-                  color: "#9D00FF",
-                  fontSize: "18px",
-                  marginBottom: "8px",
-                }}
-              >
-                All Categories
-              </h3>
-              <BarChart2 data={data?.data?.allCategories} />
-            </motion.div>
-          </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader title="Monthly spending" description="Last 12 months, in KES" />
+          <CardContent>
+            <div className="h-72">
+              <MonthlyChart data={report?.monthlySum} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader title="Spending by category" description="Largest first" />
+          <CardContent>
+            <CategoryBars items={report?.allCategories} />
+          </CardContent>
+        </Card>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="bg-white rounded-xl shadow p-4"
-            >
-              <TopFiveRolling data={data?.data?.topFive} />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="bg-white rounded-xl shadow p-4"
-            >
-              <BottomFiveRolling data={data?.data?.bottomFive} />
-            </motion.div>
-          </div>
-        </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <ExpenseMiniTable title="First five expenses" description="Your earliest records" rows={report?.topFive} />
+        <ExpenseMiniTable title="Latest five expenses" description="Your newest records" rows={report?.bottomFive} />
       </div>
     </>
   );
