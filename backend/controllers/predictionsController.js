@@ -1,12 +1,18 @@
 import connection from "../database.js";
+import { loadAccounts } from "../utils/accounts.js";
 import { buildForecast, syncForecastAlerts } from "../utils/forecast.js";
+import { captureDue, loadTracked } from "../utils/recurring.js";
+import { buildSafeToSpend } from "../utils/safeToSpend.js";
 
 export const getForecast = async (req, res) => {
   const userId = parseInt(req.user.userId);
   try {
+    await captureDue(userId);
     const forecast = await buildForecast(userId);
     await syncForecastAlerts(userId, forecast);
-    res.status(200).json(forecast);
+    const { accounts } = await loadAccounts(userId);
+    const safe = await buildSafeToSpend(userId, accounts, await loadTracked(userId));
+    res.status(200).json({ ...forecast, safeToday: safe.ready ? safe.daily : null });
   } catch (error) {
     console.error("Error in getForecast:", error);
     res.status(500).json({ error: true, message: "Your forecast could not be loaded." });

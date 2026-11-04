@@ -1,48 +1,101 @@
 import connection from "../database.js";
 import ExcelJS from "exceljs";
-import { loadBudgets, refreshUserBudgets } from "../utils/budgetStatus.js";
+import {
+  buildPlan,
+  buildPlanSummary,
+  buildReview,
+  committedByCategory,
+  isRegular,
+  loadChanges,
+  regularBudgetFor,
+  saveLimit,
+  suggestedLimit,
+} from "../utils/budgetPlans.js";
+import { currentMonth, loadAlertSettings, loadBudgets, refreshUserBudgets, shiftMonth } from "../utils/budgetStatus.js";
 
+const ownBudget = async (userId, id) =>
+  (await loadBudgets(userId)).budgets.find((budget) => budget.budget_id === Number(id));
+
+const clashMessage = (category, name) => `${name.replace(/\b\w/g, (c) => c.toUpperCase())} already covers this category. Edit it, or pause it first.`;
+
+const insertBudget = async (userId, { name, category, amount, subcategories, startDate, endDate, period = "monthly", rollover, alertMode, warnAt }) => {
+  const once = period === "once";
+  const [result] = await connection.execute(
+    `INSERT INTO budget (name, category, amount, email_checked, user_id, subcategories, start_date, end_date, has_time_limit, period, rollover, alert_mode, warn_at)
+    VALUES (?, ?, ?, 'checked', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      name,
+      category,
+      amount,
+      userId,
+      JSON.stringify(subcategories ?? []),
+      once ? (startDate ?? null) : null,
+      once ? (endDate ?? null) : null,
+      once ? 1 : 0,
+      period,
+      rollover && period === "monthly" ? 1 : 0,
+      alertMode ?? null,
+      warnAt ?? null,
+    ]
+  );
+  await connection.execute(
+    "INSERT INTO budget_limits (budget_id, user_id, from_month, only_month, amount) VALUES (?, ?, ?, 0, ?)",
+    [result.insertId, userId, currentMonth(), amount]
+  );
+  return result.insertId;
+};
+
+const MAX_REPORT_MONTHS = 36;
+const isMonth = (value) => /^\d{4}-\d{2}$/.test(value ?? "");
+
+// One row per budget per month in the chosen period: its limit, what was spent and what was left.
 export const getBudgetReport = async (req, res) => {
   const id = parseInt(req.user.userId);
+  const to = isMonth(req.query.to?.slice(0, 7)) ? req.query.to.slice(0, 7) : currentMonth();
+  const wanted = isMonth(req.query.from?.slice(0, 7)) ? req.query.from.slice(0, 7) : to;
+  const from = wanted > to ? to : wanted;
   try {
-    const [budgets] = await connection.execute(
-      `SELECT * FROM budget WHERE user_id = ?`,
-      [id]
-    );
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Budgets Report");
-
+    const sheet = workbook.addWorksheet("Budgets");
     sheet.columns = [
-      { header: "Name", key: "name", width: 15 },
-      { header: "Category", key: "category", width: 20 },
-      { header: "Amount", key: "amount", width: 15 },
-      { header: "Email", key: "email", width: 30 },
-      { header: "Subcategories", key: "subcategories", width: 30 },
+      { header: "Month", key: "month", width: 12 },
+      { header: "Budget", key: "name", width: 22 },
+      { header: "Category", key: "category", width: 22 },
+      { header: "Period", key: "period", width: 10 },
+      { header: "Limit (KES)", key: "limit", width: 14 },
+      { header: "Spent (KES)", key: "spent", width: 14 },
+      { header: "Left (KES)", key: "left", width: 14 },
+      { header: "Result", key: "result", width: 12 },
     ];
+    sheet.getRow(1).font = { bold: true };
 
-    budgets.forEach((budget) => {
-      sheet.addRow({
-        name: budget.name,
-        category: budget.category,
-        amount: budget.amount,
-        email: budget.email,
-        subcategories: budget.subcategories,
-      });
-    });
+    for (let month = from, count = 0; month <= to && count < MAX_REPORT_MONTHS; month = shiftMonth(month, 1), count++) {
+      const { budgets } = await loadBudgets(id, month);
+      budgets
+        .filter((budget) => budget.firstMonth <= month && budget.status !== "inactive")
+        .forEach((budget) => {
+          const left = Math.round((budget.limit - budget.spent) * 100) / 100;
+          sheet.addRow({
+            month,
+            name: budget.name,
+            category: budget.category,
+            period: budget.period,
+            limit: budget.limit,
+            spent: budget.spent,
+            left,
+            result: left < 0 ? "Over" : "Within",
+          });
+        });
+    }
+    if (sheet.rowCount === 1) sheet.addRow({ month: "No budgets in this period" });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=budgets.xlsx");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=budgets-${from}-to-${to}.xlsx`);
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.log("Error during budget report generation:", error);
-    return res.status(500).json({
-      error: true,
-      message: "An error occurred while generating the budget report.",
-    });
+    return res.status(500).json({ error: true, message: "The budget report could not be made." });
   }
 };
 
@@ -117,40 +170,13 @@ export async function getSingleBudget(req, res) {
 // Add a budget
 export async function addBudget(req, res) {
   const userId = parseInt(req.user.userId);
-  const {
-    name,
-    category,
-    amount,
-    email,
-    subcategories,
-    startDate,
-    endDate,
-    timeLimit,
-  } = req.body;
-  const send_email = email ? "checked" : "unchecked";
   try {
-    const [response] = await connection.execute(
-      "INSERT INTO budget (name,category, amount, email_checked, user_id, subcategories, start_date, end_date, has_time_limit) VALUES(?,?,?,?,?,?,?,?,?)",
-      [
-        name,
-        category,
-        amount,
-        send_email,
-        userId,
-        JSON.stringify(subcategories),
-        startDate ?? null,
-        endDate ?? null,
-        timeLimit ? 1 : 0,
-      ]
-    );
-    await refreshUserBudgets(userId, req.user.email);
-    if (response.length == 0) {
-      return res.status(400).json({
-        error: true,
-        message: "An error occurred. Budget was not created",
-      });
+    if ((req.body.period ?? "monthly") !== "once") {
+      const clash = await regularBudgetFor(userId, req.body.category);
+      if (clash) return res.status(409).json({ error: true, message: clashMessage(req.body.category, clash.name) });
     }
-
+    await insertBudget(userId, req.body);
+    await refreshUserBudgets(userId, req.user.email);
     res.status(201).json({ message: "Budget created successfully" });
   } catch (error) {
     console.log("Error:", error);
@@ -161,18 +187,52 @@ export async function addBudget(req, res) {
   }
 }
 
-// Change a budget's limit
+// Change the details of a budget. Its limit changes through updateBudgetLimit.
+export async function updateBudget(req, res) {
+  const userId = parseInt(req.user.userId);
+  const { name, category, subcategories, startDate, endDate, period, rollover, alertMode, warnAt } = req.body;
+  try {
+    const budget = await ownBudget(userId, req.params.id);
+    if (!budget) return res.status(404).json({ error: true, message: "Budget not found." });
+    const nextPeriod = period ?? budget.period;
+    const once = nextPeriod === "once";
+    if (!once) {
+      const clash = await regularBudgetFor(userId, category, budget.budget_id);
+      if (clash) return res.status(409).json({ error: true, message: clashMessage(category, clash.name) });
+    }
+    await connection.execute(
+      `UPDATE budget SET name = ?, category = ?, subcategories = ?, start_date = ?, end_date = ?, has_time_limit = ?,
+        period = ?, rollover = ?, alert_mode = ?, warn_at = ? WHERE budget_id = ?`,
+      [
+        name.trim(),
+        category,
+        JSON.stringify(subcategories ?? []),
+        once ? (startDate ?? null) : null,
+        once ? (endDate ?? null) : null,
+        once ? 1 : 0,
+        nextPeriod,
+        rollover && nextPeriod === "monthly" ? 1 : 0,
+        alertMode ?? null,
+        warnAt ?? null,
+        budget.budget_id,
+      ]
+    );
+    await refreshUserBudgets(userId, req.user.email);
+    res.status(200).json({ message: "Budget saved." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "This budget could not be saved." });
+  }
+}
+
+// Change a budget's limit, for this month alone or from now on.
 export async function updateBudgetLimit(req, res) {
   const userId = parseInt(req.user.userId);
-  const budgetId = parseInt(req.params.id);
+  const { amount, scope = "forward" } = req.body;
   try {
-    const [response] = await connection.execute(
-      "UPDATE budget SET amount = ? WHERE budget_id = ? AND user_id = ?",
-      [req.body.amount, budgetId, userId]
-    );
-    if (response.affectedRows === 0) {
-      return res.status(404).json({ error: true, message: "Budget not found." });
-    }
+    const budget = await ownBudget(userId, req.params.id);
+    if (!budget) return res.status(404).json({ error: true, message: "Budget not found." });
+    await saveLimit(userId, budget, Number(amount), scope);
     await refreshUserBudgets(userId, req.user.email);
     res.status(200).json({ message: "Budget limit updated." });
   } catch (error) {
@@ -184,33 +244,119 @@ export async function updateBudgetLimit(req, res) {
   }
 }
 
+// Moves part of one budget's room to another for this month, keeping the total the same.
+export async function moveBudgetMoney(req, res) {
+  const userId = parseInt(req.user.userId);
+  const amount = Number(req.body.amount);
+  try {
+    const { budgets } = await loadBudgets(userId);
+    const from = budgets.find((budget) => budget.budget_id === Number(req.body.fromId));
+    const to = budgets.find((budget) => budget.budget_id === Number(req.body.toId));
+    if (!from || !to) return res.status(404).json({ error: true, message: "Budget not found." });
+    if (from.budget_id === to.budget_id) {
+      return res.status(400).json({ error: true, message: "Choose two different budgets." });
+    }
+    if (amount > from.limit - from.spent || amount > from.baseLimit) {
+      return res.status(400).json({ error: true, message: `${from.name} doesn't have that much left to move.` });
+    }
+    await saveLimit(userId, from, from.baseLimit - amount, "month");
+    await saveLimit(userId, to, to.baseLimit + amount, "month");
+    await connection.execute(
+      "UPDATE budget_changes SET scope = 'move' WHERE user_id = ? AND budget_id IN (?, ?) AND scope = 'month' AND month = ? ORDER BY id DESC LIMIT 2",
+      [userId, from.budget_id, to.budget_id, currentMonth()]
+    );
+    await refreshUserBudgets(userId, req.user.email);
+    res.status(200).json({ message: "Money moved." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "This move could not be saved." });
+  }
+}
+
 export async function getBudgetOverview(req, res) {
   const userId = parseInt(req.user.userId);
-  const month = /^\d{4}-\d{2}$/.test(req.query.month ?? "") ? req.query.month : undefined;
+  const month = /^\d{4}-\d{2}$/.test(req.query.month ?? "") ? req.query.month : currentMonth();
   try {
     await refreshUserBudgets(userId, req.user.email);
-    const { emailChecked, ...overview } = await loadBudgets(userId, month);
-    res.status(200).json(overview);
+    const overview = await loadBudgets(userId, month);
+    const changes = await loadChanges(userId);
+    const committed = month === currentMonth() ? await committedByCategory(userId) : {};
+    const regular = overview.budgets.filter((budget) => isRegular(budget) && ["active", "exceeded"].includes(budget.status));
+    const counts = Object.groupBy(regular, (budget) => budget.category);
+
+    res.status(200).json({
+      ...overview,
+      budgets: overview.budgets.map((budget) => ({
+        ...budget,
+        changes: (changes.get(budget.budget_id) ?? []).slice(0, 5),
+        committed: isRegular(budget) && budget.period === "monthly" ? Math.round(committed[budget.category] ?? 0) : 0,
+      })),
+      overlaps: Object.entries(counts)
+        .filter(([, list]) => list.length > 1)
+        .map(([category, list]) => ({ category, budgets: list.map(({ budget_id, name }) => ({ budget_id, name })) })),
+      plan: await buildPlanSummary(userId, overview.budgets),
+      review: await buildReview(userId, month === currentMonth() ? shiftMonth(month, -1) : month),
+      alertSettings: await loadAlertSettings(userId),
+    });
   } catch (error) {
     console.log("Error:", error);
     return res.status(500).json({ error: true, message: "Your budgets could not be loaded." });
   }
 }
 
-// Average monthly spending in a category over the last three full months.
 export async function suggestBudget(req, res) {
-  const userId = parseInt(req.user.userId);
   try {
-    const [[{ total }]] = await connection.execute(
-      `SELECT COALESCE(SUM(amount), 0) AS total FROM expense
-      WHERE user_id = ? AND category = ? AND status = 'active'
-        AND date_created >= DATE_FORMAT(CURDATE() - INTERVAL 3 MONTH, '%Y-%m-01')`,
-      [userId, req.query.category ?? ""]
-    );
-    res.status(200).json({ average: Math.round(Number(total) / 3) });
+    res.status(200).json({ average: await suggestedLimit(parseInt(req.user.userId), req.query.category ?? "") });
   } catch (error) {
     console.log("Error:", error);
     return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+}
+
+export async function getPlan(req, res) {
+  try {
+    res.status(200).json(await buildPlan(parseInt(req.user.userId)));
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Your plan could not be loaded." });
+  }
+}
+
+// Creates budgets for new categories and updates the rest from this month on.
+export async function savePlan(req, res) {
+  const userId = parseInt(req.user.userId);
+  try {
+    const { budgets } = await loadBudgets(userId);
+    for (const { category, name, amount } of req.body.rows) {
+      const clash = await regularBudgetFor(userId, category);
+      if (!clash) {
+        await insertBudget(userId, { name: name.trim().toLowerCase(), category, amount });
+        continue;
+      }
+      const budget = budgets.find((row) => row.budget_id === clash.budget_id);
+      if (budget.baseLimit !== Number(amount)) await saveLimit(userId, budget, Number(amount), "forward");
+    }
+    await refreshUserBudgets(userId, req.user.email);
+    res.status(200).json({ message: "Your plan is saved." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Your plan could not be saved." });
+  }
+}
+
+export async function saveAlertSettings(req, res) {
+  const { mode, warnAt, emails } = req.body;
+  try {
+    await connection.execute("UPDATE users SET budget_alert_mode = ?, budget_warn_at = ?, budget_emails = ? WHERE user_id = ?", [
+      mode,
+      warnAt,
+      emails ? 1 : 0,
+      parseInt(req.user.userId),
+    ]);
+    res.status(200).json({ message: "Alert settings saved." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Your settings could not be saved." });
   }
 }
 
@@ -218,6 +364,11 @@ export async function updateBudgetStatus(req, res) {
   const userId = parseInt(req.user.userId);
   const budgetId = parseInt(req.params.id);
   try {
+    if (!req.body.paused) {
+      const budget = await ownBudget(userId, budgetId);
+      const clash = budget && isRegular(budget) && (await regularBudgetFor(userId, budget.category, budgetId));
+      if (clash) return res.status(409).json({ error: true, message: clashMessage(budget.category, clash.name) });
+    }
     const [response] = await connection.execute(
       "UPDATE budget SET status = ? WHERE budget_id = ? AND user_id = ?",
       [req.body.paused ? "inactive" : "active", budgetId, userId]
@@ -247,10 +398,9 @@ export async function deleteBudget(req, res) {
         "UPDATE expense SET budget_id = NULL, budgeted = 0 WHERE budget_id = ? AND user_id = ?",
         [id, userId]
       );
-      await connection.execute("DELETE FROM notifications WHERE budget_id = ? AND user_id = ?", [
-        id,
-        userId,
-      ]);
+      for (const table of ["notifications", "budget_limits", "budget_changes", "budget_alerts"]) {
+        await connection.execute(`DELETE FROM ${table} WHERE budget_id = ? AND user_id = ?`, [id, userId]);
+      }
     }
     if (response.length == 0) {
       return res.status(400).json({

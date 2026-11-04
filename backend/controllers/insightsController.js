@@ -1,17 +1,9 @@
-import connection from "../database.js";
-import { buildXray } from "../utils/buildXray.js";
+import { buildMoneyXray } from "../utils/moneyXray.js";
 
 export const getXray = async (req, res) => {
   const userId = parseInt(req.user.userId);
   try {
-    const [rows] = await connection.execute(
-      `SELECT DATE_FORMAT(occurred_at, '%Y-%m-%d %H:%i:%s') AS occurredAt,
-        kind, counterparty, paid_in AS paidIn, withdrawn
-      FROM mpesa_transactions
-      WHERE user_id = ?`,
-      [userId]
-    );
-    res.status(200).json({ xray: buildXray(rows) });
+    res.status(200).json({ xray: await buildMoneyXray(userId, req.query.period) });
   } catch (error) {
     console.log("Error:", error);
     res.status(500).json({

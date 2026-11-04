@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -13,6 +14,21 @@ import { Field, Input } from "@/components/ui/field";
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [params, setParams] = useSearchParams();
+
+  // Confirms a log-out, once.
+  useEffect(() => {
+    const ended = params.get("ended");
+    if (!params.get("loggedOut") && !ended) return;
+    const message =
+      ended === "idle"
+        ? "You were logged out after an hour without activity. Log in again to carry on."
+        : ended
+          ? "Your session has ended. Log in again to carry on."
+          : "You've been logged out.";
+    toast.info(message, { toastId: "logged-out", autoClose: ended ? false : 4000 });
+    setParams({}, { replace: true });
+  }, [params, setParams]);
 
   const {
     handleSubmit,

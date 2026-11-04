@@ -4,17 +4,26 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import { sendPasswordChangedEmail } from "../utils/emailAlert.js";
+import { LOCK_MS, lockDevice, MAX_TRIES, nairobiTime, tellOwner } from "../utils/security.js";
+import { ACCESS_MS, IDLE_MS, RENEW_MS, SESSION_MAX_MS } from "../utils/session.js";
 
 dotenv.config();
 
 export const signUp = async (req, res) => {
-  const { name, email, password, goal, age, occupation } = req.body;
+  const { name, email, password, goal, age, occupation, acceptPolicy } = req.body;
 
   // Input validation
   if (!name || !email || !password) {
     return res.status(400).json({
       error: true,
       message: "Name, email, and password are required",
+    });
+  }
+  // Consent under the Data Protection Act is recorded with the time it was given.
+  if (acceptPolicy !== true) {
+    return res.status(400).json({
+      error: true,
+      message: "Please read and accept the privacy policy to create an account.",
     });
   }
 
@@ -33,7 +42,7 @@ export const signUp = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const response = await connection.execute(
-      "INSERT INTO users (name, email, password, goal, age, occupation) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (name, email, password, goal, age, occupation, policy_accepted_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
         name,
         email,
@@ -41,6 +50,7 @@ export const signUp = async (req, res) => {
         goal || null,
         age || null,
         occupation || null,
+        Date.now(),
       ]
     );
 
@@ -80,12 +90,48 @@ export const login = async (req, res) => {
       });
     }
 
+    // On top of the limit per network: 5 wrong passwords lock this email for 15 minutes.
+    const lockedUntil = Number(user[0].login_locked_until ?? 0);
+    if (lockedUntil > Date.now()) {
+      return res.status(429).json({
+        error: true,
+        message: `Too many wrong passwords for this account. Try again after ${nairobiTime(lockedUntil)}, or reset your password.`,
+      });
+    }
+
     const doPasswordsMatch = await bcrypt.compare(password, user[0].password);
     if (!doPasswordsMatch) {
+      const failures = user[0].login_failures + 1;
+      if (failures >= MAX_TRIES) {
+        const until = Date.now() + LOCK_MS;
+        await connection.execute(
+          "UPDATE users SET login_failures = 0, login_locked_until = ? WHERE user_id = ?",
+          [until, user[0].user_id]
+        );
+        await tellOwner(
+          user[0].email,
+          "Someone tried to sign in to your account",
+          "There were 5 wrong passwords for your Expense Tracker account, so it's locked for 15 minutes."
+        );
+        return res.status(429).json({
+          error: true,
+          message: `Too many wrong passwords for this account. Try again after ${nairobiTime(until)}, or reset your password.`,
+        });
+      }
+      await connection.execute("UPDATE users SET login_failures = ? WHERE user_id = ?", [
+        failures,
+        user[0].user_id,
+      ]);
       return res.status(400).json({
         error: true,
         message: "Invalid email or password",
       });
+    }
+    if (user[0].login_failures > 0 || user[0].login_locked_until) {
+      await connection.execute(
+        "UPDATE users SET login_failures = 0, login_locked_until = NULL WHERE user_id = ?",
+        [user[0].user_id]
+      );
     }
 
     // Check if user is active (if you have an active status field)
@@ -104,7 +150,7 @@ export const login = async (req, res) => {
         email: user[0].email,
       },
       process.env.JWT_ACCESS_TOKEN,
-      { expiresIn: "15m" }
+      { expiresIn: ACCESS_MS / 1000 }
     );
 
     const refreshToken = jwt.sign(
@@ -115,26 +161,26 @@ export const login = async (req, res) => {
         email: user[0].email,
       },
       process.env.JWT_REFRESH_TOKEN,
-      { expiresIn: "7d" }
+      { expiresIn: SESSION_MAX_MS / 1000 }
     );
 
     const userId = user[0].user_id;
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + SESSION_MAX_MS);
 
     await connection.execute(
-      "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
-      [userId, refreshToken, expiresAt]
+      "INSERT INTO refresh_tokens (user_id, token, expires_at, last_used_at) VALUES (?, ?, ?, ?)",
+      [userId, refreshToken, expiresAt, Date.now()]
     );
 
     res.cookie("accessToken", accessToken, {
-      maxAge: 15 * 60 * 1000,
+      maxAge: ACCESS_MS,
       httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
     });
 
     res.cookie("refreshToken", refreshToken, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: SESSION_MAX_MS,
       httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
@@ -171,6 +217,7 @@ export const logout = async (req, res) => {
 
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
+    lockDevice(res);
 
     res.status(200).json({
       error: false,
@@ -197,7 +244,7 @@ export const refresh = async (req, res) => {
     }
 
     const [tokens] = await connection.execute(
-      "SELECT token, expires_at FROM refresh_tokens WHERE token = ?",
+      "SELECT token, expires_at, last_used_at FROM refresh_tokens WHERE token = ?",
       [refreshToken]
     );
 
@@ -221,6 +268,18 @@ export const refresh = async (req, res) => {
       });
     }
 
+    // Nothing used it for too long: the person has walked away, so they sign in again.
+    const lastUsed = Number(tokenData.last_used_at ?? Date.now());
+    if (Date.now() - lastUsed > IDLE_MS + RENEW_MS) {
+      await connection.execute("DELETE FROM refresh_tokens WHERE token = ?", [refreshToken]);
+      return res.status(401).json({
+        error: true,
+        reason: "idle",
+        message: "You were logged out after a while without activity. Please log in again.",
+      });
+    }
+    await connection.execute("UPDATE refresh_tokens SET last_used_at = ? WHERE token = ?", [Date.now(), refreshToken]);
+
     let user;
     try {
       user = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);
@@ -242,11 +301,11 @@ export const refresh = async (req, res) => {
         email: user.email,
       },
       process.env.JWT_ACCESS_TOKEN,
-      { expiresIn: "15m" }
+      { expiresIn: ACCESS_MS / 1000 }
     );
 
     res.cookie("accessToken", newAccessToken, {
-      maxAge: 15 * 60 * 1000,
+      maxAge: ACCESS_MS,
       httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
@@ -439,8 +498,8 @@ export const resetPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     await connection.execute(
-      "UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires = NULL WHERE user_id = ?",
-      [hashedPassword, user.user_id]
+      "UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires = NULL, login_failures = 0, login_locked_until = NULL, password_changed_at = ? WHERE user_id = ?",
+      [hashedPassword, Date.now(), user.user_id]
     );
 
     const htmlSuccess = `
@@ -487,104 +546,6 @@ export const resetPassword = async (req, res) => {
       error: true,
       message:
         "An error occurred while resetting your password. Please try again.",
-    });
-  }
-};
-
-export const changePassword = async (req, res) => {
-  const { currentPassword, newPassword, confirmPassword } = req.body;
-  const userId = req.user?.userId;
-
-  try {
-    if (!userId) {
-      return res.status(401).json({
-        error: true,
-        message: "Authentication required",
-      });
-    }
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return res.status(400).json({
-        error: true,
-        message: "Please provide all required fields",
-      });
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        error: true,
-        message: "New passwords do not match",
-      });
-    }
-
-    if (newPassword.length < 8) {
-      return res.status(400).json({
-        error: true,
-        message: "New password must be at least 8 characters long",
-      });
-    }
-
-    if (currentPassword === newPassword) {
-      return res.status(400).json({
-        error: true,
-        message: "New password must be different from current password",
-      });
-    }
-
-    const [users] = await connection.execute(
-      "SELECT user_id, password, email FROM users WHERE user_id = ?",
-      [userId]
-    );
-
-    if (users.length === 0) {
-      return res.status(404).json({
-        error: true,
-        message: "User not found",
-      });
-    }
-
-    const user = users[0];
-
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
-    if (!isPasswordValid) {
-      return res.status(400).json({
-        error: true,
-        message: "Current password is incorrect",
-      });
-    }
-
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-
-    await connection.execute(
-      "UPDATE users SET password = ? WHERE user_id = ?",
-      [hashedPassword, userId]
-    );
-
-    const subject = "Password Changed Successfully";
-    const text = `Your password has been changed successfully.\n\nIf you did not make this change, please contact support immediately.`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Password Changed</h2>
-        <p>Your password has been changed successfully.</p>
-        <p>If you did not make this change, please contact our support team immediately.</p>
-      </div>
-    `;
-
-    await sendPasswordChangedEmail(user.email, subject, text, html);
-
-    return res.status(200).json({
-      error: false,
-      message: "Password changed successfully",
-    });
-  } catch (error) {
-    console.error("Change password error:", error);
-    return res.status(500).json({
-      error: true,
-      message: "An error occurred while changing password",
     });
   }
 };

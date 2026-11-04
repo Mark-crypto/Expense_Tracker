@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { toast } from "react-toastify";
-import { PencilSimple, ShieldCheck, SignOut, Trash } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
+import { LockKey, PencilSimple, Question, ShieldCheck, SignOut } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -30,13 +28,6 @@ const Profile = () => {
   const { id } = useParams();
   const { isAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const { mutate: deleteAccount, isPending: isDeleting } = useMutation({
-    mutationFn: async () => await axiosInstance.delete(`/profile/${parseInt(id)}`),
-    onSuccess: () => logout(),
-    onError: () => toast.error("Could not delete your account. Please try again."),
-  });
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["profile", id],
@@ -76,6 +67,34 @@ const Profile = () => {
         </CardContent>
       </Card>
 
+      <Card className="mt-4">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Privacy & security</p>
+            <p className="text-xs text-muted-foreground">PIN, hide balances, password, signed-in devices and deleting your account.</p>
+          </div>
+          <Link to="/security">
+            <Button variant="secondary" tabIndex={-1}>
+              <LockKey /> Open
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Help</p>
+            <p className="text-xs text-muted-foreground">How Safe to spend works, statements, alerts and your data.</p>
+          </div>
+          <Link to="/help">
+            <Button variant="secondary" tabIndex={-1}>
+              <Question /> Open help
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
       <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
         {isAdmin && (
           <Link to="/admin-dashboard">
@@ -88,40 +107,6 @@ const Profile = () => {
           <SignOut /> Log out
         </Button>
       </div>
-
-      <Card className="mt-4">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">Delete account</p>
-            <p className="text-xs text-muted-foreground">
-              Permanently removes your account and all your data.
-            </p>
-          </div>
-          <Button variant="danger-ghost" onClick={() => setConfirmDelete(true)}>
-            <Trash /> Delete account
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete your account?</DialogTitle>
-            <DialogDescription>
-              Your profile, expenses, budgets and alerts will be permanently deleted. This can't be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </Button>
-            <Button variant="danger" loading={isDeleting} onClick={() => deleteAccount()}>
-              Delete my account
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent aria-describedby={undefined} className="max-h-[90vh] max-w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-lg">

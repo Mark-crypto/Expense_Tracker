@@ -1,21 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { CaretLeft, CaretRight, MagnifyingGlass, Plus, Rows, Wallet } from "@phosphor-icons/react";
+import { Bell, CalendarPlus, CaretLeft, CaretRight, Export, MagnifyingGlass, Plus, Rows, Wallet, WarningCircle } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
-import BudgetCard, { PaceBar } from "@/components/budgets/BudgetCard";
+import BudgetCard from "@/components/budgets/BudgetCard";
+import { AlertSettingsDialog, LimitDialog, MoveMoneyDialog } from "@/components/budgets/BudgetDialogs";
+import MonthReview from "@/components/budgets/MonthReview";
+import PlanMonth from "@/components/budgets/PlanMonth";
 import BudgetPanel from "@/components/budgets/BudgetPanel";
 import BudgetForm from "@/components/BudgetForm";
-import DownloadButton from "@/components/DownloadButton";
+import ExportDialog from "@/components/ExportDialog";
 import AnimatedAmount from "@/components/dashboard/AnimatedAmount";
+import { SubPage } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryIcon, categoryColor } from "@/components/ui/category";
-import { EmptyState, ErrorState } from "@/components/ui/common";
+import { EmptyState, ErrorState, Notice } from "@/components/ui/common";
 import { ConfirmDelete } from "@/components/ui/confirm-delete";
 import { Input } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { budgetProgress, budgetState, riskOf, shiftMonth } from "@/lib/budgets";
@@ -23,6 +27,7 @@ import { categoryLabel } from "@/lib/categories";
 import { monthKey, monthLabel } from "@/lib/dashboard";
 import { compactNumber, formatKES, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { usePageTour } from "@/lib/usePageTour";
 
 const TABS = [
   ["active", "Active"],
@@ -43,6 +48,8 @@ const inTab = (tab, { status, state }) => {
   if (tab === "over") return state.key === "over";
   return status === "active" || status === "exceeded";
 };
+
+const REVIEW_DAYS = 7;
 
 const useIsWide = () => {
   const query = "(min-width: 1120px)";
@@ -65,8 +72,29 @@ const Budget = () => {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("risk");
   const [compact, setCompact] = useState(false);
-  const [activeId, setActiveId] = useState(null);
-  const [creating, setCreating] = useState(null);
+  const navigate = useNavigate();
+  const { pathname, state: routeState } = useLocation();
+  const { id } = useParams();
+  // Each budget, the edit form, New budget and Plan my month have their own address.
+  const activeId = id ? Number(id) : null;
+  const view = pathname === "/budget/plan" ? "plan" : pathname === "/budget/new" ? "new" : pathname.endsWith("/edit") ? "edit" : "list";
+  const setActiveId = (next) => navigate(next ? `/budget/${next}` : "/budget");
+  const setCreating = (value) => navigate("/budget/new", { state: { category: value?.category } });
+  const setEditing = (budget) => navigate(`/budget/${budget.budget_id}/edit`);
+  const setPlanning = () => navigate("/budget/plan");
+  const [changing, setChanging] = useState(null);
+  const [moving, setMoving] = useState(null);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Alerts and emails link straight to a budget or to the alert settings.
+  useEffect(() => {
+    const opened = Number(searchParams.get("budget"));
+    if (searchParams.get("alerts")) setShowAlerts(true);
+    if (opened) navigate(`/budget/${opened}`, { replace: true });
+    else if (searchParams.get("alerts")) setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams, navigate]);
   const [toDelete, setToDelete] = useState(null);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -76,7 +104,7 @@ const Budget = () => {
   });
 
   const refresh = () => {
-    ["budgets", "dashboard-overview", "limit-notification"].forEach((queryKey) =>
+    ["budgets", "dashboard-overview", "limit-notification", "forecast"].forEach((queryKey) =>
       queryClient.invalidateQueries({ queryKey: [queryKey] })
     );
   };
@@ -86,7 +114,7 @@ const Budget = () => {
     onSuccess: (response) => {
       toast.success(response.data.message);
       setToDelete(null);
-      setActiveId(null);
+      navigate("/budget");
       refresh();
     },
     onError: () => toast.error("Could not delete this budget."),
@@ -100,6 +128,8 @@ const Budget = () => {
       }),
     [data]
   );
+
+  usePageTour("budgets", !!data);
 
   if (isLoading) {
     return (
@@ -132,12 +162,109 @@ const Budget = () => {
   const active = budgets.find((budget) => budget.budget_id === activeId);
   const showSide = active && wide;
 
+  const stepLimit = (budget, by) => setChanging({ budget, preset: Math.max(budget.baseLimit + by, 1) });
   const panelProps = active && {
     budget: active,
+    budgets,
+    onEdit: setEditing,
+    onLimit: (budget) => setChanging({ budget }),
+    onMove: setMoving,
     onClose: () => setActiveId(null),
     onChanged: refresh,
     onDelete: setToDelete,
   };
+
+  const { plan, review, overlaps, alertSettings } = data;
+  const dayOfMonth = new Date().getDate();
+  const showReview = month < thisMonth || dayOfMonth <= REVIEW_DAYS;
+  const reviewChange = ({ budget_id: id, suggestion }) => {
+    const budget = budgets.find((row) => row.budget_id === id);
+    if (budget) setChanging({ budget, preset: suggestion });
+  };
+
+  const budgetsCrumb = { label: "Budgets", to: "/budget" };
+  const dialogs = (
+    <>
+      {changing && <LimitDialog {...changing} onClose={() => setChanging(null)} />}
+      {moving && <MoveMoneyDialog {...moving} budgets={budgets} onClose={() => setMoving(null)} />}
+      {showAlerts && <AlertSettingsDialog settings={alertSettings} onClose={() => setShowAlerts(false)} />}
+      {exporting && (
+        <ExportDialog
+          months
+          title="Export budgets"
+          description="Each budget's limit, what was spent and what was left, month by month."
+          endpoint="/budget/report"
+          filename="budgets"
+          onClose={() => setExporting(false)}
+        />
+      )}
+      <ConfirmDelete
+        open={!!toDelete}
+        title={`Delete ${titleCase(toDelete?.name)}?`}
+        description="The budget is removed. Your expenses stay, and they'll no longer count toward it."
+        confirmLabel="Delete budget"
+        loading={removeBudget.isPending}
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => removeBudget.mutate(toDelete.budget_id)}
+      />
+    </>
+  );
+
+  if (view === "plan") {
+    return (
+      <SubPage crumbs={[budgetsCrumb, { label: "Plan my month" }]}>
+        <Card className="overflow-hidden p-0">
+          <PlanMonth onDone={() => navigate("/budget")} />
+        </Card>
+      </SubPage>
+    );
+  }
+
+  if (view === "new") {
+    return (
+      <SubPage crumbs={[budgetsCrumb, { label: "New budget" }]} title="New budget">
+        <Card className="p-4 sm:p-5">
+          <BudgetForm
+            category={routeState?.category}
+            onCreated={() => {
+              refresh();
+              navigate("/budget");
+            }}
+          />
+        </Card>
+      </SubPage>
+    );
+  }
+
+  if (view === "edit") {
+    const editing = budgets.find((budget) => budget.budget_id === activeId);
+    return (
+      <SubPage
+        crumbs={[budgetsCrumb, ...(editing ? [{ label: titleCase(editing.name), to: `/budget/${editing.budget_id}` }] : []), { label: "Edit" }]}
+        title="Edit budget"
+      >
+        <Card className="p-4 sm:p-5">
+          {editing ? (
+            <BudgetForm key={editing.budget_id} budget={editing} onCreated={() => navigate(`/budget/${editing.budget_id}`)} />
+          ) : (
+            <p className="text-sm text-muted-foreground">This budget wasn't found in {monthLabel(month, "long")}.</p>
+          )}
+        </Card>
+      </SubPage>
+    );
+  }
+
+  // On narrower screens a budget opens as its own page; wide screens show it beside the list.
+  if (active && !wide) {
+    return (
+      <SubPage crumbs={[budgetsCrumb, { label: titleCase(active.name) }]}>
+        <Card className="overflow-hidden p-0">
+          <BudgetPanel key={`${active.budget_id}-${active.limit}`} {...panelProps} inSheet />
+        </Card>
+        {dialogs}
+      </SubPage>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -160,12 +287,38 @@ const Budget = () => {
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
-          <DownloadButton endpoint="/budget/report" filename="budget_report.xlsx" label="Export" />
+          <Button variant="secondary" data-tour="budget-alerts" onClick={() => setShowAlerts(true)}>
+            <Bell /> Alerts
+          </Button>
+          <Button variant="secondary" onClick={() => setExporting(true)}>
+            <Export /> Export
+          </Button>
+          <Button variant="secondary" data-tour="budget-plan" onClick={() => setPlanning(true)}>
+            <CalendarPlus /> Plan my month
+          </Button>
           <Button onClick={() => setCreating({})}>
             <Plus /> New budget
           </Button>
         </div>
       </header>
+
+      {overlaps.map(({ category, budgets: clashing }) => (
+        <Notice key={category} tone="warning" icon={WarningCircle}>
+          <p>
+            {clashing.map((row) => titleCase(row.name)).join(" and ")} both cover {categoryLabel(category)}, so spending only counts toward the newest.
+            Keep one and pause the others.
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {clashing.map((row) => (
+              <Button key={row.budget_id} variant="secondary" size="sm" onClick={() => setActiveId(row.budget_id)}>
+                Open {titleCase(row.name)}
+              </Button>
+            ))}
+          </div>
+        </Notice>
+      ))}
+
+      {showReview && <MonthReview review={review} canDismiss={month === thisMonth} onUse={reviewChange} />}
 
       {live.length > 0 && (
         <Card className="space-y-3 p-4">
@@ -222,6 +375,17 @@ const Budget = () => {
               </li>
             ))}
           </ul>
+
+          {month === thisMonth && plan.income !== null && (
+            <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-border pt-3 text-xs text-muted-foreground tabular-nums">
+              <span>About {formatKES(plan.income)} comes in</span>
+              <span>· {formatKES(plan.budgeted)} in budgets</span>
+              {plan.billsOutside > 0 && <span>· {formatKES(plan.billsOutside)} in other bills</span>}
+              <span className={cn("font-medium", plan.unassigned < 0 ? "text-danger" : "text-foreground")}>
+                · {plan.unassigned < 0 ? `${formatKES(-plan.unassigned)} more than you earn` : `${formatKES(plan.unassigned)} unassigned`}
+              </span>
+            </p>
+          )}
         </Card>
       )}
 
@@ -299,6 +463,7 @@ const Budget = () => {
                 compact={compact}
                 active={budget.budget_id === activeId}
                 onOpen={(id) => setActiveId(id === activeId ? null : id)}
+                onStep={month === thisMonth ? stepLimit : undefined}
               />
             ))}
           </div>
@@ -335,36 +500,7 @@ const Budget = () => {
         </Card>
       )}
 
-      {active && !wide && (
-        <Sheet open onClose={() => setActiveId(null)} title={titleCase(active.name)}>
-          <BudgetPanel key={`${active.budget_id}-${active.limit}`} {...panelProps} inSheet />
-        </Sheet>
-      )}
-
-      <Sheet open={!!creating} onClose={() => setCreating(null)} title="New budget">
-        <div className="p-5">
-          <h2 className="mb-4 text-lg">New budget</h2>
-          {creating && (
-            <BudgetForm
-              category={creating.category}
-              onCreated={() => {
-                setCreating(null);
-                refresh();
-              }}
-            />
-          )}
-        </div>
-      </Sheet>
-
-      <ConfirmDelete
-        open={!!toDelete}
-        title={`Delete ${titleCase(toDelete?.name)}?`}
-        description="The budget is removed. Your expenses stay, and they'll no longer count toward it."
-        confirmLabel="Delete budget"
-        loading={removeBudget.isPending}
-        onCancel={() => setToDelete(null)}
-        onConfirm={() => removeBudget.mutate(toDelete.budget_id)}
-      />
+      {dialogs}
     </div>
   );
 };

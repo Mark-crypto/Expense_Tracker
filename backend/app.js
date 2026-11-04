@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
 import apiRouter from "./routes/index.js";
+import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import {
@@ -50,7 +51,13 @@ const accountLimiter = rateLimit({
   message: { error: true, message: "Too many attempts. Try again in 15 minutes." },
 });
 
+// Tighter limits where guessing or heavy work is possible.
+const limit = (max, message = "Too many tries. Wait a few minutes and try again.") =>
+  rateLimit({ windowMs: FIFTEEN_MINUTES, max, message: { error: true, message } });
+
 //middlewares
+// The API only serves JSON, so it can be read cross-origin by the app and nothing else needs embedding.
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 // Statement imports can hold thousands of transactions.
 app.use(express.json({ limit: "5mb" }));
 app.use(cookieParser());
@@ -62,6 +69,11 @@ app.use(
 );
 
 app.use("/api", limiter);
+app.use(["/api/security/pin/verify", "/api/security/pin/reset"], limit(20));
+app.use("/api/security/password", limit(10));
+app.use("/api/security/export", limit(10, "Too many downloads. Wait a few minutes and try again."));
+app.use(["/api/upload/mpesa", "/api/upload/receipt"], limit(30, "Too many uploads. Wait a few minutes and try again."));
+app.use("/api/expenses/parse-sms", limit(60));
 
 app.post("/api/auth/refresh", refresh);
 app.post("/api/auth/login", loginLimiter, login);

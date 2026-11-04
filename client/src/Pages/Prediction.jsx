@@ -18,6 +18,7 @@ import { categoryLabel } from "@/lib/categories";
 import { monthLabel } from "@/lib/dashboard";
 import { formatDate, formatKES, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { usePageTour } from "@/lib/usePageTour";
 
 const CONFIDENCE = {
   high: "High confidence",
@@ -58,7 +59,15 @@ const Bills = ({ forecast, onChanged }) => {
 
   return (
     <Card>
-      <CardHeader title="Upcoming bills" description="Detected from what you pay every month" />
+      <CardHeader
+        title="Upcoming bills"
+        description="Tracked bills and subscriptions, and repeat payments we've detected"
+        action={
+          <Link to="/bills" className="text-xs font-medium text-primary hover:underline">
+            Manage
+          </Link>
+        }
+      />
       <CardContent className="pt-3">
         {forecast.bills.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
@@ -79,16 +88,18 @@ const Bills = ({ forecast, onChanged }) => {
                   {bill.varies ? "~" : ""}
                   {formatKES(bill.amount)}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
-                  aria-label={`${bill.name} is not a regular bill`}
-                  title="Not a regular bill"
-                  onClick={() => dismiss.mutate(bill.key)}
-                >
-                  <X />
-                </Button>
+                {!bill.tracked && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+                    aria-label={`${bill.name} is not a regular bill`}
+                    title="Not a regular bill"
+                    onClick={() => dismiss.mutate(bill.key)}
+                  >
+                    <X />
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
@@ -223,6 +234,8 @@ const Prediction = () => {
     );
   };
 
+  usePageTour("forecast", !!forecast);
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -265,7 +278,7 @@ const Prediction = () => {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl">Forecast</h1>
         <Tabs value={range} onValueChange={setRange}>
-          <TabsList>
+          <TabsList data-tour="forecast-range">
             <TabsTrigger value="month" className="px-3 text-sm">
               This month
             </TabsTrigger>
@@ -303,14 +316,14 @@ const Prediction = () => {
             </ul>
           </section>
 
-          <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="How the forecast adds up">
+          <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="How the forecast adds up" data-tour="forecast-parts">
             <StatCard label="Already spent" value={formatKES(forecast.spent)} hint={`So far in ${monthName}`} />
             <StatCard label="Bills to come" value={formatKES(forecast.stillToCome)} hint={`${forecast.bills.filter((bill) => !bill.paid).length} regular bills`} />
             <StatCard label="Likely extra" value={formatKES(forecast.likelyExtra - saved > 0 ? forecast.likelyExtra - saved : 0)} hint={`Everyday spending, ${forecast.daysLeft} days left`} />
-            {forecast.safePerDay === null ? (
-              <StatCard label="Safe to spend" value="Not set up" valueClassName="text-base leading-8" hint={<Link to="/budget" className="font-medium text-primary hover:underline">Create a budget</Link>} />
+            {forecast.safeToday === null ? (
+              <StatCard label="Safe to spend" value="Not set up" valueClassName="text-base leading-8" hint={<Link to="/accounts" className="font-medium text-primary hover:underline">Add your accounts</Link>} />
             ) : (
-              <StatCard label="Safe to spend" value={`${formatKES(forecast.safePerDay)}`} hint="A day, after bills" />
+              <StatCard label="Safe to spend" value={formatKES(forecast.safeToday)} hint="Today, after bills and your buffer" />
             )}
           </section>
 

@@ -1,6 +1,10 @@
 import connection from "../database.js";
+import { loadAccounts, manualIncomeByMonth } from "../utils/accounts.js";
 import { loadBudgets, refreshUserBudgets } from "../utils/budgetStatus.js";
 import { buildForecast, syncForecastAlerts } from "../utils/forecast.js";
+import { loadGoals, noteBehindGoals, publicGoal } from "../utils/goals.js";
+import { billsAttention, captureDue, findSuggestions, loadTracked } from "../utils/recurring.js";
+import { buildComingUp, buildSafeToSpend, findLowBalance } from "../utils/safeToSpend.js";
 
 export const reports = async (req, res) => {
   const id = parseInt(req.user.userId);
@@ -151,6 +155,7 @@ export const getReportData = async (req, res) => {
 export const getOverview = async (req, res) => {
   const id = parseInt(req.user.userId);
   try {
+    await captureDue(id);
     const [expenses] = await connection.execute(
       `SELECT expense_id, amount, category, subcategories, merchant, description,
         DATE_FORMAT(date_created, '%Y-%m-%d') AS date
@@ -178,8 +183,22 @@ export const getOverview = async (req, res) => {
 
     const forecastWarnings = await syncForecastAlerts(id, await buildForecast(id));
 
+    const money = await loadAccounts(id);
+    const tracked = await loadTracked(id);
+    const extraIncome = await manualIncomeByMonth(id, money);
+    const goals = await loadGoals(id, money.accounts);
+    await noteBehindGoals(id, goals);
+    const months = new Set([...monthly.map((row) => row.month), ...extraIncome.keys()]);
+    const byMonth = new Map(monthly.map((row) => [row.month, row]));
+
     res.status(200).json({
       forecastWarnings,
+      bills: await billsAttention(id),
+      accounts: money.accounts.map(({ anchors, ...account }) => account),
+      safeToSpend: await buildSafeToSpend(id, money.accounts, tracked),
+      lowBalance: findLowBalance(money.accounts, tracked),
+      goal: goals.length > 0 ? { ...publicGoal(goals[0]), count: goals.length } : null,
+      upcoming: buildComingUp(tracked, (await findSuggestions(id, tracked)).length),
       expenses: expenses.map((row) => ({ ...row, amount: Number(row.amount) })),
       budgets: budgets.map(({ budget_id, name, category, status, limit, spent }) => ({
         budget_id,
@@ -189,10 +208,10 @@ export const getOverview = async (req, res) => {
         limit,
         spent,
       })),
-      monthly: monthly.map((row) => ({
-        month: row.month,
-        moneyIn: Number(row.moneyIn),
-        fees: Number(row.fees),
+      monthly: [...months].map((month) => ({
+        month,
+        moneyIn: Number(byMonth.get(month)?.moneyIn ?? 0) + (extraIncome.get(month) ?? 0),
+        fees: Number(byMonth.get(month)?.fees ?? 0),
       })),
     });
   } catch (error) {

@@ -1,8 +1,5 @@
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
 import { CheckCircle, Warning, WarningOctagon } from "@phosphor-icons/react";
-import axiosInstance from "@/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatKES, titleCase } from "@/lib/format";
@@ -29,21 +26,13 @@ const Alert = ({ tone, title, detail, children }) => {
   );
 };
 
-const NeedsAttention = ({ budgets, fees, warnings = [], onSelectCategory }) => {
-  const queryClient = useQueryClient();
+const billTitle = ({ dueCount, toConfirm }) => {
+  const due = dueCount > 0 && `${dueCount} ${dueCount === 1 ? "payment" : "payments"} due this week`;
+  const confirm = toConfirm > 0 && `${toConfirm} to confirm`;
+  return [due, confirm].filter(Boolean).join(", ");
+};
 
-  const { mutate: raiseLimit, isPending } = useMutation({
-    mutationFn: async ({ budget_id, amount }) =>
-      await axiosInstance.patch(`/budget/${budget_id}/limit`, { amount }),
-    onSuccess: (_, { amount }) => {
-      toast.success(`Limit raised to ${formatKES(amount)}`);
-      queryClient.invalidateQueries({ queryKey: ["dashboard-overview"] });
-      queryClient.invalidateQueries({ queryKey: ["limit-notification"] });
-      queryClient.invalidateQueries({ queryKey: ["budgets"] });
-    },
-    onError: () => toast.error("Could not change the limit. Please try again."),
-  });
-
+const NeedsAttention = ({ budgets, fees, warnings = [], bills, onSelectCategory }) => {
   const over = budgets.filter((budget) => budget.spent > budget.limit);
   const near = budgets.filter(
     (budget) => budget.spent <= budget.limit && budget.spent / budget.limit >= 0.85
@@ -62,24 +51,30 @@ const NeedsAttention = ({ budgets, fees, warnings = [], onSelectCategory }) => {
               title={`${titleCase(budget.name)} is over by ${formatKES(budget.spent - budget.limit)}`}
               detail={`${Math.round((budget.spent / budget.limit) * 100)}% of the ${formatKES(budget.limit)} limit used.`}
             >
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={isPending}
-                onClick={() =>
-                  raiseLimit({
-                    budget_id: budget.budget_id,
-                    amount: Math.round(budget.limit * 1.15),
-                  })
-                }
-              >
-                Raise limit 15%
-              </Button>
+              <Link to={`/budget/${budget.budget_id}`}>
+                <Button variant="secondary" size="sm" tabIndex={-1}>
+                  Change limit or move money
+                </Button>
+              </Link>
               <Button variant="secondary" size="sm" onClick={() => onSelectCategory(budget.category)}>
                 See spending
               </Button>
             </Alert>
           ))}
+
+          {bills && (bills.dueCount > 0 || bills.toConfirm > 0) && (
+            <Alert
+              tone="warning"
+              title={billTitle(bills)}
+              detail={bills.dueCount > 0 ? `${formatKES(bills.dueTotal)} coming up` : "We added these on their due date."}
+            >
+              <Link to="/bills">
+                <Button variant="secondary" size="sm" tabIndex={-1}>
+                  See payments
+                </Button>
+              </Link>
+            </Alert>
+          )}
 
           {warnings.slice(0, 2).map((warning) => (
             <Alert

@@ -1,6 +1,9 @@
 import { Router } from "express";
 import {
   createExpense,
+  parseSms,
+  deleteShortcut,
+  saveShortcut,
   applyMerchantCategory,
   bulkUpdateExpenses,
   clearExpenses,
@@ -20,6 +23,8 @@ import {
   validateBulk,
   validateExpense,
   validateExpenseEdit,
+  validateShortcut,
+  validateSms,
 } from "../middlewares/validate.js";
 
 const router = Router();
@@ -28,6 +33,9 @@ router.get("/expenses", getExpenses);
 router.get("/expenses/report", getExpenseReport);
 router.get("/expenses/merchant", getMerchantHistory);
 router.get("/expenses/quick-add", getQuickAdd);
+router.post("/expenses/parse-sms", validateSms, parseSms);
+router.post("/expenses/shortcuts", validateShortcut, saveShortcut);
+router.delete("/expenses/shortcuts/:id", deleteShortcut);
 router.post("/expenses/bulk", validateBulk, bulkUpdateExpenses);
 router.post("/expenses/apply-merchant", validateApplyMerchant, applyMerchantCategory);
 router.patch("/expenses/:id", validateExpenseEdit, updateExpense);

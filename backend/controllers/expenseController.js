@@ -1,6 +1,11 @@
 import connection from "../database.js";
 import ExcelJS from "exceljs";
-import { loadBudgets, refreshUserBudgets } from "../utils/budgetStatus.js";
+import { chooseAccount, loadAccounts } from "../utils/accounts.js";
+import { suggestCategory } from "../utils/extractMpesaLines.js";
+import { parseMpesaSms } from "../utils/mpesaSms.js";
+import { loadBudgets, ownBudgetId, refreshUserBudgets } from "../utils/budgetStatus.js";
+import { loadTracked, recordRealPayments } from "../utils/recurring.js";
+import { buildSafeToSpend } from "../utils/safeToSpend.js";
 
 const LARGE_EXPENSE = 5000;
 const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value ?? "");
@@ -167,11 +172,11 @@ export const getExpenses = async (req, res) => {
 export const updateExpense = async (req, res) => {
   const userId = parseInt(req.user.userId);
   const expenseId = parseInt(req.params.id);
-  const { amount, category, date, merchant, note, budgetId } = req.body;
+  const { amount, category, date, merchant, note, budgetId, accountId } = req.body;
 
   try {
     const [[expense]] = await connection.execute(
-      "SELECT subcategories FROM expense WHERE expense_id = ? AND user_id = ? AND status = 'active'",
+      "SELECT subcategories, account_id FROM expense WHERE expense_id = ? AND user_id = ? AND status = 'active'",
       [expenseId, userId]
     );
     if (!expense) {
@@ -199,7 +204,7 @@ export const updateExpense = async (req, res) => {
 
     await connection.execute(
       `UPDATE expense SET amount = ?, category = ?, date_created = ?, month = ?, merchant = ?,
-        note = ?, budget_id = ?, budgeted = ?, subcategories = ?, needs_review = 0
+        note = ?, budget_id = ?, budgeted = ?, subcategories = ?, needs_review = 0, account_id = ?
       WHERE expense_id = ?`,
       [
         amount,
@@ -211,6 +216,7 @@ export const updateExpense = async (req, res) => {
         budgetId ?? null,
         budgetId ? 1 : 0,
         JSON.stringify(items),
+        accountId === undefined ? expense.account_id : await chooseAccount(connection, userId, accountId),
         expenseId,
       ]
     );
@@ -281,8 +287,9 @@ export const getMerchantHistory = async (req, res) => {
   }
 };
 
-// What the add panel needs to fill itself in: known merchants, most recent
-// first, and the budget each category counts toward this month.
+// What the Add expense page needs: known merchants, most recent first, the budget each
+// category counts toward this month, account balances, today's Safe to spend and the
+// last few expenses, so it can show what a new expense would change before it's saved.
 export const getQuickAdd = async (req, res) => {
   const userId = parseInt(req.user.userId);
   try {
@@ -305,13 +312,100 @@ export const getQuickAdd = async (req, res) => {
           ((!budget.startDate || today >= budget.startDate) && (!budget.endDate || today <= budget.endDate)))
     );
     const byCategory = {};
-    for (const { category, name, limit, spent } of live) {
-      byCategory[category] ??= { name, left: limit - spent };
+    for (const { budget_id, category, name, limit, spent } of live) {
+      byCategory[category] ??= { id: budget_id, name, limit, spent, left: limit - spent };
     }
-    res.status(200).json({ merchants, budgets: byCategory });
+    const money = await loadAccounts(userId);
+    const accounts = money.accounts.map(({ id, name, type, balance }) => ({ id, name, type, balance }));
+    const safe = await buildSafeToSpend(userId, money.accounts, await loadTracked(userId));
+    const [recentExpenses] = await connection.execute(
+      `SELECT expense_id AS id, amount, merchant, category, account_id, DATE_FORMAT(date_created, '%Y-%m-%d') AS date
+      FROM expense WHERE user_id = ? AND status = 'active' AND merchant IS NOT NULL
+      ORDER BY date_created DESC, expense_id DESC LIMIT 5`,
+      [userId]
+    );
+    const [used] = await connection.execute(
+      `SELECT merchant, account_id FROM expense
+      WHERE user_id = ? AND status = 'active' AND merchant IS NOT NULL AND account_id IS NOT NULL
+      ORDER BY date_created, expense_id`,
+      [userId]
+    );
+    const [shortcuts] = await connection.execute(
+      "SELECT id, merchant, category, account_id FROM expense_shortcuts WHERE user_id = ? ORDER BY merchant",
+      [userId]
+    );
+    res.status(200).json({
+      merchants,
+      budgets: byCategory,
+      budgetList: live.map(({ budget_id: id, name, category, limit, spent }) => ({ id, name, category, limit, spent, left: limit - spent })),
+      accounts,
+      safe: safe.ready ? { leftToday: safe.leftToday, daily: safe.daily } : null,
+      recent: recentExpenses.map((row) => ({ ...row, amount: Number(row.amount) })),
+      shortcuts,
+      lastAccounts: Object.fromEntries(used.map((row) => [row.merchant.toLowerCase(), row.account_id])),
+    });
   } catch (error) {
     console.log("Error:", error);
     return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+};
+
+// Reads a pasted M-Pesa message into an expense, and flags one already added.
+export const parseSms = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  const found = parseMpesaSms(req.body.text);
+  if (!found) {
+    return res.status(422).json({
+      error: true,
+      message: "That doesn't look like an M-Pesa payment message. Copy the whole SMS from Safaricom.",
+    });
+  }
+  try {
+    const [[remembered]] = await connection.execute(
+      "SELECT category FROM merchant_categories WHERE user_id = ? AND LOWER(merchant) = LOWER(?)",
+      [userId, found.merchant]
+    );
+    const [[existing]] = await connection.execute(
+      "SELECT DATE_FORMAT(date_created, '%Y-%m-%d') AS date FROM expense WHERE user_id = ? AND receipt_no = ? AND status = 'active'",
+      [userId, found.receiptNo]
+    );
+    res.status(200).json({
+      ...found,
+      category: remembered?.category ?? suggestCategory(found.kind, found.merchant),
+      duplicate: existing?.date ?? null,
+    });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "Something went wrong." });
+  }
+};
+
+export const saveShortcut = async (req, res) => {
+  const userId = parseInt(req.user.userId);
+  const { merchant, category, accountId } = req.body;
+  try {
+    await connection.execute(
+      `INSERT INTO expense_shortcuts (user_id, merchant, category, account_id) VALUES (?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE category = VALUES(category), account_id = VALUES(account_id)`,
+      [userId, merchant.trim(), category, accountId ?? null]
+    );
+    res.status(201).json({ message: "Shortcut saved." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "This shortcut could not be saved." });
+  }
+};
+
+export const deleteShortcut = async (req, res) => {
+  try {
+    await connection.execute("DELETE FROM expense_shortcuts WHERE id = ? AND user_id = ?", [
+      req.params.id,
+      parseInt(req.user.userId),
+    ]);
+    res.status(200).json({ message: "Shortcut removed." });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ error: true, message: "This shortcut could not be removed." });
   }
 };
 
@@ -337,7 +431,7 @@ export const applyMerchantCategory = async (req, res) => {
 };
 
 export const createExpense = async (req, res) => {
-  const { amount, category, date, subcategories, budgeted, budgetNames, merchant } =
+  const { amount, category, date, subcategories, budgeted, budgetNames, budgetId, merchant, accountId, receiptNo } =
     req.body;
   const merchantName = merchant?.trim() || null;
   const isBudgeted = budgeted ? 1 : 0;
@@ -354,10 +448,11 @@ export const createExpense = async (req, res) => {
       `SELECT budget_id FROM budget WHERE name = ? AND user_id = ?`,
       [budgetNames ?? null, userId]
     );
-    const budgetIdValue = budgetID.length > 0 ? budgetID[0].budget_id : null;
+    // A budget picked on the Add expense page wins; otherwise the category decides later.
+    const budgetIdValue = (await ownBudgetId(userId, budgetId)) ?? (budgetID.length > 0 ? budgetID[0].budget_id : null);
 
     const [response] = await connection.execute(
-      "INSERT INTO expense (amount , category , date_created, month, user_id, subcategories, budgeted, budget_id, merchant) VALUES(?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO expense (amount , category , date_created, month, user_id, subcategories, budgeted, budget_id, merchant, account_id, receipt_no, source) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         amount,
         category,
@@ -365,9 +460,12 @@ export const createExpense = async (req, res) => {
         month,
         userId,
         JSON.stringify(subcategories),
-        isBudgeted,
+        budgetIdValue ? 1 : isBudgeted,
         budgetIdValue,
         merchantName,
+        await chooseAccount(connection, userId, accountId),
+        receiptNo ?? null,
+        receiptNo ? "sms" : "manual",
       ]
     );
 
@@ -384,11 +482,17 @@ export const createExpense = async (req, res) => {
         ON DUPLICATE KEY UPDATE category = VALUES(category)`,
         [userId, merchantName, category]
       );
+      await recordRealPayments(connection, userId, [
+        { name: merchantName, date: String(date).slice(0, 10), amount: Number(amount) },
+      ]);
     }
 
     await refreshUserBudgets(userId, req.user.email);
     res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ error: true, message: "You've already added this payment." });
+    }
     console.log("Error:", error);
     return res.status(500).json({
       error: true,

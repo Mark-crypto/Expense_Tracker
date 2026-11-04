@@ -32,8 +32,14 @@ const ExpensePanel = ({ expense, budgets, onClose, onMove, onSaved, onApplyMerch
     merchant: expense.merchant ?? "",
     note: expense.note ?? "",
     budgetId: expense.budget_id ? String(expense.budget_id) : NO_BUDGET,
+    accountId: expense.account_id ? String(expense.account_id) : "",
   };
   const [form, setForm] = useState(initial);
+  const { data: quickAdd } = useQuery({
+    queryKey: ["quick-add"],
+    queryFn: async () => (await axiosInstance.get("/expenses/quick-add")).data,
+  });
+  const accounts = quickAdd?.accounts ?? [];
   const update = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
   const name = displayName(expense);
@@ -52,6 +58,7 @@ const ExpensePanel = ({ expense, budgets, onClose, onMove, onSaved, onApplyMerch
         ...form,
         amount: Number(form.amount),
         budgetId: form.budgetId === NO_BUDGET ? null : Number(form.budgetId),
+        accountId: form.accountId ? Number(form.accountId) : undefined,
       }),
     onSuccess: () => {
       toast.success("Expense updated");
@@ -130,6 +137,22 @@ const ExpensePanel = ({ expense, budgets, onClose, onMove, onSaved, onApplyMerch
           <Field label="Paid to" htmlFor="panelMerchant">
             <Input id="panelMerchant" maxLength={150} placeholder="Add a name" value={form.merchant} onChange={update("merchant")} className="h-8" />
           </Field>
+          {accounts.length > 0 && expense.source !== "mpesa" && (
+            <Field label="Paid from">
+              <Select value={form.accountId} onValueChange={(accountId) => setForm((prev) => ({ ...prev, accountId }))}>
+                <SelectTrigger aria-label="Paid from" size="sm" className="w-full">
+                  <SelectValue placeholder="Choose an account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={String(account.id)}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
           <Field label="Budget">
             <Select
               value={form.budgetId}
@@ -161,7 +184,7 @@ const ExpensePanel = ({ expense, budgets, onClose, onMove, onSaved, onApplyMerch
 
         {items.length > 1 && (
           <div>
-            <p className="mb-1 text-xs text-muted-foreground">Items</p>
+            <p className="mb-1 text-xs text-muted-foreground">What you bought</p>
             <ul className="text-sm">
               {items.map((item, index) => (
                 <li key={index} className="flex justify-between gap-4 py-1">

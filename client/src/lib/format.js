@@ -1,5 +1,9 @@
+import { balancesHidden, MASK } from "@/lib/privacy";
+
 export const formatKES = (amount, decimals = 0) =>
-  `KES ${Number(amount || 0).toLocaleString("en-KE", {
+  balancesHidden()
+    ? `KES ${MASK}`
+    : `KES ${Number(amount || 0).toLocaleString("en-KE", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`;
@@ -18,7 +22,7 @@ export const formatDate = (value) => {
 };
 
 export const compactNumber = (value) =>
-  Intl.NumberFormat("en-KE", { notation: "compact" }).format(value);
+  balancesHidden() ? MASK : Intl.NumberFormat("en-KE", { notation: "compact" }).format(value);
 
 export const formatFileSize = (bytes) => {
   if (!bytes) return "0 Bytes";

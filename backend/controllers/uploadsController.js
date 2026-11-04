@@ -1,11 +1,14 @@
 import connection from "../database.js";
 import Tesseract from "tesseract.js";
 import { extractMpesaLines } from "../utils/extractMpesaLines.js";
-import { refreshUserBudgets } from "../utils/budgetStatus.js";
+import { accountOfType, chooseAccount, syncStatementBalances } from "../utils/accounts.js";
+import { ownBudgetId, refreshUserBudgets } from "../utils/budgetStatus.js";
+import { recordRealPayments } from "../utils/recurring.js";
 import { buildXray } from "../utils/buildXray.js";
 import { extractPdfText } from "../utils/extractPdfText.js";
 import { extractReceiptData } from "../utils/extractReceiptData.js";
 import { PasswordResponses } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { maskPhones } from "../utils/maskPhones.js";
 
 export const createMpesaExpense = async (req, res) => {
   if (!req.file) {
@@ -27,7 +30,9 @@ export const createMpesaExpense = async (req, res) => {
     const categories = new Map(remembered.map((row) => [row.merchant, row.category]));
     const importedReceipts = new Set(imported.map((row) => row.receipt_no));
 
-    const transactions = extractMpesaLines(text).map((row) => ({
+    const hasCash = await accountOfType(connection, userId, "cash");
+
+    const lines = extractMpesaLines(text).map((row) => ({
       ...row,
       category: categories.get(row.counterparty) ?? row.category,
       alreadyImported: row.isSpend && importedReceipts.has(row.receiptNo),
@@ -35,8 +40,12 @@ export const createMpesaExpense = async (req, res) => {
 
     return res.status(200).json({
       message: "PDF parsed successfully",
-      transactions,
-      xray: buildXray(transactions),
+      // With a Cash account a withdrawal is a move, not spending.
+      transactions: lines.map((row) => ({
+        ...row,
+        isSpend: row.isSpend && !(hasCash && row.kind === "withdrawal"),
+      })),
+      xray: buildXray(lines),
     });
   } catch (error) {
     if (error.name === "PasswordException") {
@@ -58,7 +67,7 @@ export const createMpesaExpense = async (req, res) => {
 
 // One "M-Pesa fees" expense per month, recalculated from the saved rows so a
 // second statement for the same month updates it instead of adding another.
-const saveMonthlyFees = async (db, userId, transactions) => {
+const saveMonthlyFees = async (db, userId, transactions, accountId) => {
   const periods = [
     ...new Set(
       transactions
@@ -82,7 +91,7 @@ const saveMonthlyFees = async (db, userId, transactions) => {
 
   await db.query(
     `INSERT INTO expense
-    (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant, receipt_no, source)
+    (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant, receipt_no, source, account_id)
     VALUES ?
     ON DUPLICATE KEY UPDATE status = 'active', amount = VALUES(amount),
       date_created = VALUES(date_created), subcategories = VALUES(subcategories)`,
@@ -102,18 +111,32 @@ const saveMonthlyFees = async (db, userId, transactions) => {
         "M-Pesa",
         `FEES-${period}`,
         "mpesa",
+        accountId,
       ]),
     ]
   );
 };
 
 export const saveMpesaTransactions = async (req, res) => {
-  const { transactions } = req.body;
+  // Masked again here, whatever the client sends.
+  const transactions = req.body.transactions.map((row) => ({
+    ...row,
+    details: maskPhones(row.details),
+    counterparty: maskPhones(row.counterparty),
+  }));
   const userId = parseInt(req.user.userId);
-  const spends = transactions.filter((row) => row.save);
-
   const db = await connection.getConnection();
   try {
+    const mpesaId = await accountOfType(db, userId, "mpesa");
+    const cashId = await accountOfType(db, userId, "cash");
+    const [moved] = await db.execute(
+      "SELECT receipt_no FROM mpesa_transactions WHERE user_id = ? AND transfer_status = 'transfer'",
+      [userId]
+    );
+    const transfers = new Set(moved.map((row) => row.receipt_no));
+    const isCashMove = (row) => cashId && mpesaId && row.kind === "withdrawal" && row.withdrawn > 0;
+    const spends = transactions.filter((row) => row.save && !transfers.has(row.receiptNo) && !isCashMove(row));
+
     await db.beginTransaction();
 
     await db.query(
@@ -138,9 +161,10 @@ export const saveMpesaTransactions = async (req, res) => {
     if (spends.length > 0) {
       await db.query(
         `INSERT INTO expense
-        (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant, receipt_no, source, needs_review)
+        (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant, receipt_no, source, needs_review, account_id)
         VALUES ?
-        ON DUPLICATE KEY UPDATE status = 'active', category = VALUES(category)`,
+        ON DUPLICATE KEY UPDATE status = 'active', category = VALUES(category), account_id = VALUES(account_id),
+          source = VALUES(source), description = VALUES(description)`,
         [
           spends.map((row) => {
             const date = row.occurredAt.slice(0, 10);
@@ -159,6 +183,7 @@ export const saveMpesaTransactions = async (req, res) => {
               row.receiptNo,
               "mpesa",
               row.category === "miscellaneous" ? 1 : 0,
+              mpesaId,
             ];
           }),
         ]
@@ -172,10 +197,29 @@ export const saveMpesaTransactions = async (req, res) => {
           ON DUPLICATE KEY UPDATE category = VALUES(category)`,
           [merchants.map((row) => [userId, row.counterparty, row.category])]
         );
+        await recordRealPayments(
+          db,
+          userId,
+          merchants.map((row) => ({
+            name: row.counterparty,
+            date: row.occurredAt.slice(0, 10),
+            amount: Number(row.withdrawn),
+          }))
+        );
       }
     }
 
-    await saveMonthlyFees(db, userId, transactions);
+    await saveMonthlyFees(db, userId, transactions, mpesaId);
+
+    const cashMoves = transactions.filter(isCashMove);
+    if (cashMoves.length > 0) {
+      await db.query(
+        `INSERT IGNORE INTO account_transfers (user_id, from_account_id, to_account_id, amount, moved_on, receipt_no)
+        VALUES ?`,
+        [cashMoves.map((row) => [userId, mpesaId, cashId, row.withdrawn, row.occurredAt.slice(0, 10), row.receiptNo])]
+      );
+    }
+    if (mpesaId) await syncStatementBalances(db, userId, mpesaId);
 
     await db.commit();
     await refreshUserBudgets(userId, req.user.email);
@@ -274,6 +318,8 @@ export const saveReceiptExpense = async (req, res) => {
       category,
       merchant,
       budgeted,
+      budgetId,
+      accountId,
     } = req.body;
 
     // Validate required fields
@@ -286,11 +332,12 @@ export const saveReceiptExpense = async (req, res) => {
 
     const userId = parseInt(req.user.userId);
     const month = new Date(date).toLocaleString("default", { month: "long" });
+    const chosenBudget = await ownBudgetId(userId, budgetId);
 
     const sql = `
       INSERT INTO expense 
-      (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant, source, needs_review)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'receipt', ?)
+      (amount, category, date_created, month, user_id, subcategories, budgeted, budget_id, description, merchant, source, needs_review, account_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'receipt', ?, ?)
     `;
 
     const values = [
@@ -302,11 +349,12 @@ export const saveReceiptExpense = async (req, res) => {
       JSON.stringify([
         { name: merchant || description, amount: parseFloat(amount) },
       ]),
-      budgeted ? 1 : 0,
-      null, // budget_id for now
+      budgeted || chosenBudget ? 1 : 0,
+      chosenBudget,
       description,
       merchant || null,
       category === "miscellaneous" ? 1 : 0,
+      await chooseAccount(connection, userId, accountId),
     ];
 
     const [response] = await connection.query(sql, values);
@@ -316,6 +364,11 @@ export const saveReceiptExpense = async (req, res) => {
         ON DUPLICATE KEY UPDATE category = VALUES(category)`,
         [userId, merchant, category]
       );
+    }
+    if (merchant) {
+      await recordRealPayments(connection, userId, [
+        { name: merchant, date: String(date).slice(0, 10), amount: parseFloat(amount) },
+      ]);
     }
     await refreshUserBudgets(userId, req.user.email);
 

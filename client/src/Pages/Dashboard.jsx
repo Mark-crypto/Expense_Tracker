@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Plus, Scan, UploadSimple, X } from "@phosphor-icons/react";
+import { Bank, CalendarCheck, Check, Plus, Scan, UploadSimple, X } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,8 +11,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CategoryBars from "@/components/charts/CategoryBars";
 import BudgetRings from "@/components/dashboard/BudgetRings";
 import CashFlowChart from "@/components/dashboard/CashFlowChart";
+import ComingUp from "@/components/dashboard/ComingUp";
+import GoalSummary from "@/components/dashboard/GoalSummary";
+import ProductTour from "@/components/setup/ProductTour";
+import SetupChecklist from "@/components/setup/SetupChecklist";
 import HeroCurve from "@/components/dashboard/HeroCurve";
 import NeedsAttention from "@/components/dashboard/NeedsAttention";
+import SafeToSpend from "@/components/dashboard/SafeToSpend";
 import SpendingCalendar from "@/components/dashboard/SpendingCalendar";
 import StatRow from "@/components/dashboard/StatRow";
 import TransactionsTable from "@/components/dashboard/TransactionsTable";
@@ -205,18 +210,37 @@ const Dashboard = () => {
           <p className="mt-0.5 text-sm text-muted-foreground">Here's how your money is doing.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/insights" className="lg:hidden">
+          <Link to="/bills" className="lg:hidden">
+            <Button variant="secondary" tabIndex={-1}>
+              <CalendarCheck /> Bills & Subscriptions
+            </Button>
+          </Link>
+          <Link to="/accounts" className="lg:hidden">
+            <Button variant="secondary" tabIndex={-1}>
+              <Bank /> Accounts
+            </Button>
+          </Link>
+          <Link to="/insights" data-tour="xray-link" className="lg:hidden">
             <Button variant="secondary" tabIndex={-1}>
               <Scan /> Money X-ray
             </Button>
           </Link>
-          <Link to="/import">
+          <Link to="/import" data-tour="import">
             <Button variant="secondary" tabIndex={-1}>
               <UploadSimple /> Import M-Pesa
             </Button>
           </Link>
         </div>
       </header>
+
+      <SetupChecklist />
+      <ProductTour safe={data.safeToSpend} />
+
+      <SafeToSpend safe={data.safeToSpend} accounts={data.accounts} lowBalance={data.lowBalance} />
+
+      {data.goal && <GoalSummary goal={data.goal} />}
+
+      {(data.upcoming.tracked > 0 || expenses.length > 0) && <ComingUp upcoming={data.upcoming} />}
 
       {expenses.length === 0 ? (
         <Onboarding />
@@ -249,6 +273,7 @@ const Dashboard = () => {
               budgets={budgets}
               fees={feeAlert}
               warnings={data.forecastWarnings}
+              bills={data.bills}
               onSelectCategory={toggleCategory}
             />
           </section>

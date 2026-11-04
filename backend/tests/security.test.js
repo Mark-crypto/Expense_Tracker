@@ -110,12 +110,9 @@ describe("access between users", () => {
       "INSERT INTO notifications (user_id, type, message) VALUES (?, 'system', 'test')",
       [bob.id]
     );
-    const res = await request(
-      api,
-      "POST",
-      `/notifications/action/${result.insertId}`,
-      { cookie: alice.cookie, body: { action: "keep-active" } }
-    );
+    const res = await request(api, "PATCH", `/notifications/mark-as-read/${result.insertId}`, {
+      cookie: alice.cookie,
+    });
     assert.equal(res.status, 404);
   });
 

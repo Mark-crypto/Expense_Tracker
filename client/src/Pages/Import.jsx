@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Check } from "@phosphor-icons/react";
 import ImportDone from "@/components/import/ImportDone";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { backTo } from "@/lib/pages";
 import ImportReview from "@/components/import/ImportReview";
 import StatementUpload from "@/components/import/StatementUpload";
 import { cn } from "@/lib/utils";
@@ -30,7 +33,11 @@ const Steps = ({ current }) => (
   </ol>
 );
 
+// Reached from Add expense, the Dashboard or the Add menu; the breadcrumb leads back there.
 const Import = () => {
+  const location = useLocation();
+  const from = location.state?.from;
+  const parent = from?.startsWith("/expenses/new") ? { ...backTo(from), state: { from: location.state?.origin } } : backTo(from);
   const [statement, setStatement] = useState(null);
   const [savedCount, setSavedCount] = useState(null);
   const step = savedCount !== null ? 2 : statement ? 1 : 0;
@@ -42,6 +49,7 @@ const Import = () => {
 
   return (
     <div className="space-y-4">
+      <Breadcrumbs items={[parent, { label: "Import M-Pesa statement" }]} />
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl">Import M-Pesa statement</h1>
         <Steps current={step} />

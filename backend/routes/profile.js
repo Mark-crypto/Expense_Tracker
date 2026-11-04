@@ -7,6 +7,7 @@ import {
 
 import { isProfileOwner } from "../middlewares/userRole.js";
 import { validateProfile } from "../middlewares/validate.js";
+import { requirePin } from "../utils/security.js";
 
 const router = Router();
 
@@ -17,6 +18,6 @@ router.put(
   validateProfile,
   updateProfile
 );
-router.delete("/profile/:id", isProfileOwner, deleteProfile);
+router.delete("/profile/:id", isProfileOwner, requirePin, deleteProfile);
 
 export default router;

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Camera, CaretDown, ChartLineUp, Moon, PencilLine, Plus, Receipt, Scan, ShieldCheck, SignOut, SquaresFour, Sun, UploadSimple, User, Wallet } from "@phosphor-icons/react";
-import { AddExpenseProvider, useAddExpense } from "@/hooks/useAddExpense";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Bank, CalendarCheck, Camera, CaretDown, ChartLineUp, Eye, EyeSlash, LockKey, Moon, PencilLine, Plus, Question, Receipt, Scan, ShieldCheck, SignOut, SquaresFour, Sun, UploadSimple, User, Wallet } from "@phosphor-icons/react";
+import { useAddExpense } from "@/hooks/useAddExpense";
 import { useAuth } from "@/hooks/useAuth";
 import { toggleTheme, useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
@@ -10,24 +10,30 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Loading from "@/components/Loading";
 import CommandBar from "@/components/CommandBar";
 import NotificationCenter from "@/components/NotificationCenter";
+import PinGate from "@/components/security/PinGate";
+import { setBalancesHidden, useBalancesHidden } from "@/lib/privacy";
 import { initials, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: SquaresFour },
   { to: "/history", label: "Expenses", icon: Receipt },
-  { to: "/budget", label: "Budgets", icon: Wallet },
+  { to: "/budget", label: "Budgets", icon: Wallet, tour: "nav-budgets" },
   { to: "/predictions", label: "Forecast", icon: ChartLineUp },
-  { to: "/insights", label: "Money X-ray", icon: Scan },
+  { to: "/bills", label: "Bills & Subscriptions", icon: CalendarCheck, tour: "nav-bills" },
+  { to: "/accounts", label: "Accounts", icon: Bank, tour: "nav-accounts" },
+  { to: "/insights", label: "Money X-ray", icon: Scan, tour: "nav-xray" },
 ];
 
 export const Logo = ({ className }) => (
-  <span className={cn("flex items-center gap-2.5 font-semibold tracking-tight", className)}>
+  <span className={cn("flex shrink-0 items-center gap-2.5 font-semibold tracking-tight whitespace-nowrap", className)}>
     <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
       <Wallet className="size-4" aria-hidden />
     </span>
@@ -35,9 +41,10 @@ export const Logo = ({ className }) => (
   </span>
 );
 
-const SideLink = ({ to, label, icon: Icon }) => (
+const SideLink = ({ to, label, icon: Icon, tour }) => (
   <NavLink
     to={to}
+    data-tour={tour}
     className={({ isActive }) =>
       cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
@@ -67,7 +74,18 @@ const Sidebar = () => {
         ))}
         <div className="my-3 border-t border-border" />
         <SideLink to={`/new/profile/${user?.id}`} label="Profile" icon={User} />
+        <SideLink to="/security" label="Privacy & security" icon={LockKey} />
+        <SideLink to="/help" label="Help" icon={Question} />
         {isAdmin && <SideLink to="/admin-dashboard" label="Admin" icon={ShieldCheck} />}
+        <div className="my-3 border-t border-border" />
+        <button
+          type="button"
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+        >
+          <SignOut className="size-4" aria-hidden />
+          Log out
+        </button>
       </nav>
 
       <div className="flex items-center gap-2.5 border-t border-border p-3">
@@ -76,9 +94,6 @@ const Sidebar = () => {
           <p className="truncate text-sm font-medium">{titleCase(user?.name)}</p>
           <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
         </div>
-        <Button variant="ghost" size="icon" aria-label="Log out" onClick={logout}>
-          <SignOut />
-        </Button>
       </div>
     </aside>
   );
@@ -87,11 +102,12 @@ const Sidebar = () => {
 const AddMenu = () => {
   const { openAdd } = useAddExpense();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button className="ml-1.5 hidden lg:inline-flex">
+        <Button data-tour="add" className="ml-1.5 hidden lg:inline-flex">
           <Plus /> Add expense <CaretDown className="size-3" />
         </Button>
       </DropdownMenuTrigger>
@@ -102,7 +118,7 @@ const AddMenu = () => {
         <DropdownMenuItem onSelect={() => openAdd({ scan: true })}>
           <Camera /> Scan receipt
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate("/import")}>
+        <DropdownMenuItem onSelect={() => navigate("/import", { state: { from: `${location.pathname}${location.search}` } })}>
           <UploadSimple /> Import M-Pesa
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -110,8 +126,60 @@ const AddMenu = () => {
   );
 };
 
+// Swaps every amount for KES ••••• on this device, for checking money in public.
+const HideBalancesButton = () => {
+  const hidden = useBalancesHidden();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Hide balances"
+      aria-pressed={hidden}
+      className={cn(hidden && "bg-accent text-accent-foreground")}
+      onClick={() => setBalancesHidden(!hidden)}
+    >
+      {hidden ? <EyeSlash /> : <Eye />}
+    </Button>
+  );
+};
+
+// Phones have no sidebar, so the avatar opens the account pages and Log out.
+const AccountMenu = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label="Account menu" className="ml-1 rounded-full lg:hidden">
+          <Avatar text={initials(user?.name)} className="size-8" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="min-w-0">
+          <span className="block truncate">{titleCase(user?.name)}</span>
+          <span className="block truncate text-xs font-normal text-muted-foreground">{user?.email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate(`/new/profile/${user?.id}`)}>
+          <User /> Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate("/security")}>
+          <LockKey /> Privacy & security
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate("/help")}>
+          <Question /> Help
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={logout} className="text-danger focus:text-danger">
+          <SignOut className="text-danger" /> Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const Topbar = () => {
-  const { user } = useAuth();
   const theme = useTheme();
 
   return (
@@ -120,7 +188,9 @@ const Topbar = () => {
         <Logo className="text-sm" />
       </Link>
       <div className="flex items-center gap-1.5">
-        <CommandBar />
+        <span data-tour="search" className="flex">
+          <CommandBar />
+        </span>
         <Button
           variant="ghost"
           size="icon"
@@ -129,11 +199,10 @@ const Topbar = () => {
         >
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
+        <HideBalancesButton />
         <NotificationCenter />
         <AddMenu />
-        <Link to={`/new/profile/${user?.id}`} aria-label="Profile" className="ml-1 lg:hidden">
-          <Avatar text={initials(user?.name)} className="size-8" />
-        </Link>
+        <AccountMenu />
       </div>
     </header>
   );
@@ -141,9 +210,10 @@ const Topbar = () => {
 
 const tabStyles = "flex flex-col items-center gap-1 py-2 text-[11px] font-medium";
 
-const MobileTab = ({ to, label, icon: Icon }) => (
+const MobileTab = ({ to, label, icon: Icon, tour }) => (
   <NavLink
     to={to}
+    data-tour={tour}
     className={({ isActive }) => cn(tabStyles, isActive ? "text-primary" : "text-muted-foreground")}
   >
     <Icon className="size-5" aria-hidden />
@@ -153,6 +223,7 @@ const MobileTab = ({ to, label, icon: Icon }) => (
 
 const MobileTabs = () => {
   const { openAdd } = useAddExpense();
+  const adding = useLocation().pathname === "/expenses/new";
 
   return (
     <nav
@@ -161,7 +232,13 @@ const MobileTabs = () => {
     >
       <MobileTab {...mainLinks[0]} />
       <MobileTab {...mainLinks[1]} />
-      <button type="button" className={cn(tabStyles, "text-muted-foreground")} onClick={() => openAdd()}>
+      <button
+        type="button"
+        data-tour="add"
+        aria-current={adding ? "page" : undefined}
+        className={cn(tabStyles, adding ? "text-primary" : "text-muted-foreground")}
+        onClick={() => openAdd()}
+      >
         <Plus className="size-5" aria-hidden />
         Add
       </button>
@@ -171,21 +248,26 @@ const MobileTabs = () => {
   );
 };
 
-const AppLayout = () => (
-  <AddExpenseProvider>
+const AppLayout = () => {
+  // Pages redraw when balances are hidden or shown, so every amount follows.
+  const hidden = useBalancesHidden();
+  return (
+  <>
+    <PinGate />
     <div className="min-h-screen">
       <Sidebar />
       <div className="lg:pl-60">
         <Topbar />
         <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-6 lg:pb-10">
           <Suspense fallback={<Loading />}>
-            <Outlet />
+            <Outlet key={hidden ? "hidden" : "shown"} />
           </Suspense>
         </main>
       </div>
       <MobileTabs />
     </div>
-  </AddExpenseProvider>
-);
+  </>
+  );
+};
 
 export default AppLayout;

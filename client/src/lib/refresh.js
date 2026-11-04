@@ -7,6 +7,11 @@ const MONEY_QUERIES = [
   "forecast",
   "xray",
   "quick-add",
+  "bills",
+  "accounts",
+  "goals",
+  "setup",
+  "pay-settings",
 ];
 
 // Every page that shows money, so a change appears everywhere at once.

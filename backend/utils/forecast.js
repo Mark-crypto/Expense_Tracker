@@ -1,5 +1,6 @@
 import connection from "../database.js";
-import { currentMonth, loadBudgets } from "./budgetStatus.js";
+import { claimAlert, currentMonth, loadAlertSettings, loadBudgets, pacesAlerted } from "./budgetStatus.js";
+import { addCycle, loadTracked, monthlyCost, nameOf } from "./recurring.js";
 
 const HISTORY_MONTHS = 6;
 const BILL_LOOKBACK = 4;
@@ -25,17 +26,6 @@ const median = (values) => {
   return sorted[Math.floor(sorted.length / 2)] ?? 0;
 };
 const round = (value) => Math.round(value);
-
-const nameOf = (row) => {
-  if (row.merchant) return row.merchant;
-  try {
-    const items = JSON.parse(row.subcategories) ?? [];
-    if (items[0]?.name) return items[0].name;
-  } catch {
-    // Older rows may hold plain text.
-  }
-  return row.description || row.category;
-};
 
 const detectBills = (rows, completed, dismissed) => {
   const window = completed.slice(-BILL_LOOKBACK);
@@ -118,8 +108,31 @@ export const buildForecast = async (userId) => {
 
   const spent = current.reduce((sum, row) => sum + row.amount, 0);
   const dismissed = new Set(dismissedRows.map((row) => row.bill_key));
-  const detected = detectBills(past, completed, dismissed);
-  const billKeys = new Set(detected.map((bill) => bill.key));
+  const tracked = await loadTracked(userId);
+  const activeBills = tracked.filter((bill) => bill.status === "active");
+  const trackedKeys = tracked.map((bill) => bill.name.trim().toLowerCase());
+  const detected = detectBills(past, completed, new Set([...dismissed, ...trackedKeys]));
+  const billKeys = new Set([...detected.map((bill) => bill.key), ...trackedKeys]);
+
+  const monthEnd = `${month}-${pad(monthDays)}`;
+  const trackedThisMonth = activeBills.flatMap((bill) => {
+    const shared = {
+      name: bill.name,
+      category: bill.category,
+      amount: round(bill.amount),
+      varies: bill.varies,
+      tracked: true,
+      overdue: false,
+    };
+    const key = bill.name.trim().toLowerCase();
+    const dates = [];
+    for (let date = bill.next_due; date <= monthEnd; date = addCycle(date, bill.frequency, bill.due_day)) dates.push(date);
+    if (dates.length === 0) {
+      const paid = current.some((row) => nameOf(row).trim().toLowerCase() === key);
+      return paid ? [{ ...shared, key, paid: true, date: bill.next_due, day: bill.due_day }] : [];
+    }
+    return dates.map((date) => ({ ...shared, key: `${key}-${date}`, paid: false, date, day: Number(date.slice(8)) }));
+  });
 
   const bills = detected
     .map((bill) => {
@@ -132,6 +145,7 @@ export const buildForecast = async (userId) => {
         date: !paid && expected < today ? today : expected,
       };
     })
+    .concat(trackedThisMonth)
     .sort((a, b) => a.date.localeCompare(b.date));
   const upcoming = bills.filter((bill) => !bill.paid);
   const stillToCome = upcoming.reduce((sum, bill) => sum + bill.amount, 0);
@@ -218,7 +232,9 @@ export const buildForecast = async (userId) => {
     remaining[bill.category] = (remaining[bill.category] ?? 0) + bill.amount;
   });
 
-  const allBills = detected.reduce((sum, bill) => sum + bill.amount, 0);
+  const allBills =
+    detected.reduce((sum, bill) => sum + bill.amount, 0) +
+    activeBills.reduce((sum, bill) => sum + monthlyCost(bill), 0);
 
   return {
     month,
@@ -256,6 +272,9 @@ export const buildForecast = async (userId) => {
 // Warns while a budget is still within its limit but heading over it.
 export const syncForecastAlerts = async (userId, forecast) => {
   const warnings = [];
+  const { mode: defaultMode } = await loadAlertSettings(userId);
+  const [modes] = await connection.execute("SELECT budget_id, alert_mode, period FROM budget WHERE user_id = ?", [userId]);
+  const settingsOf = new Map(modes.map((row) => [row.budget_id, row]));
 
   for (const budget of forecast.outlook) {
     const heading = forecast.canWarn && forecast.enough && budget.over > 0 && budget.spent <= budget.limit;
@@ -266,10 +285,13 @@ export const syncForecastAlerts = async (userId, forecast) => {
 
     if (heading) {
       warnings.push({ budget_id: budget.budget_id, name: budget.name, category: budget.category, over: budget.over });
-      if (!open) {
+      const settings = settingsOf.get(budget.budget_id);
+      const wanted = pacesAlerted(settings?.alert_mode ?? defaultMode);
+      if (wanted && (await claimAlert({ budget_id: budget.budget_id, period: settings?.period }, userId, "pace"))) {
+        const label = budget.name.replace(/\b\w/g, (char) => char.toUpperCase());
         await connection.execute(
           "INSERT INTO notifications (user_id, budget_id, type, message) VALUES (?, ?, 'system', ?)",
-          [userId, budget.budget_id, `Your budget "${budget.name}" is on pace to finish KES ${budget.over} over.`]
+          [userId, budget.budget_id, `${label} is on track to finish KES ${budget.over.toLocaleString("en-KE")} over.`]
         );
       }
     } else if (open) {

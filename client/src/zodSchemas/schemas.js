@@ -1,24 +1,27 @@
 import { z } from "zod";
 
-export const budgetSchema = z.object({
-  name: z.string().min(1, "Enter a valid budget name"),
-  email: z.boolean(),
-  subcategories: z
-    .array(
-      z.object({
-        name: z.string().optional().or(z.literal("")),
-        amount: z.number().optional(),
-      })
-    )
-    .refine(
-      (subs) => subs.length > 0 && subs.every((s) => s.name && s.amount),
-      "Each subcategory must have a name and amount"
-    ),
-  timeLimit: z.boolean().optional(),
-  startDate: z.date().optional().nullable(),
-  endDate: z.date().optional().nullable(),
-  category: z.string().min(1, "Choose a valid category"),
-});
+export const budgetSchema = z
+  .object({
+    name: z.string().trim().max(50, "Use 50 characters or fewer"),
+    category: z.string().min(1, "Choose a category"),
+    amount: z.number({ message: "Enter a limit" }).positive("Enter a limit"),
+    period: z.enum(["monthly", "weekly", "once"]),
+    rollover: z.boolean(),
+    startDate: z.string(),
+    endDate: z.string(),
+    alertMode: z.string(),
+    warnAt: z.union([z.string(), z.number()]),
+    items: z.array(z.object({ name: z.string().trim(), amount: z.unknown() })),
+  })
+  .refine((data) => data.items.every((item) => item.name && item.amount > 0), {
+    message: "Each item needs a name and an amount",
+    path: ["items"],
+  })
+  .refine((data) => data.period !== "once" || data.startDate, { message: "Choose a start date", path: ["startDate"] })
+  .refine((data) => data.period !== "once" || (data.endDate && data.endDate >= data.startDate), {
+    message: "Choose an end date after the start",
+    path: ["endDate"],
+  });
 
 export const quickExpenseSchema = z
   .object({
@@ -32,6 +35,17 @@ export const quickExpenseSchema = z
     message: "Each item needs a name and an amount",
     path: ["items"],
   });
+
+export const billSchema = z.object({
+  name: z.string().trim().min(1, "Enter a name").max(150, "Use 150 characters or fewer"),
+  category: z.string().min(1, "Choose a category"),
+  amount: z.number({ message: "Enter the amount" }).positive("Enter the amount"),
+  kind: z.enum(["bill", "subscription"]),
+  varies: z.boolean(),
+  frequency: z.enum(["weekly", "monthly", "termly", "yearly"]),
+  nextDue: z.string().min(1, "Choose a date"),
+  accountId: z.number().nullable().optional(),
+});
 
 export const loginSchema = z.object({
   email: z.string().email("Provide a valid email"),
@@ -49,6 +63,7 @@ export const registerSchema = z
     confirmPassword: z
       .string()
       .min(8, "Password has to be at least 8 characters"),
+    acceptPolicy: z.literal(true, { errorMap: () => ({ message: "Accept the privacy policy to create your account" }) }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

@@ -7,7 +7,7 @@ import { publicAxios } from "@/axiosInstance";
 import { registerSchema } from "@/zodSchemas/schemas.js";
 import AuthLayout from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { CheckboxCard, Field, Input } from "@/components/ui/field";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -63,6 +63,23 @@ const Register = () => {
         <Field label="Confirm password" htmlFor="confirmPassword" error={errors.confirmPassword?.message}>
           <Input id="confirmPassword" type="password" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} {...register("confirmPassword")} />
         </Field>
+        <div className="space-y-1 sm:col-span-2">
+          <CheckboxCard
+            id="acceptPolicy"
+            aria-invalid={!!errors.acceptPolicy}
+            title={
+              <>
+                I have read and accept the{" "}
+                <a href="/privacy" target="_blank" rel="noreferrer" className="text-primary underline">
+                  privacy policy
+                </a>
+              </>
+            }
+            description="How we keep your M-Pesa and spending data, and your rights over it."
+            {...register("acceptPolicy")}
+          />
+          {errors.acceptPolicy && <p role="alert" className="text-xs font-medium text-danger">{errors.acceptPolicy.message}</p>}
+        </div>
         <Button type="submit" loading={isPending} className="w-full sm:col-span-2">
           {isPending ? "Creating account..." : "Create account"}
         </Button>

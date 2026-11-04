@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   flexRender,
   getCoreRowModel,
@@ -31,6 +31,7 @@ import {
   Trash,
   UploadSimple,
   X,
+  ArrowsClockwise,
 } from "@phosphor-icons/react";
 import axiosInstance from "@/axiosInstance";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -54,7 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input, Label } from "@/components/ui/field";
 import { CategoryPicker } from "@/components/ui/menu";
-import { Sheet } from "@/components/ui/sheet";
+import { SubPage } from "@/components/ui/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,6 +66,8 @@ import { EXPENSE_CATEGORIES, categoryLabel } from "@/lib/categories";
 import { displayName } from "@/lib/dashboard";
 import { formatDate, formatKES, parseItems, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { usePageTour } from "@/lib/usePageTour";
+import ExportDialog from "@/components/ExportDialog";
 
 const PAGE_SIZE = 12;
 const LARGE_EXPENSE = 5000;
@@ -74,6 +77,7 @@ const SOURCES = {
   mpesa: ["M-Pesa", DeviceMobile],
   receipt: ["Receipt", Camera],
   manual: ["Manual", PencilSimpleLine],
+  auto: ["Auto-added", ArrowsClockwise],
 };
 
 const VIEWS = [
@@ -229,9 +233,15 @@ const History = () => {
   const wide = useIsWide();
   const searchInput = useRef(null);
 
+  // Other pages can open this one already filtered, for example from the Money X-ray.
+  const [searchParams] = useSearchParams();
   const [view, setView] = useState("all");
-  const [filters, setFilters] = useState({});
-  const [range, setRange] = useState(null);
+  const [filters, setFilters] = useState(() =>
+    searchParams.get("category") ? { category: searchParams.get("category") } : {}
+  );
+  const [range, setRange] = useState(() =>
+    searchParams.get("from") && searchParams.get("to") ? [searchParams.get("from"), searchParams.get("to")] : null
+  );
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState([{ id: "date", desc: true }]);
   const [grouping, setGrouping] = useState([]);
@@ -239,8 +249,16 @@ const History = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState({ monthName: false });
   const [compact, setCompact] = useState(false);
-  const [activeId, setActiveId] = useState(null);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  // Each expense has its own address: beside the list on wide screens, its own page on narrower ones.
+  const activeId = id ? Number(id) : null;
+  const setActiveId = useCallback(
+    (next) => navigate(next ? `/history/${next}` : "/history", { replace: !!next && !!activeId }),
+    [navigate, activeId]
+  );
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [clearText, setClearText] = useState("");
 
@@ -386,12 +404,12 @@ const History = () => {
       setActiveId(next.original.expense_id);
       if (!grouping.length) table.setPageIndex(Math.floor(next.index / PAGE_SIZE) || 0);
     },
-    [ordered, activeIndex, grouping.length, table]
+    [ordered, activeIndex, grouping.length, table, setActiveId]
   );
 
   useEffect(() => {
     const onKeyDown = (e) => {
-      if (e.key === "Escape") setActiveId(null);
+      if (e.key === "Escape" && activeId) setActiveId(null);
       if (["INPUT", "TEXTAREA"].includes(e.target.tagName) || e.target.isContentEditable) return;
       if (e.ctrlKey || e.metaKey) return;
       const key = e.key.toLowerCase();
@@ -412,7 +430,7 @@ const History = () => {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [moveActive, activeId]);
+  }, [moveActive, activeId, setActiveId]);
 
   useEffect(() => table.setPageIndex(0), [view, filters, range, search, table]);
 
@@ -483,21 +501,7 @@ const History = () => {
     }).filter(([, value]) => value)
   ).toString();
 
-  const exportReport = async () => {
-    try {
-      const response = await axiosInstance.get(`/expenses/report?${exportQuery}`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "expense_report.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Failed to download the report. Please try again.");
-    }
-  };
+  usePageTour("expenses", !!data);
 
   if (isLoading) {
     return (
@@ -528,6 +532,29 @@ const History = () => {
     onConfirm: (expense) => bulk.mutate({ ids: [expense.expense_id], action: "confirm" }),
   };
 
+  const deleteDialog = (
+    <ConfirmDelete
+      open={!!pendingDelete}
+      title={pendingDelete?.length > 1 ? `Delete ${pendingDelete.length} expenses?` : "Delete this expense?"}
+      description="This removes it from your expenses, budgets and reports."
+      confirmLabel="Delete"
+      loading={bulk.isPending}
+      onCancel={() => setPendingDelete(null)}
+      onConfirm={confirmDelete}
+    />
+  );
+
+  if (active && !wide) {
+    return (
+      <SubPage crumbs={[{ label: "Expenses", to: "/history" }, { label: titleCase(active.merchantName) }]}>
+        <Card className="overflow-hidden p-0">
+          <ExpensePanel key={active.expense_id} {...panelProps} inSheet />
+        </Card>
+        {deleteDialog}
+      </SubPage>
+    );
+  }
+
   const headerGroup = table.getHeaderGroups()[0];
   const hasFilters = chips.length > 0 || range || search || view !== "all";
   const groupValue = grouping[0] ?? "none";
@@ -537,7 +564,7 @@ const History = () => {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl">Expenses</h1>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={exportReport}>
+          <Button variant="secondary" onClick={() => setExporting(true)}>
             <Export /> Export
           </Button>
         </div>
@@ -574,6 +601,7 @@ const History = () => {
         <div className="relative w-full sm:w-64">
           <MagnifyingGlass className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
+            data-tour="expenses-search"
             ref={searchInput}
             aria-label="Search expenses"
             placeholder="Search merchant, item or note"
@@ -585,7 +613,7 @@ const History = () => {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" data-tour="expenses-filter">
               <FunnelSimple /> Filter
             </Button>
           </DropdownMenuTrigger>
@@ -900,21 +928,26 @@ const History = () => {
         </div>
       )}
 
-      {active && !wide && (
-        <Sheet open onClose={() => setActiveId(null)} title={titleCase(active.merchantName)}>
-          <ExpensePanel key={active.expense_id} {...panelProps} inSheet />
-        </Sheet>
-      )}
 
-      <ConfirmDelete
-        open={!!pendingDelete}
-        title={pendingDelete?.length > 1 ? `Delete ${pendingDelete.length} expenses?` : "Delete this expense?"}
-        description="This removes it from your expenses, budgets and reports."
-        confirmLabel="Delete"
-        loading={bulk.isPending}
-        onCancel={() => setPendingDelete(null)}
-        onConfirm={confirmDelete}
-      />
+      {deleteDialog}
+      {exporting && (
+        <ExportDialog
+          title="Export expenses"
+          description="An Excel file of your expenses for the period you choose."
+          endpoint="/expenses/report"
+          filename="expenses"
+          filters={exportQuery}
+          filtersText={[
+            ...chips.map(([, label, value]) => `${label}: ${value}`),
+            search && `Search: ${search}`,
+            view !== "all" && VIEWS.find((row) => row.id === view)?.label,
+          ]
+            .filter(Boolean)
+            .join(", ")}
+          initialRange={range}
+          onClose={() => setExporting(false)}
+        />
+      )}
 
       <Dialog
         open={clearing}

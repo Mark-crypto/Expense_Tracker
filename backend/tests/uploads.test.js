@@ -82,8 +82,9 @@ describe("M-Pesa statement upload", () => {
     const saved = await request(api, "GET", "/insights/xray", {
       cookie: user.cookie,
     });
-    assert.equal(saved.body.xray.transactionCount, 9);
-    assert.equal(saved.body.xray.moneyOut, first.body.xray.moneyOut);
+    assert.equal(saved.body.xray.moneyOut, Math.round(first.body.xray.moneyOut));
+    assert.equal(saved.body.xray.moneyIn, 5000);
+    assert.equal(saved.body.xray.costs.rows.find((row) => row.key === "fees").total, 56);
 
     const second = await upload(fixture("statement.pdf"));
     const spends = second.body.transactions.filter((row) => row.isSpend);

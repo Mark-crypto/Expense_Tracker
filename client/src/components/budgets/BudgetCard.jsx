@@ -1,6 +1,8 @@
-import { CheckCircle, PauseCircle, Warning, WarningOctagon } from "@phosphor-icons/react";
+import { CheckCircle, Minus, PauseCircle, Plus, Warning, WarningOctagon } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryIcon } from "@/components/ui/category";
+import { LIMIT_STEP, periodLabel } from "@/lib/budgets";
 import { categoryLabel } from "@/lib/categories";
 import { formatKES, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -28,18 +30,19 @@ export const PaceBar = ({ share, elapsed, showMarker, fill, className }) => (
   </div>
 );
 
-const forecast = (budget, progress, state) => {
-  if (state.key === "over") return `Over by ${formatKES(budget.spent - budget.limit)}`;
-  if (!progress.running) return `${formatKES(progress.left)} left unspent`;
+const answer = (budget, progress, state) => {
+  if (state.key === "over") return `${formatKES(budget.spent - budget.limit)} over`;
   if (state.key === "paused" || state.key === "ended") return `${formatKES(budget.spent)} spent`;
-  if (progress.canForecast && progress.projected > budget.limit) {
-    return `On pace to finish ${formatKES(progress.projected - budget.limit)} over`;
-  }
-  return `${formatKES(progress.dailyLeft)} a day left`;
+  if (!progress.running) return `${formatKES(progress.left)} left unspent`;
+  if (progress.left <= 0) return budget.committed > 0 ? "Fully committed to bills" : "Nothing left";
+  const perDay = `${formatKES(progress.left)} left, about ${formatKES(progress.dailyLeft)} a day`;
+  if (state.key === "fast") return `${perDay}, on track to finish ${formatKES(progress.projected - budget.limit)} over`;
+  return state.key === "good" ? `${perDay}, on track` : perDay;
 };
 
-const BudgetCard = ({ budget, progress, state, active, compact, onOpen }) => {
+const BudgetCard = ({ budget, progress, state, active, compact, onOpen, onStep }) => {
   const [text, fill, Icon] = TONES[state.tone];
+  const canStep = !compact && !!onStep && ["active", "exceeded"].includes(budget.status);
 
   return (
     <Card
@@ -61,7 +64,7 @@ const BudgetCard = ({ budget, progress, state, active, compact, onOpen }) => {
               <span className="block truncate text-sm font-semibold">{titleCase(budget.name)}</span>
               {!compact && (
                 <span className="block truncate text-xs text-muted-foreground">
-                  {categoryLabel(budget.category)} · {budget.has_time_limit ? "One-off" : "Monthly"}
+                  {budget.name === categoryLabel(budget.category).toLowerCase() ? periodLabel(budget.period) : `${categoryLabel(budget.category)} · ${periodLabel(budget.period)}`}
                 </span>
               )}
             </span>
@@ -80,9 +83,26 @@ const BudgetCard = ({ budget, progress, state, active, compact, onOpen }) => {
         <PaceBar share={progress.share} elapsed={progress.elapsed} showMarker={progress.running} fill={fill} />
 
         <span className="block text-xs text-muted-foreground tabular-nums">
-          {forecast(budget, progress, state)}
+          {answer(budget, progress, state)}
         </span>
+        {budget.committed > 0 && (
+          <span className="block text-xs text-muted-foreground tabular-nums">
+            {formatKES(budget.committed)} already committed to bills
+          </span>
+        )}
       </button>
+      {canStep && (
+        <div data-tour="budget-step" className="flex items-center justify-end gap-1 border-t border-border px-3 py-1.5">
+          <span className="mr-auto text-xs text-muted-foreground">Change limit by</span>
+          <Button variant="ghost" size="icon" className="size-7" aria-label={`Lower ${budget.name} by ${LIMIT_STEP}`} disabled={budget.baseLimit <= LIMIT_STEP} onClick={() => onStep(budget, -LIMIT_STEP)}>
+            <Minus />
+          </Button>
+          <span className="min-w-16 text-center text-xs font-medium tabular-nums">{LIMIT_STEP}</span>
+          <Button variant="ghost" size="icon" className="size-7" aria-label={`Raise ${budget.name} by ${LIMIT_STEP}`} onClick={() => onStep(budget, LIMIT_STEP)}>
+            <Plus />
+          </Button>
+        </div>
+      )}
     </Card>
   );
 };

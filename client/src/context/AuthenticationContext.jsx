@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useCallback, useState } from "react";
 import { publicAxios } from "@/axiosInstance";
 
 export const AuthContext = createContext(null);
@@ -19,7 +19,8 @@ export const AuthProvider = ({ children }) => {
     setUser(info);
   };
 
-  const logout = async () => {
+  // reason: none when someone logs out themselves, "idle" or "expired" when the session ends.
+  const logout = useCallback(async (reason) => {
     try {
       await publicAxios.post("/auth/logout");
     } catch (error) {
@@ -27,9 +28,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       localStorage.removeItem("user");
       setUser(null);
-      window.location.href = "/";
+      window.location.href = typeof reason === "string" ? `/?ended=${reason}` : "/?loggedOut=1";
     }
-  };
+  }, []);
 
   const value = {
     user,

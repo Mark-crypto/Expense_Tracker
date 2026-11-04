@@ -19,7 +19,11 @@ const pages = [
   { label: "Go to Expenses", to: "/history" },
   { label: "Go to Budgets", to: "/budget" },
   { label: "Go to Forecast", to: "/predictions" },
+  { label: "Go to Bills & Subscriptions", to: "/bills" },
+  { label: "Go to Accounts", to: "/accounts" },
   { label: "Go to Money X-ray", to: "/insights" },
+  { label: "Privacy & security", to: "/security" },
+  { label: "Help", to: "/help" },
 ];
 
 const CommandBar = () => {

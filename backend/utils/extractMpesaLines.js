@@ -1,3 +1,5 @@
+import { maskPhones } from "./maskPhones.js";
+
 // A transaction starts with a 10-character receipt code, then its timestamp.
 const TRANSACTION_START =
   /\b([A-Z][A-Z0-9]{9})\s+(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/g;
@@ -5,6 +7,7 @@ const TRANSACTION_START =
 const AMOUNT = /-?\s?[\d,]+\.\d{2}/g;
 
 const toNumber = (text) => parseFloat(text.replace(/[^\d.]/g, ""));
+const toBalance = (text) => (text.includes("-") ? -toNumber(text) : toNumber(text));
 
 // Columns after the status are paid in, withdrawn, balance. A blank column is
 // tolerated by reading the sign: withdrawals are negative.
@@ -14,7 +17,7 @@ const readAmounts = (text) => {
     return {
       paidIn: toNumber(found[0]),
       withdrawn: toNumber(found[1]),
-      balance: toNumber(found[2]),
+      balance: toBalance(found[2]),
     };
   }
   if (found.length === 2) {
@@ -22,7 +25,7 @@ const readAmounts = (text) => {
     return {
       paidIn: isWithdrawal ? 0 : toNumber(found[0]),
       withdrawn: isWithdrawal ? toNumber(found[0]) : 0,
-      balance: toNumber(found[1]),
+      balance: toBalance(found[1]),
     };
   }
   return null;
@@ -87,11 +90,7 @@ export const extractMpesaLines = (text) => {
     const amounts = readAmounts(content.slice(completedIndex));
     if (!amounts) return;
 
-    const details = content
-      .slice(0, completedIndex)
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 255);
+    const details = maskPhones(content.slice(0, completedIndex).replace(/\s+/g, " ").trim()).slice(0, 255);
     const kind = classify(details, amounts.paidIn);
 
     rows.push({

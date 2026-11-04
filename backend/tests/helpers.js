@@ -44,6 +44,7 @@ export const createUser = async (api) => {
       goal: "Testing",
       age: 30,
       occupation: "Tester",
+      acceptPolicy: true,
     },
   });
   const login = await request(api, "POST", "/auth/login", {
@@ -67,6 +68,19 @@ export const removeUsers = async (users) => {
       "mpesa_transactions",
       "merchant_categories",
       "dismissed_bills",
+      "recurring_payments",
+      "recurring_price_changes",
+      "bill_aliases",
+      "budget_limits",
+      "budget_changes",
+      "budget_alerts",
+      "account_balances",
+      "account_income",
+      "account_transfers",
+      "accounts",
+      "expense_shortcuts",
+      "goal_moves",
+      "savings_goals",
       "users",
     ]) {
       await connection.execute(`DELETE FROM ${table} WHERE user_id = ?`, [id]);
